@@ -1,0 +1,14 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Clone
+        run: git clone --depth=1 $GITHUB_SERVER_URL/$GITHUB_REPOSITORY .
+      - name: Build Docker Image
+        run: cd makeimage && docker build -t makeimage .
+      - name: Run Build
+        run: docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.ks $(pwd)/result --compression zstd
+      - name: Show Size
+        run: ls -lh result
