@@ -9,6 +9,10 @@ jobs:
       - name: Build Docker Image
         run: cd makeimage && docker build -t makeimage .
       - name: Run Build
-        run: docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.ks $(pwd)/result --compression zstd
+        run: docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/makeimage/custom.ks $(pwd)/result
       - name: Show Size
         run: ls -lh result
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: result/boot.iso

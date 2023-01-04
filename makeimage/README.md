@@ -5,15 +5,20 @@ Build a custom Fedora image in docker.
 ```sh
 setenforce 0
 docker build -t makeimage .
-docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.ks $(pwd)/result --compression zstd
+docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.ks $(pwd)/result
 
---compress-arg=-b,16M,-Xdict-size,128M,-no-recovery
+# rm -rf result
+# echo y | sudo docker container prune
+# docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/min.ks $(pwd)/result --compression zstd
+# --compress-arg=-b,16M,-Xdict-size,128M,-no-recovery
 # echo y | sudo docker container prune
 
 --compress-arg
 --anaconda-arg
 
 --env HTTP_PROXY=http://192.168.43.82/ --env HTTPS_PROXY=http://192.168.43.82/
+
+https://download.copr.fedorainfracloud.org/results/nickavem/adw-gtk3
 
 /var/log/squid/
 

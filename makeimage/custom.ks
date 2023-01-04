@@ -91,16 +91,24 @@ epiphany
 # -yelp
 # -fedora-logos*
 # -fedora-release*
+gnome-tweaks
 %end
 
-# modify desktop background and touchpad setting
+# modify settings
 %post
+curl -o /usr/share/themes/adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.2/adw-gtk3v4-2.tar.xz
+(cd /usr/share/themes && tar -xf adw-gtk3.tar.xz && rm -f adw-gtk3.tar.xz)
+cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.override << FOE
+[org.gnome.desktop.interface]
+gtk-theme="adw-gtk3"
+monospace-font-name="Noto Sans Mono 10"
+FOE
 cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.background.gschema.override << FOE
 [org.gnome.desktop.background]
 primary-color="#000000"
 FOE
 cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.peripherals.touchpad.gschema.override << FOE
-[org.gnome.desktop.background]
+[org.gnome.desktop.peripherals.touchpad]
 tap-to-click=true
 FOE
 glib-compile-schemas /usr/share/glib-2.0/schemas

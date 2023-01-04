@@ -175,4 +175,4 @@ vi /etc/docker/daemon.json
 
 curl -o miniserve -L https://github.com/svenstaro/miniserve/releases/download/v0.22.0/miniserve-0.22.0-x86_64-unknown-linux-musl
 
-sudo qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom ./boot.iso
+sudo qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/boot.iso
