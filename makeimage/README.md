@@ -1,28 +1,124 @@
 # makeimage - utils4fedora
 
-Build a custom Fedora image in docker.
+Build your custom Fedora ISO in Docker.
+
+## Usage
 
 ```sh
-setenforce 0
+# sudo -i # or add sudo before every command
+# setenforce 0 # if you get any errors like memory permission
+
+git clone --depth=1 https://github.com/kkocdko/utils4fedora
+cd utils4fedora/makeimage
+
+# build the docker image
 docker build -t makeimage .
+
+# build your custom fedora iso!
 docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.ks $(pwd)/result
 
-# rm -rf result
+# see what's produced
+ls -lh ./result/*
+```
+
+## Tips
+
+```sh
+rm -rf result/ custom.* ; cp /home/kkocdko/misc/code/utils4fedora/makeimage/custom.test.ks .
+docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.test.ks $(pwd)/result --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
+
+docker kill makeimage-0 ; docker rm makeimage-0
+qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result/boot.iso
+
+LiveOS_rootfs
+
+noxattrs is not bootable
+
+sudo docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 -it --entrypoint /bin/bash makeimage
+
+--squashfs-only
+
+46.71 MB target/debug/ksite.mirror/fedora-releases-37-everything-x86-64-os-packages-i-iwlax2xx-f
+
+sudo qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result/boot.iso
+
+# 2023-01-04 20:06:40,180 - 2023-01-04 20:11:53,416
+# --cpuset-cpus 1
+# --anaconda-arg --compression lz4 --compress-arg=
+# -no-recovery -b 1M -Xdict-size 1M -Xbcj x86
 # echo y | sudo docker container prune
-# docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/min.ks $(pwd)/result --compression zstd
-# --compress-arg=-b,16M,-Xdict-size,128M,-no-recovery
-# echo y | sudo docker container prune
+# --env HTTP_PROXY=http://192.168.43.82/ --env HTTPS_PROXY=http://192.168.43.82/
+vi /etc/docker/daemon.json
 
---compress-arg
---anaconda-arg
+#!/bin/sh
 
---env HTTP_PROXY=http://192.168.43.82/ --env HTTPS_PROXY=http://192.168.43.82/
+exit
 
-https://download.copr.fedorainfracloud.org/results/nickavem/adw-gtk3
+# ==============================
 
-/var/log/squid/
+sudo sh -c "systemctl kill docker && rm -rf /tmp/docker && systemctl start docker"
+sudo docker run --network=host --hostname docker --name makeimage --privileged=true --cap-add=SYS_ADMIN -d fedora:37 tail -f /dev/null
+sudo docker exec -it makeimage bash
 
-luxury
+sudo livemedia-creator \
+    --make-iso \
+    --no-virt \
+    --resultdir ./result \
+    --ks makeimage.ks \
+    --logfile livemedia-creator.log \
+    --fs-label ultramarine-G-x86_64 \
+    --project 'Ultramarine Linux' \
+    --releasever 37 \
+    --release 1.0 \
+    --iso-only \
+    --iso-name aa.iso
+
+# sudo livemedia-creator --make-tar --no-virt --resultdir build/image --ks build/docker-minimal-flattened.ks --logfile build/logs/livemedia-creator.log --fs-label ultramarine-D-x86_64 --project Ultramarine Linux --releasever 37 --isfinal --release 1.0 --variant docker-minimal --image-name ultramarine-docker.tar.xz --nomacboot
+
+
+# ==============================
+
+sudo vi /etc/docker/daemon.json
+sudo systemctl restart docker
+sudo docker pull fedora:37
+sudo docker rename $(sudo docker run --network=host --privileged -h docker -d fedora:37 /sbin/init) fedora-livecd-util
+sudo docker exec -it fedora-livecd-util bash
+
+sudo dnf install osbuild-composer composer-cli -y
+
+dnf install lorax -y
+
+# ==============================
+
+dnf install livecd-tools spin-kickstarts
+
+# ==============================
+
+sudo docker rename $(sudo docker run --network=host --privileged -h docker -d httpd tail -f /dev/null) fedora1
+sudo docker exec -it fedora1 bash
+
+sudo docker run -d --tmpfs /tmp --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro osmaker
+
+sudo docker run -it --name u0 ubuntu bash
+sudo docker exec -it xxxx bash
+
+
+sudo docker run --name osmaker1 -d --tmpfs /tmp --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro osmaker /sbin/init
+sudo docker attach osmaker1
+
+
+sudo docker run --name fedora0 fedora:37
+
+sudo docker exec -it osmaker2 bash
+
+sudo docker run --name fedora -d -ti fedora /usr/bin/bash
+
+export DOCKER_BUILDKIT=1
+
+docker run -d --tmpfs /tmp --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro httpd
+
+curl -o miniserve -L https://github.com/svenstaro/miniserve/releases/download/v0.22.0/miniserve-0.22.0-x86_64-unknown-linux-musl
+
 
 ```
 
@@ -52,3 +148,4 @@ Just restart the container.
 
 https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f37&arch=x86_64
 https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-37&arch=x86_64
+https://github.com/plougher/squashfs-tools/blob/master/USAGE

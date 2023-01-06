@@ -2,10 +2,11 @@
 
 ## makeimage
 
-Build a custom Fedora image in docker.
+Build your custom Fedora image in docker.
 
 ## Links
 
+```
 https://koji.fedoraproject.org/koji/
 https://docs.fedoraproject.org/en-US/quick-docs/creating-and-using-a-live-installation-image/#proc_creating-and-using-live-cd
 https://cloud-atlas.readthedocs.io/zh_CN/latest/docker/init/docker_systemd.html#id2
@@ -32,3 +33,7 @@ https://blog.sigma-star.at/post/2022/07/squashfs-erofs/
 https://weldr.io/lorax/livemedia-creator.html#using-a-proxy-with-repos
 https://weldr.io/lorax/image-minimizer.html
 https://fedoraproject.org/wiki/Changes/OptimizeSquashFS
+https://pykickstart.readthedocs.io/en/latest/kickstart-docs.html#url
+https://unix.stackexchange.com/questions/103926/kickstart-copy-file-to-new-system
+https://access.redhat.com/discussions/6978850
+```
