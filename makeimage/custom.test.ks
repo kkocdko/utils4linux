@@ -13,6 +13,7 @@ network  --bootproto=dhcp --device=link --activate
 # Shutdown after installation
 shutdown
 repo --name="fedora" --baseurl="http://192.168.43.82:9304/mirror/fedora/releases/37/Everything/x86_64/os/"
+# repo --name="updates" --baseurl="http://192.168.43.82:9304/mirror/fedora/releases/37/Everything/x86_64/"
 # Root password
 rootpw --iscrypted --lock locked
 # SELinux configuration
@@ -32,7 +33,7 @@ zerombr
 # Partition clearing information
 clearpart --all
 # Disk partitioning information
-part / --size=3072
+part / --size=4096
 
 %post
 # FIXME: it'd be better to get this installed from a package

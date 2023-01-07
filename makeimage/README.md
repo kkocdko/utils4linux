@@ -8,6 +8,7 @@ Build your custom Fedora ISO in Docker.
 # sudo -i # or add sudo before every command
 # setenforce 0 # if you get any errors like memory permission
 
+# clone this repo
 git clone --depth=1 https://github.com/kkocdko/utils4fedora
 cd utils4fedora/makeimage
 
@@ -15,17 +16,19 @@ cd utils4fedora/makeimage
 docker build -t makeimage .
 
 # build your custom fedora iso!
-docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.ks $(pwd)/result
+docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage \
+    $(pwd)/custom.ks $(pwd)/result \
+    --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
 
 # see what's produced
 ls -lh ./result/*
 ```
 
-## Tips
+## Temp Contents
 
 ```sh
 rm -rf result/ custom.* ; cp /home/kkocdko/misc/code/utils4fedora/makeimage/custom.test.ks .
-docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.test.ks $(pwd)/result --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
+docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.test.ks $(pwd)/result --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
 
 docker kill makeimage-0 ; docker rm makeimage-0
 qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result/boot.iso
@@ -34,17 +37,14 @@ LiveOS_rootfs
 
 noxattrs is not bootable
 
+docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0-0 -it --entrypoint /bin/bash makeimage-0
+
 sudo docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 -it --entrypoint /bin/bash makeimage
 
---squashfs-only
+46.71 MB iwlax2xx-firmware
 
-46.71 MB target/debug/ksite.mirror/fedora-releases-37-everything-x86-64-os-packages-i-iwlax2xx-f
-
-sudo qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result/boot.iso
-
-# 2023-01-04 20:06:40,180 - 2023-01-04 20:11:53,416
-# --cpuset-cpus 1
-# --anaconda-arg --compression lz4 --compress-arg=
+# --squashfs-only --anaconda-arg --compression lz4 --compress-arg=
+# -processors 1
 # -no-recovery -b 1M -Xdict-size 1M -Xbcj x86
 # echo y | sudo docker container prune
 # --env HTTP_PROXY=http://192.168.43.82/ --env HTTPS_PROXY=http://192.168.43.82/
