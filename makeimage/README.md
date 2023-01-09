@@ -1,6 +1,6 @@
 # makeimage - utils4fedora
 
-Build your custom Fedora ISO in Docker.
+Build your custom Fedora 37 ISO with Docker.
 
 ## Usage
 
@@ -10,28 +10,29 @@ Build your custom Fedora ISO in Docker.
 
 # clone this repo
 git clone --depth=1 https://github.com/kkocdko/utils4fedora
-cd utils4fedora/makeimage
 
 # build the docker image
-docker build -t makeimage .
+docker build -t makeimage utils4fedora/makeimage
 
 # build your custom fedora iso!
-docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage \
-    $(pwd)/custom.ks $(pwd)/result \
-    --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
+docker run --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage \
+    $(pwd)/utils4fedora/makeimage/custom.ks $(pwd)/result \
+    --make-iso --iso-only --squashfs-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
 
 # see what's produced
-ls -lh ./result/*
+# ls -lh ./result/*
 ```
 
 ## Temp Contents
 
 ```sh
-rm -rf result/ custom.* ; cp /home/kkocdko/misc/code/utils4fedora/makeimage/custom.test.ks .
-docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/custom.test.ks $(pwd)/result --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
+cd /tmp/lmc ; rm -rf * ; cp /home/kkocdko/misc/code/utils4fedora/makeimage/custom.test.ks .
+docker kill mkimg0 ; docker rm mkimg0
+docker run -it --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage $(pwd)/custom.test.ks $(pwd)/result0 --make-iso --iso-only --squashfs-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
 
-docker kill makeimage-0 ; docker rm makeimage-0
-qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result/boot.iso
+qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result0/boot.iso
+
+docker cp mkimg0:/fedora-kickstarts/makeimage.ks ./mk.ks
 
 LiveOS_rootfs
 

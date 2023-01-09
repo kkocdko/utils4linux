@@ -11,7 +11,7 @@ jobs:
       - name: Build Docker Image
         run: cd makeimage && docker build -t makeimage .
       - name: Run Build
-        run: docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 makeimage $(pwd)/makeimage/custom.ks $(pwd)/result --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
+        run: docker run --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage $(pwd)/makeimage/custom.ks $(pwd)/result --make-iso --iso-only --squashfs-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
       - name: Release File
         uses: softprops/action-gh-release@v1
         with:

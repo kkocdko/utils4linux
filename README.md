@@ -1,12 +1,18 @@
 # utils4fedora
 
+## lazymirror
+
+HTTP proxy cache for rpm / deb packages.
+
 ## makeimage
 
-Build your custom Fedora image in docker.
+Build your custom Fedora 37 ISO with Docker.
 
-## Links
+<!-- ## Links -->
 
+<!--
 ```
+https://fedoraproject.org/wiki/How_to_create_a_Fedora_install_ISO_for_testing
 https://koji.fedoraproject.org/koji/
 https://docs.fedoraproject.org/en-US/quick-docs/creating-and-using-a-live-installation-image/#proc_creating-and-using-live-cd
 https://cloud-atlas.readthedocs.io/zh_CN/latest/docker/init/docker_systemd.html#id2
@@ -37,3 +43,4 @@ https://pykickstart.readthedocs.io/en/latest/kickstart-docs.html#url
 https://unix.stackexchange.com/questions/103926/kickstart-copy-file-to-new-system
 https://access.redhat.com/discussions/6978850
 ```
+-->

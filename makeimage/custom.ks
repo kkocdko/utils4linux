@@ -3,16 +3,18 @@
 # Based on offical kickstart file
 %include fedora-live-workstation.ks
 
-# Set virtual partition size
-part / --size=8192
+# Set image root size
+part / --size=4096
 
-# Remove some packages
+# Packages config
 %packages
 -@container-management
 -@guest-desktop-agents
 -@libreoffice
+-@firefox
 -@printing
--abrt-desktop
+-abrt
+-abrt-*
 -adobe-source-code-pro-fonts
 -adwaita-qt5
 -anaconda-install-env-deps
@@ -30,11 +32,8 @@ part / --size=8192
 -fedora-bookmarks
 -fedora-workstation-backgrounds
 -gamemode
--gcc
--gdb
 -ghostscript
 -glibc-all-langpacks
--gnome-abrt
 -gnome-backgrounds
 -gnome-boxes
 -gnome-calculator
@@ -65,15 +64,11 @@ part / --size=8192
 -kernel-modules-extra
 -lohit-*
 -mediawriter
--podman
--podman-*
--qemu-*
 -qgnomeplatform-qt5
 -qt5-*
 -rhythmbox
 -sos
 -speech-dispatcher
--speech-dispatcher-*
 -toolbox
 -orca
 -rygel
@@ -82,29 +77,19 @@ part / --size=8192
 -sane-backends-*
 -libsane-*
 -sushi
--systemd-oomd-defaults
 -totem
 -unoconv
--urw-base35-*
-# remove some git components
 -git
-git-core
-# replace firefox with gnome-web
--@firefox
-epiphany
-# -yelp
-# -fedora-logos*
-# -fedora-release*
 gnome-tweaks
+epiphany # replace firefox with gnome-web
+isomd5sum # included for image checking by anaconda-install-env-deps
 %end
 
 # Add adw-gtk3 theme
 %post --nochroot
 curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.2/adw-gtk3v4-2.tar.xz
-tar -xf adw-gtk3.tar.xz
+tar -xf adw-gtk3.tar.xz -C /mnt/sysimage/usr/share/themes/
 rm -f adw-gtk3.tar.xz
-mv ./adw-gtk3 /mnt/sysimage/usr/share/themes/
-mv ./adw-gtk3-dark /mnt/sysimage/usr/share/themes/
 %end
 
 # Modify settings
@@ -112,7 +97,13 @@ mv ./adw-gtk3-dark /mnt/sysimage/usr/share/themes/
 cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.override << FOE
 [org.gnome.desktop.interface]
 gtk-theme="adw-gtk3"
+font-name="Noto Sans 11"
+document-font-name="Noto Sans 11"
 monospace-font-name="Noto Sans Mono 10"
+FOE
+cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.wm.preferences.gschema.override << FOE
+[org.gnome.desktop.wm.preferences]
+titlebar-font="Noto Sans Bold 11"
 FOE
 cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.background.gschema.override << FOE
 [org.gnome.desktop.background]
@@ -122,10 +113,6 @@ cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.peripherals.touchpad.gschem
 [org.gnome.desktop.peripherals.touchpad]
 tap-to-click=true
 FOE
-cat >> /usr/share/glib-2.0/schemas/org.gnome.shell.gschema.override << FOE
-[org.gnome.shell]
-favorite-apps=[]
-FOE
 cat >> /usr/share/glib-2.0/schemas/org.gnome.TextEditor.gschema.override << FOE
 [org.gnome.TextEditor]
 spellcheck=false
@@ -133,6 +120,12 @@ FOE
 glib-compile-schemas /usr/share/glib-2.0/schemas
 systemctl disable dnf-makecache
 systemctl disable dnf-makecache.timer
+# workarounds for squashfs-only enabled
+cat >> /etc/rc.d/init.d/livesys << FOE
+mount -o remount,size=100%,noatime /run # increase liveos rootfs size
+systemctl disable systemd-resolved # delay resolved service
+nohup sh -c "sleep 3 ; systemctl enable systemd-resolved ; systemctl restart systemd-resolved"
+FOE
 %end
 
 # Mirror tips
