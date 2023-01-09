@@ -535,10 +535,4 @@ FOE
 glib-compile-schemas /usr/share/glib-2.0/schemas
 systemctl disable dnf-makecache
 systemctl disable dnf-makecache.timer
-# workarounds for squashfs-only enabled
-cat >> /etc/rc.d/init.d/livesys << FOE
-mount -o remount,size=100%,noatime /run # increase liveos rootfs size
-systemctl disable systemd-resolved # delay resolved service
-nohup sh -c "sleep 3 ; systemctl enable systemd-resolved ; systemctl restart systemd-resolved"
-FOE
 %end

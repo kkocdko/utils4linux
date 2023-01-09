@@ -17,18 +17,17 @@ docker build -t makeimage utils4fedora/makeimage
 # build your custom fedora iso!
 docker run --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage \
     $(pwd)/utils4fedora/makeimage/custom.ks $(pwd)/result \
-    --make-iso --iso-only --squashfs-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
+    --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
 
 # see what's produced
 # ls -lh ./result/*
 ```
 
-## Temp Contents
-
+<!--
 ```sh
 cd /tmp/lmc ; rm -rf * ; cp /home/kkocdko/misc/code/utils4fedora/makeimage/custom.test.ks .
 docker kill mkimg0 ; docker rm mkimg0
-docker run -it --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage $(pwd)/custom.test.ks $(pwd)/result0 --make-iso --iso-only --squashfs-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
+docker run -it --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage $(pwd)/custom.test.ks $(pwd)/result0 --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
 
 qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 2G -cdrom /tmp/lmc/result0/boot.iso
 
@@ -44,6 +43,7 @@ sudo docker run --network=host --privileged -v $(pwd):$(pwd) --name makeimage-0 
 
 46.71 MB iwlax2xx-firmware
 
+# --squashfs-only cause systemd-resolved failed
 # --squashfs-only --anaconda-arg --compression lz4 --compress-arg=
 # -processors 1
 # -no-recovery -b 1M -Xdict-size 1M -Xbcj x86
@@ -150,3 +150,5 @@ Just restart the container.
 https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f37&arch=x86_64
 https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-37&arch=x86_64
 https://github.com/plougher/squashfs-tools/blob/master/USAGE
+
+-->
