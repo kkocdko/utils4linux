@@ -63,7 +63,7 @@
 -ibus-typing-booster
 -kernel-modules-extra
 -lohit-*
--mediawriter
+-mediawriter # use ventoy or dd instead
 -qgnomeplatform-qt5
 -qt5-*
 -rhythmbox
@@ -94,29 +94,29 @@ rm -f adw-gtk3.tar.xz
 
 # Modify settings
 %post
-cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.override << FOE
+cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.override << EOF
 [org.gnome.desktop.interface]
 gtk-theme="adw-gtk3"
 font-name="Noto Sans 11"
 document-font-name="Noto Sans 11"
 monospace-font-name="Noto Sans Mono 10"
-FOE
-cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.wm.preferences.gschema.override << FOE
+EOF
+cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.wm.preferences.gschema.override << EOF
 [org.gnome.desktop.wm.preferences]
 titlebar-font="Noto Sans Bold 11"
-FOE
-cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.background.gschema.override << FOE
+EOF
+cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.background.gschema.override << EOF
 [org.gnome.desktop.background]
 primary-color="#000000"
-FOE
-cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.peripherals.touchpad.gschema.override << FOE
+EOF
+cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.peripherals.touchpad.gschema.override << EOF
 [org.gnome.desktop.peripherals.touchpad]
 tap-to-click=true
-FOE
-cat >> /usr/share/glib-2.0/schemas/org.gnome.TextEditor.gschema.override << FOE
+EOF
+cat >> /usr/share/glib-2.0/schemas/org.gnome.TextEditor.gschema.override << EOF
 [org.gnome.TextEditor]
 spellcheck=false
-FOE
+EOF
 glib-compile-schemas /usr/share/glib-2.0/schemas
 systemctl disable dnf-makecache
 systemctl disable dnf-makecache.timer

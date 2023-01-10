@@ -10,6 +10,5 @@ RUN echo -n ;\
     echo 'cp $1 custom.ks' >> entry.sh ;\
     echo 'ksflatten -c custom.ks -o makeimage.ks' >> entry.sh ;\
     echo 'livemedia-creator --no-virt --releasever 37 --ks makeimage.ks --resultdir $2 ${@:3}' >> entry.sh ;\
-    chmod +x entry.sh ;\
-    echo -n
+    chmod +x entry.sh
 ENTRYPOINT ["/bin/sh", "entry.sh"]
