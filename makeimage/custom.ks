@@ -9,9 +9,9 @@
 # Packages config
 %packages
 -@container-management
+-@firefox
 -@guest-desktop-agents
 -@libreoffice
--@firefox
 -@printing
 -abrt
 -abrt-*
@@ -32,7 +32,9 @@
 -fedora-bookmarks
 -fedora-workstation-backgrounds
 -gamemode
+-geolite2-*
 -ghostscript
+-git
 -glibc-all-langpacks
 -gnome-backgrounds
 -gnome-boxes
@@ -58,31 +60,30 @@
 -gnome-weather
 -google-noto-emoji-color-fonts
 -gutenprint-cups
--hplip
 -ibus-libzhuyin
 -ibus-typing-booster
 -kernel-modules-extra
 -lohit-*
 -mediawriter # use ventoy or dd instead
+-orca
 -qgnomeplatform-qt5
 -qt5-*
 -rhythmbox
--sos
--speech-dispatcher
--toolbox
--orca
 -rygel
 -simple-scan
+-libsane-*
 -sane-backends
 -sane-backends-*
--libsane-*
+-hplip
+-sos
+-speech-dispatcher
 -sushi
+-toolbox
 -totem
 -unoconv
--git
-gnome-tweaks
 epiphany # replace firefox with gnome-web
 isomd5sum # included for image checking by anaconda-install-env-deps
+gnome-tweaks
 %end
 
 # Add adw-gtk3 theme
