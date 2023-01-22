@@ -39,6 +39,10 @@ rm -rf /var/run/anaconda.pid
 ```
 
 <!--
+https://old.reddit.com/r/Fedora/comments/6gnwr5/reducing_idle_bandwidth_consumption_in_fedora/
+https://utcc.utoronto.ca/~cks/space/blog/linux/FedoraDnfMakecacheOff
+https://bugzilla.redhat.com/show_bug.cgi?id=1187111
+
 ```sh
 rm -rf /tmp/lmc/* ; mkdir /tmp/lmc ; cd /tmp/lmc
 cp /home/kkocdko/misc/code/utils4fedora/makeimage/custom.test.ks .

@@ -475,7 +475,7 @@ kernel-modules-extra
 -gnome-weather
 -google-noto-emoji-color-fonts
 -gutenprint-cups
--ibus-libzhuyin
+-ibus-libzhuyin # omit this if you want
 -ibus-typing-booster
 -kernel-modules-extra
 -lohit-*
@@ -534,6 +534,6 @@ cat >> /usr/share/glib-2.0/schemas/org.gnome.TextEditor.gschema.override << EOF
 spellcheck=false
 EOF
 glib-compile-schemas /usr/share/glib-2.0/schemas
-systemctl disable dnf-makecache
+systemctl disable dnf-makecache.service
 systemctl disable dnf-makecache.timer
 %end
