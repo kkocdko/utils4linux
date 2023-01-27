@@ -4,7 +4,7 @@ Lightweight alternative to [lm-sensors](https://github.com/lm-sensors/lm-sensors
 
 ## Why
 
-Because the lm-sensors need too many dependencies:
+Because the lm-sensors required too many dependencies:
 
 ```
 [kkocdko@klf apps]$ sudo dnf install lm_sensors
@@ -13,17 +13,17 @@ Installing dependencies:
  perl-AutoLoader  noarch  5.74-492.fc37
  perl-B           x86_64  1.83-492.fc37
  perl-Carp        noarch  1.52-489.fc37
-... many many packages
+... many many packages!
 Install  59 Packages
 Installed size: 26 M
 ```
 
-However, after kernel 5.6, we can read sensors easily through the [hwmon module](https://www.kernel.org/doc/html/latest/hwmon/), without any other dependencies. So I write this helper script.
+However, after kernel `5.6`, we can read sensors easily through the [hwmon module](https://www.kernel.org/doc/html/latest/hwmon/), without any other dependencies. So I write this helper script.
 
 This script shows:
 
 ```
-[kkocdko@klf apps]$ ./hwmon
+[kkocdko@klf apps]$ ./hwmoncat
 [bat1]
 in0: 15.679 V
 
@@ -40,7 +40,7 @@ temp1(edge): 24.00 C
 temp1(tctl): 25.75 C
 ```
 
-The lm-sensors:
+Compare to the lm-sensors:
 
 ```
 [kkocdko@klf apps]$ sensors
@@ -66,6 +66,11 @@ in0:          15.68 V
 
 ## Thanks
 
-- https://www.kernel.org/doc/html/latest/hwmon/
+- <https://www.kernel.org/doc/html/latest/hwmon/>
 
-- https://unix.stackexchange.com/questions/558112/
+- <https://unix.stackexchange.com/questions/558112/>
+
+<!--
+ln -s ~/misc/code/utils4fedora/hwmoncat/hwmoncat ./hwmoncat
+./hyperfine -r 20 --warmup 3 ./hwmoncat 
+-->
