@@ -1,0 +1,25 @@
+#!/bin/sh
+
+cd /sys/class/hwmon
+for device in `ls`; do
+  echo "["`cat $device/name`"]" | sed 's/./\L&/g'
+  for kind in `echo -e "freq\nin\npower\ntemp"`; do
+    for ((i=0; i<=9; i=i+1)); do
+      if [ ! -e $device/$kind$i\_input ]; then
+        continue
+      fi
+      echo -n $kind$i
+      if [ -e $device/$kind$i\_label ]; then
+        echo -n "("`cat $device/$kind$i\_label | sed 's/./\L&/g'`")"
+      fi
+      v=`cat $device/$kind$i\_input`
+      [ $kind == "freq" ] && echo ": "`printf %.0f\ MHz "$(($v))e-6"`
+      [ $kind == "in" ] && echo ": "`printf %.3f\ V "$(($v))e-3"`
+      [ $kind == "temp" ] && echo ": "`printf %.2f\ C "$(($v))e-3"`
+    done
+  done
+  echo ""
+  # freq in power temp
+done
+# ln -s ~/misc/code/utils4fedora/hwmon/hwmon ~/misc/apps/hwmon
+# ./hyperfine -r 20 --warmup 3 ./hwmon 
