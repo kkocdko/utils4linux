@@ -2,20 +2,20 @@
 
 cd /sys/class/hwmon
 for device in `ls`; do
-  echo "["`cat $device/name`"]" | sed 's/./\L&/g'
+  echo "["`cat $device/name`"]" | sed "s/./\L&/g"
   for kind in `echo -e "freq\nin\npower\ntemp"`; do
-    for ((i=0; i<=9; i=i+1)); do
+    for i in `seq 0 9`; do
       if [ ! -e $device/$kind$i\_input ]; then
         continue
       fi
       echo -n $kind$i
       if [ -e $device/$kind$i\_label ]; then
-        echo -n "("`cat $device/$kind$i\_label | sed 's/./\L&/g'`")"
+        echo -n "("`cat $device/$kind$i\_label | sed "s/./\L&/g"`")"
       fi
       v=`cat $device/$kind$i\_input`
-      [ $kind == "freq" ] && echo ": "`printf %.0f\ MHz "$(($v))e-6"`
-      [ $kind == "in" ] && echo ": "`printf %.3f\ V "$(($v))e-3"`
-      [ $kind == "temp" ] && echo ": "`printf %.2f\ C "$(($v))e-3"`
+      [ $kind == "freq" ] && printf ": %.0f MHz\n" "$(($v))e-6"
+      [ $kind == "in" ] && printf ": %.3f V\n" "$(($v))e-3"
+      [ $kind == "temp" ] && printf ": %.2f C\n" "$(($v))e-3"
     done
   done
   echo ""
