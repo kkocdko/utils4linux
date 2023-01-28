@@ -24,20 +24,19 @@ This script shows:
 
 ```
 [kkocdko@klf apps]$ ./hwmoncat
-[bat1]
-in0: 15.679 V
+- bat1
+in0: 15.671 V
 
-[nvme]
-temp1(composite): 22.85 C
+- nvme
+temp1_composite: 23.85 C
 
-[amdgpu]
-freq1(sclk): 200 MHz
-in0(vddgfx): 0.656 V
-in1(vddnb): 0.687 V
-temp1(edge): 24.00 C
+- amdgpu
+freq1_sclk: 200 MHz
+in0_vddgfx: 0.656 V
+temp1_edge: 24.00 C
 
-[k10temp]
-temp1(tctl): 25.75 C
+- k10temp
+temp1_tctl: 24.88 C
 ```
 
 Compare to the lm-sensors:
@@ -55,13 +54,11 @@ Composite:    +25.9°C
 amdgpu-pci-0500
 Adapter: PCI adapter
 vddgfx:      656.00 mV
-vddnb:       843.00 mV
 edge:         +29.0°C
-PPT:           0.00 W
 
 BAT1-acpi-0
 Adapter: ACPI interface
-in0:          15.68 V
+in0:          15.67 V
 ```
 
 ## Thanks
@@ -72,5 +69,5 @@ in0:          15.68 V
 
 <!--
 ln -s ~/misc/code/utils4fedora/hwmoncat/hwmoncat ./hwmoncat
-./hyperfine -r 20 --warmup 3 ./hwmoncat 
+./hyperfine -r 20 --warmup 5 ./hwmoncat
 -->

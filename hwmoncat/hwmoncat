@@ -2,7 +2,7 @@
 
 cd /sys/class/hwmon
 for device in `ls`; do
-  echo "["`cat $device/name`"]" | sed "s/./\L&/g"
+  echo - `sed "s/./\L&/g" < $device/name`
   for kind in "fan" "freq" "in" "temp"; do
     for i in `seq 0 9`; do
       if [ ! -e $device/$kind$i\_input ]; then
@@ -11,7 +11,7 @@ for device in `ls`; do
       v=`cat $device/$kind$i\_input`
       echo -n $kind$i
       if [ -e $device/$kind$i\_label ]; then
-        echo -n "("`cat $device/$kind$i\_label | sed "s/./\L&/g"`")"
+        echo -n _`sed "s/./\L&/g" < $device/$kind$i\_label`
       fi
       [ $kind == "fan" ] && printf ": %d RPM\n" "$v"
       [ $kind == "freq" ] && printf ": %.0f MHz\n" "$(($v))e-6"
