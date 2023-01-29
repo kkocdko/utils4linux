@@ -430,9 +430,9 @@ kernel-modules-extra
 -@printing
 -abrt
 -abrt-*
--adobe-source-code-pro-fonts
 -adwaita-qt5
 -anaconda-install-env-deps
+-avahi
 -baobab
 -bluez-cups
 -cheese
@@ -440,6 +440,7 @@ kernel-modules-extra
 -cups
 -cups-filters
 -desktop-backgrounds-gnome
+-dnsmasq
 -eog
 -evince
 -evince-djvu
@@ -473,32 +474,59 @@ kernel-modules-extra
 -gnome-user-docs
 -gnome-user-share
 -gnome-weather
--google-noto-emoji-color-fonts
 -gutenprint-cups
+-hplip
+-ibus-anthy
+-ibus-hangul
 -ibus-libzhuyin # omit this if you want
+-ibus-m17n
 -ibus-typing-booster
 -kernel-modules-extra
+-libsane-*
 -lohit-*
 -mediawriter # use ventoy or dd instead
+-nss-mdns
 -orca
 -qgnomeplatform-qt5
 -qt5-*
+-realmd
 -rhythmbox
 -rygel
--simple-scan
--libsane-*
 -sane-backends
 -sane-backends-*
--hplip
+-simple-scan
 -sos
 -speech-dispatcher
 -sushi
+-tcpdump
+-thermald
 -toolbox
 -totem
+-traceroute
 -unoconv
+-uresourced
+-whois
+-words
 epiphany # replace firefox with gnome-web
-isomd5sum # included for image checking by anaconda-install-env-deps
 gnome-tweaks
+isomd5sum # included for image checking by anaconda-install-env-deps
+# todo: plymouth, plymouth-system-theme, abattis-*-fonts
+# fonts
+-aajohan-comfortaa-fonts
+-adobe-source-code-pro-fonts
+-google-noto-emoji-color-fonts
+-jomolhari-fonts
+-khmer-os-system-fonts
+-liberation-fonts
+-liberation-*-fonts
+-liberation-fonts-*
+-paktype-naskh-basic-fonts
+-rit-meera-new-fonts
+-sil-*-fonts
+-stix-fonts
+-thai-scalable-fonts-common
+-thai-scalable-waree-fonts
+-vazirmatn-vf-fonts
 %end
 
 # Add adw-gtk3 theme
@@ -510,6 +538,7 @@ rm -f adw-gtk3.tar.xz
 
 # Modify settings
 %post
+rm /usr/share/anaconda/gnome/fedora-welcome.desktop # disable welcome dialog
 cat >> /usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.override << EOF
 [org.gnome.desktop.interface]
 gtk-theme="adw-gtk3"
