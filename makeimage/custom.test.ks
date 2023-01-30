@@ -476,9 +476,9 @@ kernel-modules-extra
 -gnome-weather
 -gutenprint-cups
 -hplip
--ibus-anthy
+-ibus-anthy # omit these if you want
 -ibus-hangul
--ibus-libzhuyin # omit this if you want
+-ibus-libzhuyin
 -ibus-m17n
 -ibus-typing-booster
 -kernel-modules-extra
@@ -517,14 +517,11 @@ isomd5sum # included for image checking by anaconda-install-env-deps
 -google-noto-emoji-color-fonts
 -jomolhari-fonts
 -khmer-os-system-fonts
--liberation-fonts
 -liberation-*-fonts
--liberation-fonts-*
 -paktype-naskh-basic-fonts
 -rit-meera-new-fonts
 -sil-*-fonts
 -stix-fonts
--thai-scalable-fonts-common
 -thai-scalable-waree-fonts
 -vazirmatn-vf-fonts
 %end

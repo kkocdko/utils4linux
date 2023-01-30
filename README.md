@@ -1,5 +1,9 @@
 # utils4fedora
 
+## hwmoncat
+
+Read sensors. A lightweight alternative to lm-sensors.
+
 ## lazymirror
 
 HTTP proxy cache for rpm / deb packages.

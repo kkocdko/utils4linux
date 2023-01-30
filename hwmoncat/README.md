@@ -1,6 +1,6 @@
 # hwmoncat - utils4fedora
 
-Lightweight alternative to [lm-sensors](https://github.com/lm-sensors/lm-sensors).
+Read sensors. A lightweight alternative to [lm-sensors](https://github.com/lm-sensors/lm-sensors).
 
 ## Why
 
