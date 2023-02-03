@@ -2,7 +2,7 @@
 
 ## hwmoncat
 
-Read sensors. A lightweight alternative to lm-sensors.
+Used for sensors reading. A lightweight alternative to lm-sensors.
 
 ## lazymirror
 
