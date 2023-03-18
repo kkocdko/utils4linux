@@ -1,7 +1,7 @@
 FROM fedora:37
 ENV container=docker
 RUN echo -n ;\
-    # sed -e 's|^metalink=|#metalink=|g' -e 's|^#baseurl=http://download.example/pub/fedora/linux|baseurl=http://mirror.nju.edu.cn/fedora|g' -i.bak /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-modular.repo /etc/yum.repos.d/fedora-updates.repo /etc/yum.repos.d/fedora-updates-modular.repo ;\
+    # sed -e 's|^metalink=|#metalink=|g' -e 's|^#baseurl=http://download.example/pub/fedora/linux|baseurl=http://mirrors.ustc.edu.cn/fedora|g' -i.bak /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-modular.repo /etc/yum.repos.d/fedora-updates.repo /etc/yum.repos.d/fedora-updates-modular.repo ;\
     dnf install -y lorax-lmc-novirt pykickstart git-core --setopt=install_weak_deps=False ;\
     git clone https://pagure.io/fedora-kickstarts --depth=1 --branch=f37 ;\
     dnf remove -y git-core ;\

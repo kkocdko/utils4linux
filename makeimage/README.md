@@ -75,7 +75,8 @@ vi /etc/docker/daemon.json
 {
   "data-root": "/tmp/docker",
   "registry-mirrors": ["http://hub-mirror.c.163.com"],
-  "registry-mirrors": ["https://docker.mirrors.ustc.edu.cn/"]
+  "registry-mirrors": ["https://docker.mirrors.ustc.edu.cn/"],
+  "registry-mirrors": ["https://docker.nju.edu.cn/"]
 }
 ```
 

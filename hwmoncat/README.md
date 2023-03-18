@@ -8,7 +8,7 @@ Because the lm-sensors required too many dependencies:
 
 ```
 [kkocdko@klf apps]$ sudo dnf install lm_sensors
-... some logs
+... some boring logs
 Installing dependencies:
  perl-AutoLoader  noarch  5.74-492.fc37
  perl-B           x86_64  1.83-492.fc37
