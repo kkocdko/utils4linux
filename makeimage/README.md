@@ -15,8 +15,7 @@ git clone --depth=1 https://github.com/kkocdko/utils4fedora
 docker build -t makeimage utils4fedora/makeimage
 
 # build your custom fedora iso!
-docker run --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 makeimage \
-    $(pwd)/utils4fedora/makeimage/custom.ks $(pwd)/result \
+docker run --privileged -v $(pwd)/makeimage:/dist --rm --name mkimg0 makeimage \
     --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
 
 # see what's produced

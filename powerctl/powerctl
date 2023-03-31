@@ -46,7 +46,7 @@ elif [ "$1" == "high" ]; then
 elif [ "$1" == "max" ]; then
   acpi_power_profile performance
   gpu_level high
-  cpupower frequency-set -g performance -d 3300MHz -u 3600MHz
+  cpupower frequency-set -g performance -d 3800MHz -u 4000MHz
   sleep 0.7
   cpupower frequency-set -g performance -d 4200MHz -u 5000MHz
 elif [ "$1" == "stable" ]; then
