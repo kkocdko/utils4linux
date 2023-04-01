@@ -8,7 +8,7 @@ Used for sensors reading. A lightweight alternative to lm-sensors.
 
 HTTP proxy cache for rpm / deb packages.
 
-## makeimage
+## mkimg
 
 Build your custom Fedora 37 ISO with Docker.
 

@@ -528,7 +528,7 @@ isomd5sum # included for image checking by anaconda-install-env-deps
 
 # Add adw-gtk3 theme
 %post --nochroot
-curl -o adw-gtk3.tar.xz -L https://ghproxy.com/https://github.com/lassekongo83/adw-gtk3/releases/download/v4.2/adw-gtk3v4-2.tar.xz
+curl -o adw-gtk3.tar.xz -L https://ghproxy.com/https://github.com/lassekongo83/adw-gtk3/releases/download/v4.4/adw-gtk3v4-4.tar.xz
 tar -xf adw-gtk3.tar.xz -C /mnt/sysimage/usr/share/themes/
 rm -f adw-gtk3.tar.xz
 %end

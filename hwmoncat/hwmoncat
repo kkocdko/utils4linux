@@ -1,5 +1,4 @@
 #!/bin/sh
-
 cd /sys/class/hwmon
 for device in `ls`; do
   echo -n "- "
@@ -16,10 +15,10 @@ for device in `ls`; do
         echo -n _
         tr [:upper:] [:lower:] <$device/$kind$i\_label | tr -d \\n
       fi
-      [ $kind == "fan" ] && printf ": %d RPM\n" "$v"
-      [ $kind == "freq" ] && printf ": %.0f MHz\n" "$(($v))e-6"
-      [ $kind == "in" ] && printf ": %.3f V\n" "$(($v))e-3"
-      [ $kind == "temp" ] && printf ": %.2f C\n" "$(($v))e-3"
+      [ $kind = "fan" ] && printf ": %d RPM\n" "$v"
+      [ $kind = "freq" ] && printf ": %.0f MHz\n" "$(($v))e-6"
+      [ $kind = "in" ] && printf ": %.3f V\n" "$(($v))e-3"
+      [ $kind = "temp" ] && printf ": %.2f C\n" "$(($v))e-3"
     done
   done
   echo ""

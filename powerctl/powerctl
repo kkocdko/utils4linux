@@ -30,41 +30,41 @@ fi
 # please always use the amd-pstate
 # order: acpi, gpu, multi_cpu, cpu, heavy_tasks
 
-if [ "$1" == "" ]; then
+if [ "$1" = "" ]; then
   echo "Usage: $0 [ low | high | max | bench | doze | undoze | suspend ]"
-elif [ "$1" == "info" ]; then
+elif [ "$1" = "info" ]; then
   cpupower frequency-info
   ./hwmoncat
-elif [ "$1" == "low" ]; then
+elif [ "$1" = "low" ]; then
   acpi_power_profile low-power
   gpu_level low
   cpupower frequency-set -g conservative -d 400 -u 1200MHz
-elif [ "$1" == "high" ]; then
+elif [ "$1" = "high" ]; then
   acpi_power_profile low-power
   gpu_level low
   cpupower frequency-set -g conservative -d 400 -u 3600MHz
-elif [ "$1" == "max" ]; then
+elif [ "$1" = "max" ]; then
   acpi_power_profile performance
   gpu_level high
   cpupower frequency-set -g performance -d 3800MHz -u 4000MHz
   sleep 0.7
   cpupower frequency-set -g performance -d 4200MHz -u 5000MHz
-elif [ "$1" == "stable" ]; then
+elif [ "$1" = "stable" ]; then
   acpi_power_profile low-power
   gpu_level low
   cpupower frequency-set -g powersave -d 1200 -u 1200MHz
   kill -STOP `heavy_tasks_pids`
-elif [ "$1" == "doze" ]; then
+elif [ "$1" = "doze" ]; then
   acpi_power_profile low-power
   gpu_level low
   multi_cpu_core 0
   cpupower frequency-set -g powersave -d 400 -u 420MHz
   kill -STOP `heavy_tasks_pids`
-elif [ "$1" == "undoze" ]; then
+elif [ "$1" = "undoze" ]; then
   multi_cpu_core 1
   # $0 high
   kill -CONT `heavy_tasks_pids`
-elif [ "$1" == "suspend" ]; then
+elif [ "$1" = "suspend" ]; then
   acpi_power_profile performance
   gpu_level high
   multi_cpu_core 1
