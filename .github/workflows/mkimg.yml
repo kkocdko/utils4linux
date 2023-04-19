@@ -1,9 +1,9 @@
-name: release
+name: mkimg
 on:
   release:
     types: [created]
 jobs:
-  release:
+  mkimg:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout

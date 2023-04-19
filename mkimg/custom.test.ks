@@ -12,7 +12,7 @@ lang en_US.UTF-8
 network  --bootproto=dhcp --device=link --activate
 # Shutdown after installation
 shutdown
-repo --name="fedora" --baseurl="http://192.168.43.82:9304/mirror/fedora/releases/37/Everything/x86_64/os/"
+repo --name="fedora" --baseurl="http://192.168.43.82:9304/mirror/fedora/releases/38/Everything/x86_64/os/"
 # Root password
 rootpw --iscrypted --lock locked
 # SELinux configuration
@@ -22,7 +22,7 @@ services --disabled="sshd" --enabled="NetworkManager,ModemManager"
 # System timezone
 timezone US/Eastern
 # Use network installation
-url --url "http://192.168.43.82:9304/mirror/fedora/releases/37/Everything/x86_64/os/"
+url --url "http://192.168.43.82:9304/mirror/fedora/releases/38/Everything/x86_64/os/"
 # X Window System configuration information
 xconfig  --startxonboot
 # System bootloader configuration
