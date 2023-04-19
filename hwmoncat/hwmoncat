@@ -8,8 +8,8 @@ for device in `ls`; do
       if [ ! -e $device/$kind$i\_input ]; then
         continue
       fi
-      v=0
-      read -rd "" v <$device/$kind$i\_input 2>/dev/null
+      read v <$device/$kind$i\_input 2>/dev/null
+      [ "$v" = "" ] && v=0
       echo -n $kind$i
       if [ -e $device/$kind$i\_label ]; then
         echo -n _
