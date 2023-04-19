@@ -30,41 +30,45 @@ fi
 # please always use the amd-pstate
 # order: acpi, gpu, multi_cpu, cpu, heavy_tasks
 
+# https://wiki.archlinux.org/title/CPU_frequency_scaling
+# https://blog.csdn.net/lizhiqiang50/article/details/50992847
+
 if [ "$1" = "" ]; then
-  echo "Usage: $0 [ low | high | max | bench | doze | undoze | suspend ]"
+  echo "Usage: $0 [ info | min | low | high | max | doze | undoze | suspend ]"
 elif [ "$1" = "info" ]; then
   cpupower frequency-info
   ./hwmoncat
+elif [ "$1" = "min" ]; then
+  acpi_power_profile low-power
+  gpu_level low
+  cpupower frequency-set -g powersave -d 400MHz -u 1200MHz
 elif [ "$1" = "low" ]; then
   acpi_power_profile low-power
   gpu_level low
-  cpupower frequency-set -g conservative -d 400 -u 1200MHz
+  cpupower frequency-set -g ondemand -d 400MHz -u 3600MHz
 elif [ "$1" = "high" ]; then
   acpi_power_profile low-power
   gpu_level low
-  cpupower frequency-set -g conservative -d 400 -u 3600MHz
+  cpupower frequency-set -g performance -d 3850MHz -u 3900MHz
 elif [ "$1" = "max" ]; then
   acpi_power_profile performance
   gpu_level high
-  cpupower frequency-set -g performance -d 3800MHz -u 4000MHz
+  cpupower frequency-set -g performance -d 3900MHz -u 4000MHz
   sleep 0.7
   cpupower frequency-set -g performance -d 4200MHz -u 5000MHz
-elif [ "$1" = "stable" ]; then
-  acpi_power_profile low-power
-  gpu_level low
-  cpupower frequency-set -g powersave -d 1200 -u 1200MHz
-  kill -STOP `heavy_tasks_pids`
 elif [ "$1" = "doze" ]; then
   acpi_power_profile low-power
   gpu_level low
   multi_cpu_core 0
-  cpupower frequency-set -g powersave -d 400 -u 420MHz
+  cpupower frequency-set -g powersave -d 400MHz -u 420MHz
   kill -STOP `heavy_tasks_pids`
 elif [ "$1" = "undoze" ]; then
   multi_cpu_core 1
-  # $0 high
+  $0 low
   kill -CONT `heavy_tasks_pids`
 elif [ "$1" = "suspend" ]; then
+  echo suspend was broken
+  exit
   acpi_power_profile performance
   gpu_level high
   multi_cpu_core 1
