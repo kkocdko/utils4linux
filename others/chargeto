@@ -1,0 +1,17 @@
+#!/bin/sh
+if [ `whoami` != "root" ]; then
+  sudo $0 $*
+  exit
+fi
+/home/kkocdko/misc/apps/lenopow disable
+while true; do
+  read -rd "" v </sys/class/hwmon/hwmon1/device/capacity
+  if [ $v -gt 30 ]; then
+    sudo /home/kkocdko/misc/apps/lenopow enable
+    echo "greater"
+    exit
+  else
+    echo "less"
+  fi
+  sleep 5
+done

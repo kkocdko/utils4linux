@@ -14,6 +14,11 @@ Build your custom Fedora 37 ISO with Docker.
 
 <!--
 
+```sh
+ln -s `realpath ./powerctl` ~/misc/apps/powerctl
+```
+
+
 ## Links
 
 ```
