@@ -8,6 +8,7 @@ for device in `ls`; do
       if [ ! -e $device/$kind$i\_input ]; then
         continue
       fi
+      v=0
       read v <$device/$kind$i\_input 2>/dev/null
       [ "$v" = "" ] && v=0
       echo -n $kind$i
