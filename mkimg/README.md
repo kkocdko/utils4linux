@@ -59,14 +59,16 @@ livemedia-creator --make-tar --no-virt --resultdir build/image --ks build/docker
 curl -o miniserve -L https://github.com/svenstaro/miniserve/releases/download/v0.22.0/miniserve-0.22.0-x86_64-unknown-linux-musl
 
 ```
-vi /etc/docker/daemon.json
+
+rm -rf /etc/docker/daemon.json ; vi /etc/docker/daemon.json
 
 ```json
 {
-  "data-root": "/tmp/docker",
-  "registry-mirrors": ["http://hub-mirror.c.163.com"],
-  "registry-mirrors": ["https://docker.mirrors.ustc.edu.cn/"],
-  "registry-mirrors": ["https://docker.nju.edu.cn/"]
+  "registry-mirrors": [
+    "https://dockerproxy.com",
+    "http://hub-mirror.c.163.com"
+  ],
+  "max-concurrent-downloads": 8
 }
 ```
 

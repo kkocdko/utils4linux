@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ "$1" = "inner" ]; then
-  # sed -e 's|^metalink=|#metalink=|g' -e 's|^#baseurl=http://download.example/pub/fedora/linux|baseurl=https://mirrors.ustc.edu.cn/fedora|g' -i.bak /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-updates.repo
+  # sed -e 's|^metalink=|#metalink=|g' -e 's|^#baseurl=http://download.example/pub/fedora/linux|baseurl=https://mirror.nju.edu.cn/fedora|g' -i.bak /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-updates.repo
   # sudo sh -c 'mv fedora.repo.bak fedora.repo ; mv fedora-updates.repo.bak fedora-updates.repo'
   find /etc/yum.repos.d -not -name 'fedora.repo' -not -name 'fedora-updates.repo' -not -name 'yum.repos.d' -delete
   dnf install lorax-lmc-novirt pykickstart -y --setopt=install_weak_deps=False --setopt=max_parallel_downloads=6
