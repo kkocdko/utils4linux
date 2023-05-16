@@ -45,11 +45,11 @@ elif [ "$1" = "min" ]; then
 elif [ "$1" = "low" ]; then
   acpi_power_profile low-power
   gpu_level low
-  cpupower frequency-set -g ondemand -d 400MHz -u 3600MHz
+  cpupower frequency-set -g conservative -d 400MHz -u 3600MHz
 elif [ "$1" = "high" ]; then
   acpi_power_profile low-power
   gpu_level low
-  cpupower frequency-set -g performance -d 3850MHz -u 3900MHz
+  cpupower frequency-set -g performance -d 3550MHz -u 3600MHz
 elif [ "$1" = "max" ]; then
   acpi_power_profile performance
   gpu_level high
@@ -57,18 +57,19 @@ elif [ "$1" = "max" ]; then
   sleep 0.7
   cpupower frequency-set -g performance -d 4200MHz -u 5000MHz
 elif [ "$1" = "doze" ]; then
+  kill -STOP `heavy_tasks_pids`
   acpi_power_profile low-power
   gpu_level low
-  multi_cpu_core 0
   cpupower frequency-set -g powersave -d 400MHz -u 420MHz
-  kill -STOP `heavy_tasks_pids`
+  sleep 0.7
+  multi_cpu_core 0
 elif [ "$1" = "undoze" ]; then
   multi_cpu_core 1
   $0 low
   kill -CONT `heavy_tasks_pids`
 elif [ "$1" = "suspend" ]; then
-  echo suspend was broken
-  exit
+  # echo suspend was broken
+  # exit
   acpi_power_profile performance
   gpu_level high
   multi_cpu_core 1
