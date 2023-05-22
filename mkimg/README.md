@@ -65,7 +65,6 @@ rm -rf /etc/docker/daemon.json ; vi /etc/docker/daemon.json
 ```json
 {
   "registry-mirrors": [
-    "https://dockerproxy.com",
     "http://hub-mirror.c.163.com"
   ],
   "max-concurrent-downloads": 8

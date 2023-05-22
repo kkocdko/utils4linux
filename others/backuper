@@ -4,7 +4,7 @@ echo backup ~/misc/code to /tmp/code-backup
 
 rsync -r --delete --filter=':- ~/misc/code/.rsyncignore' ~/misc/code /tmp/code-backup
 pushd /tmp/code-backup
-XZ_OPT='-9e' tar -cJf code.tar.xz code
+XZ_OPT='-9e' tar -cJf code_`date +%Y%m%d`.tar.xz code
 ls -lh code.tar.xz
 rm -rf /tmp/code-backup/code
 popd
