@@ -22,8 +22,9 @@ heavy_tasks_pids(){
 }
 
 if [ `whoami` != "root" ] && [ "$1" != "info" ] && [ "$1" != "" ]; then
-  sudo $0 $*
-  $0 info
+  # run "info" only after operation succeed
+  # and "info" must be run as non-root user
+  sudo $0 $* && $0 info
   exit
 fi
 
@@ -78,6 +79,7 @@ elif [ "$1" = "suspend" ]; then
   systemctl suspend
 else
   echo unknown switch $1
+  exit 1
 fi
 
 exit
