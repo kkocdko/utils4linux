@@ -18,7 +18,7 @@ multi_cpu_core(){
 }
 
 heavy_tasks_pids(){
-  echo `pidof chrome` `pidof node` `pidof miniserve`
+  echo `pidof chrome node miniserve gopls esbuild` `pgrep -f qemu-kvm`
 }
 
 if [ `whoami` != "root" ] && [ "$1" != "info" ] && [ "$1" != "" ]; then
