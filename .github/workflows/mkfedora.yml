@@ -1,16 +1,16 @@
-name: mkimg
+name: mkfedora
 on:
   release:
     types: [created]
 jobs:
-  mkimg:
+  mkfedora:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build
-        run: cd mkimg ; chmod +x mkimg ; ./mkimg
+        run: cd mkfedora ; chmod +x mkfedora ; ./mkfedora
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: mkimg/result/boot.iso
+          files: mkfedora/result/boot.iso

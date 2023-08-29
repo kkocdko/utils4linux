@@ -1,4 +1,4 @@
-# mkimg - utils4fedora
+# mkfedora - utils4liux
 
 Build your custom Fedora 37 ISO with Docker.
 
@@ -7,9 +7,9 @@ Build your custom Fedora 37 ISO with Docker.
 ```sh
 # sudo setenforce 0 # if you get any errors like memory permission
 git clone --depth=1 https://github.com/kkocdko/utils4fedora
-cd utils4fedora/mkimg
-chmod +x mkimg
-./mkimg # needs docker and sudo inner
+cd utils4fedora/mkfedora
+chmod +x mkfedora
+./mkfedora # needs docker and sudo inner
 # ls -lh ./result/* # see what's produced
 ```
 
@@ -29,18 +29,24 @@ rm -rf /var/run/anaconda.pid
 ```
 
 <!--
+-gnome-browser-connector
+-fedora-chromium-config
+-fedora-chromium-config-gnome
+-fedora-repos-modular
+-mozjs78
+
 https://old.reddit.com/r/Fedora/comments/6gnwr5/reducing_idle_bandwidth_consumption_in_fedora/
 https://utcc.utoronto.ca/~cks/space/blog/linux/FedoraDnfMakecacheOff
 https://bugzilla.redhat.com/show_bug.cgi?id=1187111
 
 ```sh
 rm -rf /tmp/lmc/* ; mkdir /tmp/lmc ; cd /tmp/lmc
-cp /home/kkocdko/misc/code/utils4fedora/mkimg/custom.test.ks .
-docker kill mkimg0 ; docker rm mkimg0
-docker run -it --network=host --privileged -v $(pwd):$(pwd) --name mkimg0 mkimg $(pwd)/custom.test.ks $(pwd)/result0 --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
+cp /home/kkocdko/misc/code/utils4fedora/mkfedora/custom.test.ks .
+docker kill mkfedora0 ; docker rm mkfedora0
+docker run -it --network=host --privileged -v $(pwd):$(pwd) --name mkfedora0 mkfedora $(pwd)/custom.test.ks $(pwd)/result0 --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
 qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 2 -m 2G -cdrom /tmp/lmc/result0/boot.iso
 
-docker cp mkimg0:/fedora-kickstarts/mkimg.ks ./mk.ks
+docker cp mkfedora0:/fedora-kickstarts/mkfedora.ks ./mk.ks
 
 LiveOS_rootfs
 
@@ -53,7 +59,7 @@ LiveOS_rootfs
 # echo y | sudo docker container prune
 
 sudo sh -c "systemctl kill docker && rm -rf /tmp/docker && systemctl start docker"
-livemedia-creator --make-iso --no-virt --resultdir ./result --ks mkimg.ks --logfile livemedia-creator.log --fs-label ultramarine-G-x86_64 --project 'Ultramarine Linux' --releasever 37 --release 1.0 --iso-only --iso-name aa.iso
+livemedia-creator --make-iso --no-virt --resultdir ./result --ks mkfedora.ks --logfile livemedia-creator.log --fs-label ultramarine-G-x86_64 --project 'Ultramarine Linux' --releasever 37 --release 1.0 --iso-only --iso-name aa.iso
 livemedia-creator --make-tar --no-virt --resultdir build/image --ks build/docker-minimal-flattened.ks --logfile build/logs/livemedia-creator.log --fs-label ultramarine-D-x86_64 --project Ultramarine Linux --releasever 37 --isfinal --release 1.0 --variant docker-minimal --image-name ultramarine-docker.tar.xz --nomacboot
 
 curl -o miniserve -L https://github.com/svenstaro/miniserve/releases/download/v0.22.0/miniserve-0.22.0-x86_64-unknown-linux-musl
