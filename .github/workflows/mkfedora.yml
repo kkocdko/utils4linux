@@ -9,7 +9,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build
-        run: cd mkfedora ; chmod +x mkfedora ; ./mkfedora
+        run: cd mkfedora ; chmod +x mkfedora ; script -c './mkfedora' /dev/null
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
