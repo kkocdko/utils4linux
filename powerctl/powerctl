@@ -1,79 +1,72 @@
 #!/bin/sh
 
-# may effect fan policy, $1 = low-power | balanced | performance
-acpi_power_profile(){
-  echo $1 > /sys/firmware/acpi/platform_profile
-}
+# 1. Always use the amd_pstate=guided
+# 2. Call functions in declear order
 
-# for gpu, $1 = low | high | auto
-gpu_level(){
-  echo $1 > /sys/class/drm/card1/device/power_dpm_force_performance_level
-}
-
-# can disable all cpu core expect cpu0, $1 = 1 | 0, 1 means all core, 0 means cpu0 only
-multi_cpu_core(){
-  for i in `seq 1 $(cat /sys/devices/system/cpu/present | sed -e 's|0-| |')`; do
-    echo $1 > /sys/devices/system/cpu/cpu$i/online
-  done
-}
-
-heavy_tasks_pids(){
-  echo `pidof chrome node miniserve gopls esbuild` `pgrep -f qemu-kvm`
-}
+# output pids which should be stop / resume
+heavy_tasks_pids(){ echo `pidof chrome node miniserve gopls esbuild` `pgrep -f qemu-kvm` ;}
+# $1 = low-power | balanced | performance
+acpi_profile(){ echo $1 >/sys/firmware/acpi/platform_profile ;}
+# $1 = low | high | auto
+gpu_level(){ echo $1 >/sys/class/drm/card1/device/power_dpm_force_performance_level ;}
+# switch all cpu core expect cpu0, $1 = 0 (off) | 1 (on)
+cpu_multi_core(){ echo $1 | tee /sys/devices/system/cpu/cpu*/online ;}
+# $1 = conservative | ondemand | userspace | powersave | performance | schedutil 
+cpu_governor(){ echo $1 | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor ;}
+# for amd-pstate-epp only
+cpu_epp(){ echo power | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference ;}
 
 if [ `whoami` != "root" ] && [ "$1" != "info" ] && [ "$1" != "" ]; then
-  # run "info" only after operation succeed
-  # and "info" must be run as non-root user
+  # run "info" only after operation succeed, and "info" must be run as non-root user
   sudo $0 $* && $0 info
   exit
 fi
 
-# please always use the amd-pstate
-# order: acpi, gpu, multi_cpu, cpu, heavy_tasks
-
-# https://wiki.archlinux.org/title/CPU_frequency_scaling
-# https://blog.csdn.net/lizhiqiang50/article/details/50992847
-
 if [ "$1" = "" ]; then
   echo "Usage: $0 [ info | min | low | high | max | doze | undoze | suspend ]"
 elif [ "$1" = "info" ]; then
-  cpupower frequency-info
+  echo "- cpu"
+  echo -n "freq: "
+  for freq in $(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq); do
+    printf "%.0f " "$(($freq))e-3"
+  done
+  printf "(MHz)\n\n"
+  # cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | tr '\n' ' ' 2>/dev/null
   ./hwmoncat
+  # cat /sys/class/hwmon/hwmon1/device/power_now
 elif [ "$1" = "min" ]; then
-  acpi_power_profile low-power
+  acpi_profile low-power
   gpu_level low
-  cpupower frequency-set -g powersave -d 400MHz -u 1200MHz
+  cpu_governor powersave
 elif [ "$1" = "low" ]; then
-  acpi_power_profile low-power
+  acpi_profile low-power
   gpu_level low
-  cpupower frequency-set -g conservative -d 400MHz -u 3600MHz
+  cpu_governor conservative
 elif [ "$1" = "high" ]; then
-  acpi_power_profile low-power
+  acpi_profile low-power
   gpu_level low
-  cpupower frequency-set -g performance -d 3550MHz -u 3600MHz
+  cpu_governor conservative
 elif [ "$1" = "max" ]; then
-  acpi_power_profile performance
+  acpi_profile performance
   gpu_level high
-  cpupower frequency-set -g performance -d 3900MHz -u 4000MHz
-  sleep 0.7
-  cpupower frequency-set -g performance -d 4200MHz -u 5000MHz
+  cpu_governor performance
 elif [ "$1" = "doze" ]; then
   kill -STOP `heavy_tasks_pids`
-  acpi_power_profile low-power
+  acpi_profile low-power
   gpu_level low
-  cpupower frequency-set -g powersave -d 400MHz -u 420MHz
-  sleep 0.7
-  multi_cpu_core 0
+  cpu_multi_core 0
+  cpu_governor powersave 2>/dev/null
+  exit 0
 elif [ "$1" = "undoze" ]; then
-  multi_cpu_core 1
+  cpu_multi_core 1
   $0 low
   kill -CONT `heavy_tasks_pids`
 elif [ "$1" = "suspend" ]; then
-  # echo suspend was broken
-  # exit
-  acpi_power_profile performance
+  echo suspend was broken
+  exit
+  acpi_profile performance
   gpu_level high
-  multi_cpu_core 1
+  cpu_multi_core 1
   cpupower frequency-set -g performance -d 4200MHz -u 5000MHz
   sleep 0.5
   systemctl suspend
@@ -81,32 +74,3 @@ else
   echo unknown switch $1
   exit 1
 fi
-
-exit
-
-# olds
-
-case $1 in
-  min)
-    ./amdctl -m -p2 -v124 -d20 -f60
-    cpupower frequency-set -g powersave
-    ;;
-  low)
-    ./amdctl -m -p2 -v124 -d20 -f160
-    cpupower frequency-set -g powersave
-    ;;
-  high)
-    ./amdctl -m -p2 -v124 -d10 -f160
-    cpupower frequency-set -g powersave
-    ;;
-  max)
-    cpupower frequency-set -g powersave
-    ./amdctl -m -p2 -v90 -d10 -f170
-    cpupower frequency-set -g powersave
-    sleep 1
-    cpupower frequency-set -g performance
-    ;;
-  *)
-    echo unknown switch $1
-    ;;
-esac
