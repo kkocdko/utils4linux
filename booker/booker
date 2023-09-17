@@ -1,0 +1,80 @@
+#!/bin/sh
+
+if [ "$1" == "init" ]
+then
+rm -rf pdfjs pdfjs-dist.zip
+# or use https://ghproxy.com/https://github.com/xxx
+curl -o pdfjs-dist.zip -L https://ghproxy.com/https://github.com/mozilla/pdf.js/releases/download/v3.4.120/pdfjs-3.4.120-dist.zip
+unzip -qq -d pdfjs pdfjs-dist.zip
+mv pdfjs/web/locale/en-US/viewer.properties pdfjs/web/locale/locale.properties
+rm -rf \
+    pdfjs-dist.zip \
+    pdfjs/**/*.map \
+    pdfjs/**/*.pdf \
+    pdfjs/web/cmaps/ \
+    pdfjs/web/locale/*/ \
+    pdfjs/build/pdf.sandbox.js
+sed \
+    -e 's|_parseHashParameters() {|_parseHashParameters() {await loadFakeWorker();|' \
+    -e 's|"disableAutoFetch": false,|"disableAutoFetch": true,|' \
+    -e 's|"disableStream": false,|"disableStream": true,|' \
+    -e 's|"useOnlyCssZoom": false,|"useOnlyCssZoom": true,|' \
+    -i pdfjs/web/viewer.js
+sed \
+    -e 's|CanvasGraphics;|CanvasGraphics;CanvasGraphics.prototype.showText=()=>{};|' \
+    -i pdfjs/build/pdf.js
+# new URLSearchParams(location.search).has('')
+cat patch.html >> pdfjs/web/viewer.html
+esbuild(){ ~/misc/code/hello-react/node_modules/.bin/esbuild --minify --allow-overwrite $1 --outfile=$1;}
+esbuild pdfjs/build/pdf.js
+esbuild pdfjs/build/pdf.worker.js
+esbuild pdfjs/web/viewer.js
+esbuild pdfjs/web/viewer.css
+mkdir books
+ln -s "/run/media/kkocdko/data/docs/ebook/Computer Networking A Top Down Approach 8th.pdf" ./books/cnatda.pdf
+ln -s "/run/media/kkocdko/data/docs/ebook/Computer Systems A Programmer s Perspective 3th.pdf" ./books/csapp.pdf
+ln -s "/run/media/kkocdko/data/docs/ebook/算法竞赛入门经典 第2版.pdf" ./books/aoapc.pdf
+ln -s "/run/media/kkocdko/data/docs/ebook/概率论与数理统计-第二版-冯建中.pdf" ./books/probability1.pdf
+ln -s "/run/media/kkocdko/data/docs/ebook/概率论与数理统计-第二版-北京交通大学概率统计课程组.pdf" ./books/probability2.pdf
+ln -s "/run/media/kkocdko/data/docs/ebook/数字电子技术及应用-乐丽琴-mod.pdf" ./books/de.pdf
+elif [ "$1" == "run" ]
+then
+~/misc/apps/miniserve --header Cache-Control:max-age=31536000 -p 9005 $(dirname $0)
+else
+echo unknown operation. usage: ./main.sh \<init \| run\>
+fi
+
+<style>
+  .toolbar:not(:hover) {
+    opacity: 0;
+  }
+  #viewerContainer {
+    top: 0;
+    /* filter: brightness(0.7) contrast(3) hue-rotate(180deg) invert(1); */
+  }
+  .pdfViewer .page {
+    margin: 0 0 1px;
+    /* margin: 0 0 -250px; */
+    border: none;
+    background: none !important;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  .textLayer,
+  .textLayer * {
+    opacity: 1;
+    color: #fff !important;
+  }
+  canvas {
+    filter: brightness(0.8) contrast(2) hue-rotate(180deg) invert(1);
+  }
+</style>
+<script>
+  addEventListener("keypress", ({ key: k }) => {
+    if (k == "]") viewerContainer.scrollBy(0, innerHeight / 3);
+    if (k == "[") viewerContainer.scrollBy(0, innerHeight / -3);
+    if (k == "=") PDFViewerApplication.pdfViewer.currentScale += 0.01;
+    if (k == "-") PDFViewerApplication.pdfViewer.currentScale -= 0.01;
+  });
+</script>
