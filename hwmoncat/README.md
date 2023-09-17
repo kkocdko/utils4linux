@@ -1,4 +1,4 @@
-# hwmoncat - utils4fedora
+# hwmoncat - utils4linux
 
 Used for sensors reading. A lightweight alternative to [lm-sensors](https://github.com/lm-sensors/lm-sensors).
 
@@ -68,6 +68,6 @@ in0:          15.67 V
 - <https://unix.stackexchange.com/questions/558112/>
 
 <!--
-ln -s ~/misc/code/utils4fedora/hwmoncat/hwmoncat ./hwmoncat
+ln -s ~/misc/code/utils4linux/hwmoncat/hwmoncat ./hwmoncat
 ./hyperfine -r 20 --warmup 5 ./hwmoncat
 -->

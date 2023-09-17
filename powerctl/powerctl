@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# 1. Always use the amd_pstate=guided
-# 2. Call functions in declear order
+# 1. Always use the amd_pstate=passive, don't use guided or active.
+# 2. Call functions in declear order.
+# https://docs.kernel.org/admin-guide/pm/amd-pstate.html
 
 # output pids which should be stop / resume
 heavy_tasks_pids(){ echo `pidof chrome node miniserve gopls esbuild` `pgrep -f qemu-kvm` ;}
@@ -9,43 +10,45 @@ heavy_tasks_pids(){ echo `pidof chrome node miniserve gopls esbuild` `pgrep -f q
 acpi_profile(){ echo $1 >/sys/firmware/acpi/platform_profile ;}
 # $1 = low | high | auto
 gpu_level(){ echo $1 >/sys/class/drm/card1/device/power_dpm_force_performance_level ;}
-# switch all cpu core expect cpu0, $1 = 0 (off) | 1 (on)
-cpu_multi_core(){ echo $1 | tee /sys/devices/system/cpu/cpu*/online ;}
 # $1 = conservative | ondemand | userspace | powersave | performance | schedutil 
 cpu_governor(){ echo $1 | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor ;}
+# switch all cpu core expect cpu0, $1 = 0 (off) | 1 (on)
+cpu_multi_core(){ echo $1 | tee /sys/devices/system/cpu/cpu*/online ;}
+# $1 = 0 (off) | 1 (on)
+cpu_boost(){ echo $1 >/sys/devices/system/cpu/cpufreq/boost ;}
 # for amd-pstate-epp only
 cpu_epp(){ echo power | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference ;}
 
 if [ `whoami` != "root" ] && [ "$1" != "info" ] && [ "$1" != "" ]; then
-  # run "info" only after operation succeed, and "info" must be run as non-root user
-  sudo $0 $* && $0 info
+  sudo $0 $*
+  $0 info # must be run as non-root user
   exit
 fi
 
 if [ "$1" = "" ]; then
-  echo "Usage: $0 [ info | min | low | high | max | doze | undoze | suspend ]"
+  echo "Usage: $0 [ info | min | high | max | doze | undoze | suspend ]"
 elif [ "$1" = "info" ]; then
   echo "- cpu"
   echo -n "freq: "
-  for freq in $(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq); do
+  for freq in $(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq 2>/dev/null); do
     printf "%.0f " "$(($freq))e-3"
   done
   printf "(MHz)\n\n"
-  # cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | tr '\n' ' ' 2>/dev/null
   ./hwmoncat
   # cat /sys/class/hwmon/hwmon1/device/power_now
 elif [ "$1" = "min" ]; then
   acpi_profile low-power
   gpu_level low
   cpu_governor powersave
-elif [ "$1" = "low" ]; then
-  acpi_profile low-power
-  gpu_level low
-  cpu_governor conservative
 elif [ "$1" = "high" ]; then
   acpi_profile low-power
   gpu_level low
   cpu_governor conservative
+  # echo 999 >/sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
+  # echo 99 >/sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+  # echo 80000 >/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+  # https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt
+  cpu_boost 0
 elif [ "$1" = "max" ]; then
   acpi_profile performance
   gpu_level high
@@ -54,12 +57,11 @@ elif [ "$1" = "doze" ]; then
   kill -STOP `heavy_tasks_pids`
   acpi_profile low-power
   gpu_level low
+  cpu_governor powersave
   cpu_multi_core 0
-  cpu_governor powersave 2>/dev/null
-  exit 0
 elif [ "$1" = "undoze" ]; then
   cpu_multi_core 1
-  $0 low
+  cpu_governor ondemand
   kill -CONT `heavy_tasks_pids`
 elif [ "$1" = "suspend" ]; then
   echo suspend was broken

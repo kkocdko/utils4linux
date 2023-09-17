@@ -6,8 +6,8 @@ Build your custom Fedora 37 ISO with Docker.
 
 ```sh
 # sudo setenforce 0 # if you get any errors like memory permission
-git clone --depth=1 https://github.com/kkocdko/utils4fedora
-cd utils4fedora/mkfedora
+git clone --depth=1 https://github.com/kkocdko/utils4linux
+cd utils4linux/mkfedora
 chmod +x mkfedora
 ./mkfedora # needs docker and sudo inner
 # ls -lh ./result/* # see what's produced
@@ -41,7 +41,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=1187111
 
 ```sh
 rm -rf /tmp/lmc/* ; mkdir /tmp/lmc ; cd /tmp/lmc
-cp /home/kkocdko/misc/code/utils4fedora/mkfedora/custom.test.ks .
+cp /home/kkocdko/misc/code/utils4linux/mkfedora/custom.test.ks .
 docker kill mkfedora0 ; docker rm mkfedora0
 docker run -it --network=host --privileged -v $(pwd):$(pwd) --name mkfedora0 mkfedora $(pwd)/custom.test.ks $(pwd)/result0 --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=1
 qemu-kvm -machine q35 -device qemu-xhci -device usb-tablet -cpu host -smp 2 -m 2G -cdrom /tmp/lmc/result0/boot.iso

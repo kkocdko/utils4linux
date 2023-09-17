@@ -1,3 +1,3 @@
-# others - utils4fedora
+# others - utils4linux
 
 Other utils.

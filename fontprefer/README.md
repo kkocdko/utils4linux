@@ -1,4 +1,4 @@
-# fontprefer - utils4fedora
+# fontprefer - utils4linux
 
 https://szclsya.me/zh-cn/posts/fonts/linux-config-guide/#footnote-reference-1
 

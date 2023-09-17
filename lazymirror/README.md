@@ -1,4 +1,4 @@
-# lazymirror - utils4fedora
+# lazymirror - utils4linux
 
 HTTP proxy cache for rpm / deb packages.
 
