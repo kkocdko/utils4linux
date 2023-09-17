@@ -85,7 +85,7 @@ sed \
   -e 's|CanvasGraphics;|CanvasGraphics;if(xopts["x-text-enhance"])CanvasGraphics.prototype.showText=()=>{};|' \
   -i pdfjs/build/pdf.js
 sed \
-  -e 's|<meta name="viewport"|<link rel=stylesheet href=booker.css><script src=booker.js></script>&|' \
+  -e 's|<meta name="viewport"|<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href='"'"'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><style>path{fill:none;stroke:black;stroke-linejoin:round;stroke-width:2}@media(prefers-color-scheme:dark){path{stroke:white}}</style><path d="M12 7s5-4 10 0v13s-5-4-10 0V7S7 3 2 7v13s5-4 10 0"/></svg>'"'"' />&|' \
   -i pdfjs/web/viewer.html
 rm -rf books
 mkdir books
