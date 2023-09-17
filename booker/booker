@@ -61,24 +61,9 @@ cat >> pdfjs/web/booker.js << EOF
     document.documentElement.setAttribute(k, (xopts[k] = v || "true"));
   }
   localStorage["pdfjs.preferences"] = JSON.stringify({
-    // cursorToolOnLoad: 0,
-    // disablePageLabels: false,
-    // externalLinkTarget: 0,
-    // ignoreDestinationZoom: false,
-    // forcePageColors: false,
-    // pageColorsBackground: "Canvas",
-    // pageColorsForeground: "CanvasText",
-    // pdfBugEnabled: false,
-    // sidebarViewOnLoad: -1,
-    // scrollModeOnLoad: -1,
-    // spreadModeOnLoad: -1,
     ...(xopts["x-no-text-layer"] && { textLayerMode: 0 }),
-    // viewOnLoad: 0,
-    // disableAutoFetch: false,
-    // disableFontFace: false,
-    // disableRange: false,
-    // disableStream: false,
-    // enableXfa: true,
+    disableAutoFetch: true,
+    disableStream: true,
   });
 EOF
 sed \
@@ -92,6 +77,7 @@ mkdir books
 archive_dir="/run/media/kkocdko/data/docs/ebook"
 ln -s "$archive_dir/Computer Networking A Top Down Approach 8th.pdf" books/cnatda.pdf
 ln -s "$archive_dir/Computer Systems A Programmer s Perspective 3th.pdf" books/csapp.pdf
+ln -s "$archive_dir/深入理解计算机系统（第三版）.pdf" books/csapp-zh.pdf
 ln -s "$archive_dir/计算机网络自顶向下方法 第七版.pdf" books/cnatda-zh.pdf
 ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" books/aoapc.pdf
 ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" books/bulletproof-ssl-and-tls-zh.pdf
