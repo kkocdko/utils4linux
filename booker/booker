@@ -39,12 +39,17 @@ cat >> pdfjs/web/booker.css << EOF
     --page-border: none;
     background: none !important;
   }
-  html[x-text-enhance] .textLayer * {
+  html[x-text-enhance] .textLayer {
     opacity: 1;
+  }
+  html[x-text-enhance] .textLayer * {
     color: #000;
   }
+  html[x-text-enhance][x-invert] .textLayer * {
+    color: #fff;
+  }
   html[x-invert] canvas {
-    filter: brightness(0.8) contrast(2) hue-rotate(180deg) invert(1);
+    filter: brightness(0.77) contrast(2.4) hue-rotate(180deg) invert(1);
   }
 EOF
 cat >> pdfjs/web/booker.js << EOF
@@ -82,6 +87,7 @@ ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" books/aoapc.pdf
 ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" books/bulletproof-ssl-and-tls-zh.pdf
 fi
 
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/bulletproof-ssl-and-tls-zh.pdf&x-invert&x-text-enhance
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/cnatda.pdf&x-invert&x-text-enhance
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/cnatda-zh.pdf&x-invert&x-no-text-layer&x-text-enhance
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/cnatda.pdf&x-text-enhance&x-invert
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
