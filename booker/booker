@@ -60,22 +60,18 @@ cat >> pdfjs/web/booker.js << EOF
     if (k === "-") PDFViewerApplication.pdfViewer.currentScale -= 0.01;
   });
   const xopts = {};
-  for (const [k, v] of new URLSearchParams(location.search)) {
-    if (!k.startsWith("x-")) continue;
-    document.documentElement.setAttribute(k, (xopts[k] = v || "true"));
-  }
+  for (const [k, v] of new URLSearchParams(location.search))
+    if (k.startsWith("x-"))
+      document.documentElement.setAttribute(k, (xopts[k] = v || "true"));
   localStorage["pdfjs.preferences"] = JSON.stringify({
     ...(xopts["x-no-text-layer"] && { textLayerMode: 0 }),
     disableAutoFetch: true,
     disableStream: true,
   });
 EOF
-sed \
-  -e 's|CanvasGraphics;|CanvasGraphics;if(xopts["x-text-enhance"])CanvasGraphics.prototype.showText=()=>{};|' \
-  -i pdfjs/build/pdf.js
-sed \
-  -e 's|<meta name="viewport"|<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href='"'"'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><style>path{fill:none;stroke:black;stroke-linejoin:round;stroke-width:2}@media(prefers-color-scheme:dark){path{stroke:white}}</style><path d="M12 7s5-4 10 0v13s-5-4-10 0V7S7 3 2 7v13s5-4 10 0"/></svg>'"'"' />&|' \
-  -i pdfjs/web/viewer.html
+sed -i pdfjs/build/pdf.js -e 's|CanvasGraphics;|&if(xopts["x-text-enhance"])CanvasGraphics.prototype.showText=()=>{};|'
+sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
+sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg/>|'
 rm -rf books
 mkdir books
 archive_dir="/run/media/kkocdko/data/docs/ebook"
