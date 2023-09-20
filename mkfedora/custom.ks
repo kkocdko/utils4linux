@@ -150,7 +150,7 @@ systemctl disable dnf-makecache.timer
 %end
 
 # Mirror tips
-# http://192.168.1.150:9304/mirror/fedora/releases/38/Everything/x86_64/os/
+# http://172.16.5.4:9304/mirror/fedora/releases/38/Everything/x86_64/os/
 # http://192.168.1.150:9304/mirror/fedora/releases/$releasever/Everything/$basearch/os/
 # https://mirror.nju.edu.cn/fedora/releases/$releasever/Everything/$basearch/os/
 # https://mirrors.ustc.edu.cn/fedora/releases/$releasever/Everything/$basearch/os/

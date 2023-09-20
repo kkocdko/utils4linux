@@ -1,12 +1,11 @@
 #!/bin/sh
 inner() { docker exec -it mkfedora0 $* ;}
-docker run --privileged -d --name mkfedora0 fedora:38 tail -f /dev/null
+docker run --privileged -d --name mkfedora0 fedora:39 tail -f /dev/null
 inner find /etc/yum.repos.d -not -name 'fedora.repo' -not -name 'fedora-updates.repo' -not -name 'yum.repos.d' -delete
 inner dnf install lorax-lmc-novirt pykickstart git-core -y --setopt=install_weak_deps=False --setopt=max_parallel_downloads=6
-inner git clone https://pagure.io/fedora-kickstarts --depth=1 --branch=f38
-docker cp custom.ks mkfedora0:/fedora-kickstarts/custom.ks
-inner ksflatten -c /fedora-kickstarts/custom.ks -o flat.ks
-inner livemedia-creator --no-virt --releasever 38 --ks flat.ks --resultdir /result --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
+inner git clone https://pagure.io/fedora-kickstarts --depth=1 --branch=f39
+# docker cp custom.ks mkfedora0:/fedora-kickstarts/custom.ks
+# inner ksflatten -c /fedora-kickstarts/custom.ks -o flat.ks
+docker cp custom.test.ks mkfedora0:/flat.ks
+inner livemedia-creator --no-virt --releasever 39 --ks flat.ks --resultdir /result --make-iso --iso-only --compression zstd --compress-arg=-b --compress-arg=1M --compress-arg=-Xcompression-level --compress-arg=22
 docker cp mkfedora0:/result/ ./result/
-# sed -e 's|^metalink=|#metalink=|g' -e 's|^#baseurl=http://download.example/pub/fedora/linux|baseurl=https://mirror.nju.edu.cn/fedora|g' -i.bak /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-updates.repo
-# sudo sh -c 'mv fedora.repo.bak fedora.repo ; mv fedora-updates.repo.bak fedora-updates.repo'
