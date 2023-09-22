@@ -10,7 +10,7 @@ lang en_US.UTF-8
 network  --bootproto=dhcp --device=link --activate
 # Shutdown after installation
 shutdown
-repo --name="fedora" --baseurl="http://192.168.43.82:9304/mirror/fedora/releases/38/Everything/x86_64/os/"
+repo --name="fedora" --baseurl="http://192.168.43.82:9304/mirror/fedora/development/39/Everything/x86_64/os/"
 # Root password
 rootpw --iscrypted --lock locked
 # SELinux configuration
@@ -20,7 +20,7 @@ services --disabled="sshd" --enabled="NetworkManager,ModemManager"
 # System timezone
 timezone US/Eastern
 # Use network installation
-url --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-$releasever&arch=$basearch"
+url --url "http://192.168.43.82:9304/mirror/fedora/development/39/Everything/x86_64/os/"
 # X Window System configuration information
 xconfig  --startxonboot
 # System bootloader configuration
@@ -90,8 +90,9 @@ sed -i 's/^livesys_session=.*/livesys_session="gnome"/' /etc/sysconfig/livesys
 
 %end
 
+# Add adw-gtk3 theme
 %post --nochroot
-curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.9/adw-gtk3v4-9.tar.xz
+curl -o adw-gtk3.tar.xz -L https://ghproxy.com/https://github.com/lassekongo83/adw-gtk3/releases/download/v4.9/adw-gtk3v4-9.tar.xz
 tar -xf adw-gtk3.tar.xz -C /mnt/sysimage/usr/share/themes/
 rm -f adw-gtk3.tar.xz
 %end
@@ -224,6 +225,7 @@ livesys-scripts
 -rygel
 -sane-backends
 -sane-backends-*
+-sdubby
 -sil-*-fonts
 -simple-scan
 -sos
