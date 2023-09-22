@@ -1,0 +1,33 @@
+#!/bin/sh
+for device in $(ls /sys/class/hwmon); do
+  cd /sys/class/hwmon/$device
+  echo -n "- "
+  tr [:upper:] [:lower:] <name
+  ~/misc/apps/busybox find -name "fab*_input" -or -name "freq*_input" -or -name "in*_input" -or -name "temp*_input"
+
+  # ls $device/fan*_input $device/freq*_input $device/in*_input $device/temp*_input
+  # for kind in "fan" "freq" "in" "temp"; do
+  #   ls $device/$kind\*_input
+  #   for i in 0 1 2 3 4 5 6 7; do
+  #     if [ ! -e $device/$kind$i\_input ]; then
+  #       continue
+  #     fi
+  #     v=0
+  #     read v <$device/$kind$i\_input 2>/dev/null
+  #     [ "$v" = "" ] && v=0
+  #     echo -n $kind$i
+  #     if [ -e $device/$kind$i\_label ]; then
+  #       echo -n _
+  #       tr [:upper:] [:lower:] <$device/$kind$i\_label | tr -d \\n
+  #     fi
+  #     [ $kind = "fan" ] && printf ": %d RPM\n" "$v"
+  #     [ $kind = "freq" ] && printf ": %.0f MHz\n" "$(($v))e-6"
+  #     [ $kind = "in" ] && printf ": %.3f V\n" "$(($v))e-3"
+  #     [ $kind = "temp" ] && printf ": %.2f C\n" "$(($v))e-3"
+  #   done
+  # done
+  echo ""
+done
+
+
+# ~/misc/apps/hyperfine -w 5 -r 7 -p 'sleep 0.2' ./hwmoncat
