@@ -1,6 +1,6 @@
 # mkfedora - utils4liux
 
-Build your custom Fedora 39 ISO with Docker.
+Build your custom Fedora 39 Workstation ISO. Inner Docker.
 
 ## Usage
 
@@ -100,11 +100,12 @@ rm -rf /etc/docker/daemon.json ; vi /etc/docker/daemon.json
 
 ```json
 {
+  "max-concurrent-downloads": 8,
+  "data-root": "/tmp/docker"
+}
   "registry-mirrors": [
     "http://hub-mirror.c.163.com"
   ],
-  "max-concurrent-downloads": 8
-}
 ```
 
 https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-37&arch=x86_64

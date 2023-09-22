@@ -1,0 +1,21 @@
+#!/bin/sh
+echo "Strip Fedora Workstation 39 x86_64"
+sudo dnf mark install git-core tmux
+sudo dnf remove \
+  firefox libreoffice-* gstreamer1-plugin-libav qemu-* podman abrt \
+  xorg-x11-server-Xorg gnome-classic-session \
+  gnome-software gnome-connections gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
+  cpp sos cups orca paps opensc toolbox tcpdump traceroute uresourced whois words libsane-* dnsmasq evince-* gamemode geolite2-* git glibc-all-langpacks langpacks-* hunspell-en-GB \
+  gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-flathub-remote fedora-logos-httpd fedora-chromium-config fedora-chromium-config-* \
+  ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
+  anaconda-install-env-deps \
+  default-fonts-other-sans default-fonts-core-math default-fonts-core-emoji urw-base35-* liberations-*
+
+exit
+for entry in $(echo "firefox libreoffice-* ..."); do
+  echo $entry
+  sudo dnf remove $entry
+done
+
+# qemu-system-x86_64 -machine q35,accel=kvm -device qemu-xhci -device usb-tablet -cpu host -smp 2 -m 4G -cdrom /run/media/kkocdko/data/boot.iso -vga none -device virtio-gpu
+# qemu-device-display-virtio-gpu-gl

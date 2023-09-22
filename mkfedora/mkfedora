@@ -1,6 +1,8 @@
 #!/bin/sh
+docker kill mkfedora0 ; docker rm mkfedora0
 inner() { docker exec -it mkfedora0 $* ;}
-docker run --privileged -d --network host --name mkfedora0 fedora:39 tail -f /dev/null
+docker run --device=/dev/loop-control:/dev/loop-control  --cap-add SYS_ADMIN -d --network host --name mkfedora0 fedora:39 tail -f /dev/null
+# docker run --privileged -d --network host --name mkfedora0 fedora:39 tail -f /dev/null
 inner find /etc/yum.repos.d -not -name 'fedora.repo' -not -name 'fedora-updates.repo' -not -name 'yum.repos.d' -delete
 
 # localhost
