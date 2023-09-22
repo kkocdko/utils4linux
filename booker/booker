@@ -68,6 +68,8 @@ cat >> pdfjs/web/booker.js << EOF
     disableAutoFetch: true,
     disableStream: true,
   });
+  // <button class=secondaryToolbarButton onclick=document.body.requestFullscreen()><span>Fullscreen</span></button>
+  // viewBookmark.replaceWith()
 EOF
 sed -i pdfjs/build/pdf.js -e 's|CanvasGraphics;|&if(xopts["x-text-enhance"])CanvasGraphics.prototype.showText=()=>{};|'
 sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
