@@ -3,5 +3,7 @@
 /booker/pdfjs-dist.zip
 /mkdebian/dist/
 /mkfedora/result
+/mkfedora/root
+/mkfedora/root.*
 /mkfedora/fedora-kickstarts
 /katago/venv/

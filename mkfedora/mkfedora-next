@@ -1,0 +1,102 @@
+#!/bin/sh
+# dnf install xorriso squashfs-tools isomd5sum
+# curl -o official.iso https://mirror.23m.com/fedora/linux/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-39-20230920.n.0.iso
+ln -s /run/media/kkocdko/data/boot.iso official.iso
+mkdir official-iso squashfs-img rootfs-img out out-ud out-wd
+mount -r official.iso official-iso
+mount -r official-iso/LiveOS/squashfs.img squashfs-img
+mount -r squashfs-img/LiveOS/rootfs.img rootfs-img
+mount -t overlay -o lowerdir=rootfs-img,upperdir=out-ud,workdir=out-wd overlay out
+
+cat <<EOF | chroot out /bin/bash
+  # then run inner chroot
+  dnf mark install git-core tmux
+  dnf remove -y \
+    firefox libreoffice-* gstreamer1-plugin-libav qemu-* podman abrt plymouth \
+    xorg-x11-server-Xorg gnome-classic-session qt5-* qt6-* \
+    gnome-software gnome-remote-desktop gnome-connections gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
+    git nano cpp sos orca paps opensc toolbox tcpdump traceroute uresourced whois words dnsmasq system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
+    gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-flathub-remote fedora-logos-httpd fedora-chromium-config fedora-chromium-config-* \
+    ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
+    default-fonts-core-math default-fonts-core-emoji default-fonts-other-* urw-base35-*
+  # anaconda-install-env-deps
+  rm -rf /var/lib/dnf/* /var/lib/selinux/targeted/active/modules/*
+  rm -rf /usr/share/ibus/dicts/emoji-*
+  rm -rf /usr/share/anaconda/gnome/fedora-welcome.desktop
+EOF
+
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.override 
+  [org.gnome.desktop.interface]
+  gtk-theme="adw-gtk3"
+  font-name="Noto Sans 11"
+  document-font-name="Noto Sans 11"
+  monospace-font-name="Noto Sans Mono 10"
+EOF
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.wm.preferences.gschema.override 
+  [org.gnome.desktop.wm.preferences]
+  titlebar-font="Noto Sans Bold 11"
+EOF
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.background.gschema.override 
+  [org.gnome.desktop.background]
+  primary-color="#000000"
+EOF
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.peripherals.touchpad.gschema.override 
+  [org.gnome.desktop.peripherals.touchpad]
+  tap-to-click=true
+EOF
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.TextEditor.gschema.override 
+  [org.gnome.TextEditor]
+  spellcheck=false
+EOF
+glib-compile-schemas out/usr/share/glib-2.0/schemas
+cat <<EOF >>out/etc/rc.d/init.d/livesys
+  glib-compile-schemas /usr/share/glib-2.0/schemas
+  systemctl disable dnf-makecache.service
+  systemctl disable dnf-makecache.timer
+EOF
+exit
+# dd if=/dev/zero of=rootfs.img bs=1M count=3072
+# mkfs.ext4 rootfs.img -L Fedora -b 4096 -m 0
+# mkdir out-rootfs-img
+# mount -o loop rootfs.img out-rootfs-img
+# cp -a out out-rootfs-img
+# umount out-rootfs-img
+# mksquashfs rootfs.img out.img -root-becomes LiveOS -comp zstd -Xcompression-level 3
+# sync
+
+rm -rf out.iso out.img
+mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -comp lz4 # -comp zstd -Xcompression-level 22
+umount out rootfs-img squashfs-img official-iso
+rm -rf out-wd out-ud out rootfs-img squashfs-img official-iso
+
+xorriso -indev official.iso -outdev out.iso -boot_image isolinux keep -pathspecs on -add /LiveOS/squashfs.img=out.img # -boot_image any keep
+rm -rf out.img
+implantisomd5 out.iso
+
+qemu-system-x86_64 -machine q35,accel=kvm -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 4G -cdrom out.iso
+
+exit
+
+for entry in $(echo "firefox libreoffice-* ..."); do
+  echo $entry
+  sudo dnf remove $entry
+done
+# qemu-device-display-virtio-gpu-gl
+
+~/misc/apps/dua
+
+mount -o remount,size=80%,noatime /run
+
+curl -o root.tar.xz -L https://mirror.23m.com/fedora/linux/development/39/Container/x86_64/images/Fedora-Container-Base-39-20230920.n.0.x86_64.tar.xz
+mkdir root
+tar -Oxf root.tar.xz '*/layer.tar' | tar -xC root
+chroot root /bin/bash
+
+sudo -D `pwd` bash
+
+# https://fedoraproject.org/wiki/Changes/OptimizeSquashFSOnDVDByRemovingEXT4FilesystemImageLayer
+# https://www.gnu.org/software/xorriso/
+# https://stackoverflow.com/questions/31831268/genisoimage-and-uefi/75688552#75688552
+# https://wiki.debian.org/RepackBootableISO
+# https://unix.stackexchange.com/questions/503211/how-can-an-image-file-be-created-for-a-directory
+# https://unix.stackexchange.com/questions/599536/how-to-generate-small-image-of-big-ext4-partition
