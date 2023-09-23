@@ -78,8 +78,8 @@ tar -xf adw-gtk3.tar.xz -C out/usr/share/themes/
 # sync
 
 rm -rf out.iso out.img
-mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -comp lz4 # fast, for debug
-# mksquashfs out out.img -comp zstd -Xcompression-level 22
+# mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -comp lz4 # fast, for debug
+mksquashfs out out.img -comp zstd -Xcompression-level 22
 umount out rootfs-img squashfs-img official-iso
 rm -rf out-wd out-ud out rootfs-img squashfs-img official-iso
 
@@ -88,29 +88,3 @@ rm -rf out.img
 implantisomd5 out.iso
 
 qemu-system-x86_64 -machine q35,accel=kvm -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 4G -cdrom out.iso
-
-exit
-
-for entry in $(echo "firefox libreoffice-* ..."); do
-  echo $entry
-  sudo dnf remove $entry
-done
-# qemu-device-display-virtio-gpu-gl
-
-~/misc/apps/dua
-
-mount -o remount,size=80%,noatime /run
-
-curl -o root.tar.xz -L https://mirror.23m.com/fedora/linux/development/39/Container/x86_64/images/Fedora-Container-Base-39-20230920.n.0.x86_64.tar.xz
-mkdir root
-tar -Oxf root.tar.xz '*/layer.tar' | tar -xC root
-chroot root /bin/bash
-
-sudo -D `pwd` bash
-
-# https://fedoraproject.org/wiki/Changes/OptimizeSquashFSOnDVDByRemovingEXT4FilesystemImageLayer
-# https://www.gnu.org/software/xorriso/
-# https://stackoverflow.com/questions/31831268/genisoimage-and-uefi/75688552#75688552
-# https://wiki.debian.org/RepackBootableISO
-# https://unix.stackexchange.com/questions/503211/how-can-an-image-file-be-created-for-a-directory
-# https://unix.stackexchange.com/questions/599536/how-to-generate-small-image-of-big-ext4-partition

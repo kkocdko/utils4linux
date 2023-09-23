@@ -111,3 +111,32 @@ rm -rf /etc/docker/daemon.json ; vi /etc/docker/daemon.json
 https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-37&arch=x86_64
 
 -->
+<!--
+
+exit
+
+for entry in $(echo "firefox libreoffice-* ..."); do
+  echo $entry
+  sudo dnf remove $entry
+done
+# qemu-device-display-virtio-gpu-gl
+
+~/misc/apps/dua
+
+mount -o remount,size=80%,noatime /run
+
+curl -o root.tar.xz -L https://mirror.23m.com/fedora/linux/development/39/Container/x86_64/images/Fedora-Container-Base-39-20230920.n.0.x86_64.tar.xz
+mkdir root
+tar -Oxf root.tar.xz '*/layer.tar' | tar -xC root
+chroot root /bin/bash
+
+sudo -D `pwd` bash
+
+# https://fedoraproject.org/wiki/Changes/OptimizeSquashFSOnDVDByRemovingEXT4FilesystemImageLayer
+# https://www.gnu.org/software/xorriso/
+# https://stackoverflow.com/questions/31831268/genisoimage-and-uefi/75688552#75688552
+# https://wiki.debian.org/RepackBootableISO
+# https://unix.stackexchange.com/questions/503211/how-can-an-image-file-be-created-for-a-directory
+# https://unix.stackexchange.com/questions/599536/how-to-generate-small-image-of-big-ext4-partition
+
+-->
