@@ -13,9 +13,9 @@ cat <<EOF | chroot out /bin/bash
   dnf mark install git-core tmux
   dnf remove -y \
     firefox libreoffice-* gstreamer1-plugin-libav qemu-* podman abrt plymouth \
-    xorg-x11-server-Xorg gnome-classic-session qt5-* qt6-* \
+    xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* \
     gnome-software gnome-remote-desktop gnome-connections gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
-    git nano cpp sos orca paps opensc toolbox tcpdump traceroute uresourced whois words dnsmasq system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
+    git nano cpp sos orca paps opensc toolbox tcpdump traceroute binutils uresourced whois words dnsmasq python-systemd-doc system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
     gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-flathub-remote fedora-logos-httpd fedora-chromium-config fedora-chromium-config-* \
     ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
     default-fonts-core-math default-fonts-core-emoji default-fonts-other-* urw-base35-*
@@ -31,6 +31,7 @@ cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.interface.gschema.o
   font-name="Noto Sans 11"
   document-font-name="Noto Sans 11"
   monospace-font-name="Noto Sans Mono 10"
+  cursor-blink=false
 EOF
 cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.wm.preferences.gschema.override 
   [org.gnome.desktop.wm.preferences]
@@ -44,17 +45,29 @@ cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.desktop.peripherals.touchpa
   [org.gnome.desktop.peripherals.touchpad]
   tap-to-click=true
 EOF
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.mutter.gschema.override 
+  [org.gnome.mutter]
+  check-alive-timeout=7200000
+EOF
+cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.settings-daemon.plugins.power.gschema.override 
+  [org.gnome.settings-daemon.plugins.power]
+  idle-brightness=100
+EOF
 cat <<EOF >>out/usr/share/glib-2.0/schemas/org.gnome.TextEditor.gschema.override 
   [org.gnome.TextEditor]
   spellcheck=false
 EOF
-glib-compile-schemas out/usr/share/glib-2.0/schemas
-cat <<EOF >>out/etc/rc.d/init.d/livesys
+
+cat <<EOF >>out/usr/libexec/livesys/sessions.d/livesys-gnome
   glib-compile-schemas /usr/share/glib-2.0/schemas
-  systemctl disable dnf-makecache.service
-  systemctl disable dnf-makecache.timer
+  find /usr/share/glib-2.0/schemas -name '*.override' -delete
+  # systemctl disable dnf-makecache.service
+  # systemctl disable dnf-makecache.timer
 EOF
-exit
+
+[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.9/adw-gtk3v4-9.tar.xz
+tar -xf adw-gtk3.tar.xz -C out/usr/share/themes/
+
 # dd if=/dev/zero of=rootfs.img bs=1M count=3072
 # mkfs.ext4 rootfs.img -L Fedora -b 4096 -m 0
 # mkdir out-rootfs-img
@@ -65,7 +78,8 @@ exit
 # sync
 
 rm -rf out.iso out.img
-mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -comp lz4 # -comp zstd -Xcompression-level 22
+mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -comp lz4 # fast, for debug
+# mksquashfs out out.img -comp zstd -Xcompression-level 22
 umount out rootfs-img squashfs-img official-iso
 rm -rf out-wd out-ud out rootfs-img squashfs-img official-iso
 
