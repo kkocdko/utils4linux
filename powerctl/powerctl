@@ -53,6 +53,7 @@ elif [ "$1" = "max" ]; then
   acpi_profile performance
   gpu_level high
   cpu_governor performance
+  cpu_boost 1
 elif [ "$1" = "doze" ]; then
   kill -STOP `heavy_tasks_pids`
   acpi_profile low-power
