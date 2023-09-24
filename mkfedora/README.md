@@ -132,11 +132,12 @@ chroot root /bin/bash
 
 sudo -D `pwd` bash
 
-# https://fedoraproject.org/wiki/Changes/OptimizeSquashFSOnDVDByRemovingEXT4FilesystemImageLayer
 # https://www.gnu.org/software/xorriso/
 # https://stackoverflow.com/questions/31831268/genisoimage-and-uefi/75688552#75688552
 # https://wiki.debian.org/RepackBootableISO
 # https://unix.stackexchange.com/questions/503211/how-can-an-image-file-be-created-for-a-directory
 # https://unix.stackexchange.com/questions/599536/how-to-generate-small-image-of-big-ext4-partition
+# https://fedoraproject.org/wiki/Changes/OptimizeSquashFS
+# https://fedoraproject.org/wiki/Changes/OptimizeSquashFSOnDVDByRemovingEXT4FilesystemImageLayer
 
 -->
