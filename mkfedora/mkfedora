@@ -25,18 +25,16 @@ dnf remove -y \
   firefox libreoffice-* gstreamer1-plugin-libav qemu-* podman abrt plymouth \
   xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* \
   gnome-software gnome-remote-desktop gnome-connections gnome-browser-connector gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
-  git nano cpp sos orca paps opensc toolbox tcpdump traceroute binutils uresourced whois words dnsmasq python-systemd-doc system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
-  gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-flathub-remote fedora-logos-httpd fedora-chromium-config fedora-chromium-config-* \
+  git nano cpp sos orca paps opensc toolbox tcpdump traceroute binutils uresourced whois words dnsmasq python-systemd-doc system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks glibc-langpack-en hunspell-en-GB \
+  gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-flathub-remote fedora-logos-httpd fedora-chromium-* \
   ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
   default-fonts-core-math default-fonts-core-emoji default-fonts-other-* urw-base35-*
 # anaconda-install-env-deps
 rm -rf /var/lib/dnf/* /var/lib/selinux/targeted/active/modules/*
 rm -rf /usr/share/ibus/dicts/emoji-*
 EOF
-
 cat <<EOF >out/usr/share/anaconda/gnome/fedora-welcome
 #!/bin/sh
-rm -rf /usr/share/applications/org.fedoraproject.welcome-screen.desktop
 gsettings set org.gnome.settings-daemon.plugins.power idle-brightness 100 # 无操作不降亮度
 gsettings set org.gnome.desktop.interface cursor-blink false # 关闭光标 blink
 gsettings set org.gnome.mutter check-alive-timeout 7200000 # 弹出 not responsing 时间，单位 ms；勿设为 0 否则会出现 bug
@@ -49,12 +47,10 @@ gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
 gsettings set org.gnome.desktop.interface document-font-name "Noto Sans 11"
 gsettings set org.gnome.desktop.interface monospace-font-name "Noto Sans Mono 10"
 gsettings set org.gnome.TextEditor spellcheck false
+rm -f /usr/share/applications/org.fedoraproject.welcome-screen.desktop
+# systemctl disable dnf-makecache.service
+# systemctl disable dnf-makecache.timer
 EOF
-
-# cat <<EOF >>out/usr/libexec/livesys/sessions.d/livesys-gnome
-#   # systemctl disable dnf-makecache.service
-#   # systemctl disable dnf-makecache.timer
-# EOF
 
 [ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.9/adw-gtk3v4-9.tar.xz
 tar -xf adw-gtk3.tar.xz -C out/usr/share/themes/
