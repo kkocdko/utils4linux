@@ -8,7 +8,7 @@ fi
 
 if [ "$1" = "init" ]; then
 if [ ! -e pdfjs-dist.zip ]; then
-  curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v3.10.111/pdfjs-3.10.111-dist.zip
+  curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v3.11.174/pdfjs-3.11.174-dist.zip
 fi
 rm -rf pdfjs
 unzip -qq -d pdfjs pdfjs-dist.zip
@@ -19,7 +19,7 @@ rm -rf \
   pdfjs/web/cmaps/ \
   pdfjs/web/locale/*/ \
   pdfjs/build/pdf.sandbox.js
-cat >> pdfjs/web/booker.css << EOF
+cat > pdfjs/web/booker.css << EOF
   ::-webkit-scrollbar {
     display: none;
   }
@@ -52,7 +52,7 @@ cat >> pdfjs/web/booker.css << EOF
     filter: brightness(0.77) contrast(2.4) hue-rotate(180deg) invert(1);
   }
 EOF
-cat >> pdfjs/web/booker.js << EOF
+cat > pdfjs/web/booker.js << EOF
   addEventListener("keypress", ({ key: k }) => {
     if (k === "]") viewerContainer.scrollBy(0, innerHeight / 3);
     if (k === "[") viewerContainer.scrollBy(0, innerHeight / -3);
@@ -74,18 +74,18 @@ EOF
 sed -i pdfjs/build/pdf.js -e 's|CanvasGraphics;|&if(xopts["x-text-enhance"])CanvasGraphics.prototype.showText=()=>{};|'
 sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
 sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg/>|'
-rm -rf books
-mkdir books
+rm -rf chunks
+mkdir chunks
 archive_dir="/run/media/kkocdko/data/docs/ebook"
-ln -s "$archive_dir/Computer Networking A Top Down Approach 8th.pdf" books/cnatda.pdf
-ln -s "$archive_dir/Computer Systems A Programmer s Perspective 3th.pdf" books/csapp.pdf
-ln -s "$archive_dir/深入理解计算机系统（第三版）.pdf" books/csapp-zh.pdf
-ln -s "$archive_dir/计算机网络自顶向下方法 第七版.pdf" books/cnatda-zh.pdf
-ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" books/aoapc.pdf
-ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" books/bulletproof-ssl-and-tls-zh.pdf
+ln -s "$archive_dir/Computer Networking A Top Down Approach 8th.pdf" chunks/cnatda.pdf
+ln -s "$archive_dir/Computer Systems A Programmer s Perspective 3th.pdf" chunks/csapp.pdf
+ln -s "$archive_dir/深入理解计算机系统（第三版）.pdf" chunks/csapp-zh.pdf
+ln -s "$archive_dir/计算机网络自顶向下方法 第七版.pdf" chunks/cnatda-zh.pdf
+ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" chunks/aoapc.pdf
+ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" chunks/bulletproof-ssl-and-tls-zh.pdf
 fi
 
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/cnatda.pdf&x-text-enhance&x-invert
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/books/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda.pdf&x-text-enhance&x-invert
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
