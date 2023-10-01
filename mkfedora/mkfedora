@@ -4,8 +4,10 @@ mkdir -p /tmp/mkfedora
 cd /tmp/mkfedora
 
 # dnf install xorriso squashfs-tools isomd5sum
-# curl -o official.iso https://mirror.23m.com/fedora/linux/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-39-20230920.n.0.iso
-ln -s /run/media/kkocdko/data/boot.iso official.iso
+# mirror_root="https://mirror.23m.com/fedora/linux"
+# mirror_root="https://mirror.alwyzon.net/fedora/linux"
+# curl -o official.iso -L $mirror_root/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-xxx.iso
+ln -s /run/media/kkocdko/data/official.iso official.iso
 if [ ! -e squashfs-root/LiveOS/rootfs.img ]; then
   mkdir official-iso
   mount -r official.iso official-iso
@@ -18,35 +20,36 @@ mkdir rootfs-img out out-u out-w
 mount -r squashfs-root/LiveOS/rootfs.img rootfs-img
 mount -t overlay overlay -o lowerdir=rootfs-img,upperdir=out-u,workdir=out-w out
 
-cat <<EOF | chroot out /bin/bash
-# then run inner chroot
-dnf mark install git-core tmux
-# dnf remove -y plymouth
+cat <<EOF | chroot out /bin/bash # inner chroot
+dnf mark install git-core tmux # keep these packages
+# dnf remove -y firefox libreoffice-* xorg-x11-server-Xorg plymouth # fast, for dev
 dnf remove -y \
   firefox libreoffice-* gstreamer1-plugin-libav qemu-* podman abrt plymouth \
   xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* \
   gnome-software gnome-remote-desktop gnome-connections gnome-browser-connector gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
-  git nano cpp sos orca paps opensc toolbox tcpdump traceroute binutils uresourced whois words dnsmasq python-systemd-doc system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
-  gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-flathub-remote fedora-logos-httpd fedora-chromium-* \
+  git nano cpp sos orca paps toolbox tcpdump traceroute binutils uresourced whois words dnsmasq python-systemd-doc pcsc-lite-* system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
+  gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-third-party fedora-logos-httpd fedora-chromium-* \
   ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
   default-fonts-core-math default-fonts-core-emoji default-fonts-other-* urw-base35-*
-# anaconda-install-env-deps
-rm -rf /var/lib/dnf/* /var/lib/selinux/targeted/active/modules/*
-rm -rf /usr/share/ibus/dicts/emoji-*
+# anaconda-install-env-deps mesa-dri-drivers
+python -c "$(printf "import sqlite3\nconn=sqlite3.connect('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nconn.execute('vacuum;')")" # tidy database
+echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
+rm -rf /usr/share/locale/* # remove useless locale files
+rm -rf /var/lib/dnf/* /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
+rm -rf /usr/share/ibus/dicts/emoji-* # emoji in ibus
 EOF
 cat <<EOF >out/usr/share/anaconda/gnome/fedora-welcome
 #!/bin/sh
 gsettings set org.gnome.settings-daemon.plugins.power idle-brightness 100 # 无操作不降亮度
-gsettings set org.gnome.desktop.interface cursor-blink false # 关闭光标 blink
-gsettings set org.gnome.mutter check-alive-timeout 7200000 # 弹出 not responsing 时间，单位 ms；勿设为 0 否则会出现 bug
-gsettings set org.gnome.shell disable-user-extensions false # 启用用户扩展
+gsettings set org.gnome.mutter check-alive-timeout 7200000 # 弹出 not responsing 时间，单位 ms，勿设为 0 否则会出现 bug
 gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
 gsettings set org.gnome.desktop.background primary-color "#000000"
-gsettings set org.gnome.desktop.wm.preferences titlebar-font "Noto Sans Bold 11"
+gsettings set org.gnome.desktop.interface cursor-blink false
 gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
 gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
 gsettings set org.gnome.desktop.interface document-font-name "Noto Sans 11"
 gsettings set org.gnome.desktop.interface monospace-font-name "Noto Sans Mono 10"
+gsettings set org.gnome.desktop.wm.preferences titlebar-font "Noto Sans Bold 11"
 gsettings set org.gnome.TextEditor spellcheck false
 rm -f /usr/share/applications/org.fedoraproject.welcome-screen.desktop
 # systemctl disable dnf-makecache.service
@@ -57,11 +60,10 @@ EOF
 tar -xf adw-gtk3.tar.xz -C out/usr/share/themes/
 
 # dd if=/dev/zero of=rootfs.img bs=1 count=0 seek=8192M
-# # dd if=/dev/zero of=rootfs.img bs=1M count=8192
 # mkfs.ext4 rootfs.img -L Anaconda -b 4096 -m 0
 # mkdir out-rootfs-img
 # mount -t ext4 rootfs.img out-rootfs-img
-# rsync -axHAXv rootfs-img/ out-rootfs-img/ >/dev/null
+# rsync -axHAXv out/ out-rootfs-img/ >/dev/null
 # # cp -a out/* out-rootfs-img
 # umount out-rootfs-img
 # mkdir out-rootfs-img/LiveOS
@@ -71,7 +73,7 @@ tar -xf adw-gtk3.tar.xz -C out/usr/share/themes/
 # rm -rf out-rootfs-img
 
 # mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4 # fast, for debug
-# mksquashfs out out.img -no-recovery -b 1M -comp zstd -Xcompression-level 22
+mksquashfs out out.img -no-recovery -b 1M -comp zstd -Xcompression-level 22
 umount out rootfs-img
 rm -rf out-w out-u out rootfs-img
 
