@@ -1,32 +1,6 @@
-# mkfedora - utils4liux
+# mkfedora - utils4linux
 
-Build your custom Fedora 39 Workstation ISO. Inner Docker.
-
-## Usage
-
-```sh
-# sudo setenforce 0 # if you get any errors like memory permission
-git clone --depth=1 https://github.com/kkocdko/utils4linux
-cd utils4linux/mkfedora
-chmod +x mkfedora
-./mkfedora # needs docker and sudo inner
-# ls -lh ./result/* # see what's produced
-```
-
-## Troubleshooting
-
-- Throws `Command '['unshare', ...]' returned non-zero ...`:
-
-Just restart the container.
-
-- Throws `Command '['losetup', ...]' returned non-zero ...`:
-
-This is because the `/dev/loop0` was taken by last anaconda process. Try to kill it (in container).
-
-```sh
-killall anaconda
-rm -rf /var/run/anaconda.pid
-```
+Build your custom Fedora 39 Workstation ISO.
 
 <!--
 -gnome-browser-connector
@@ -34,36 +8,6 @@ rm -rf /var/run/anaconda.pid
 -fedora-chromium-config-gnome
 -fedora-repos-modular
 -mozjs78
-
-
-==============================================================================================================================================================================================
- Package                                                   Architecture                   Version                                                     Repository                         Size
-==============================================================================================================================================================================================
-Removing:
- xorg-x11-server-Xorg                                      x86_64                         1.20.14-23.fc38                                             @updates                          3.7 M
-Removing dependent packages:
- gnome-session-xsession                                    x86_64                         44.0-1.fc38                                                 @anaconda                          15 k
- xorg-x11-drv-amdgpu                                       x86_64                         23.0.0-1.fc38                                               @anaconda                         253 k
- xorg-x11-drv-ati                                          x86_64                         19.1.0-9.fc38                                               @anaconda                         503 k
- xorg-x11-drv-evdev                                        x86_64                         2.10.6-13.fc38                                              @anaconda                          78 k
- xorg-x11-drv-fbdev                                        x86_64                         0.5.0-12.fc38                                               @anaconda                          34 k
- xorg-x11-drv-intel                                        x86_64                         2.99.917-55.20210115.fc38                                   @anaconda                         2.1 M
- xorg-x11-drv-libinput                                     x86_64                         1.3.0-1.fc38                                                @updates                           98 k
- xorg-x11-drv-nouveau                                      x86_64                         1:1.0.17-5.fc38                                             @anaconda                         216 k
- xorg-x11-drv-openchrome                                   x86_64                         0.6.400-5.20210215git5dbad06.fc38                           @anaconda                         296 k
- xorg-x11-drv-qxl                                          x86_64                         0.1.6-1.fc38                                                @anaconda                         168 k
- xorg-x11-drv-vesa                                         x86_64                         2.5.0-5.fc38                                                @anaconda                          34 k
- xorg-x11-drv-vmware                                       x86_64                         13.4.0-1.fc38                                               @anaconda                         170 k
- xorg-x11-drv-wacom                                        x86_64                         1.2.0-1.fc38                                                @updates                          1.2 M
-Removing unused dependencies:
- libXScrnSaver                                             x86_64                         1.2.3-12.fc38                                               @anaconda                          43 k
- libXvMC                                                   x86_64                         1.0.13-2.fc38                                               @anaconda                          46 k
- mesa-libxatracker                                         x86_64                         23.1.6-1.fc38                                               @updates                          8.4 M
- xorg-x11-drv-wacom-serial-support                         x86_64                         1.2.0-1.fc38                                                @updates                           40 k
-
-Transaction Summary
-
-
 
 https://old.reddit.com/r/Fedora/comments/6gnwr5/reducing_idle_bandwidth_consumption_in_fedora/
 https://utcc.utoronto.ca/~cks/space/blog/linux/FedoraDnfMakecacheOff

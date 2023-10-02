@@ -7,14 +7,14 @@ cd /tmp/mkfedora
 # mirror_root="https://mirror.23m.com/fedora/linux"
 # mirror_root="https://mirror.alwyzon.net/fedora/linux"
 # curl -o official.iso -L $mirror_root/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-xxx.iso
-ln -s /run/media/kkocdko/data/official.iso official.iso
+
+official_iso="/run/media/kkocdko/data/official.iso"
 if [ ! -e squashfs-root/LiveOS/rootfs.img ]; then
   mkdir official-iso
-  mount -r official.iso official-iso
+  mount -r $official_iso official-iso
   unsquashfs official-iso/LiveOS/squashfs.img
   umount official-iso
   rm -rf official-iso
-  chmod -w squashfs-root/LiveOS/rootfs.img
 fi
 mkdir rootfs-img out out-u out-w
 mount -r squashfs-root/LiveOS/rootfs.img rootfs-img
@@ -22,20 +22,18 @@ mount -t overlay overlay -o lowerdir=rootfs-img,upperdir=out-u,workdir=out-w out
 
 cat <<EOF | chroot out /bin/bash # inner chroot
 dnf mark install git-core tmux # keep these packages
-# dnf remove -y firefox libreoffice-* xorg-x11-server-Xorg plymouth # fast, for dev
+dnf group remove -y firefox printing libreoffice uest-desktop-agents container-management multimedia
 dnf remove -y \
-  firefox libreoffice-* gstreamer1-plugin-libav qemu-* podman abrt plymouth \
-  xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* \
+  libreoffice-* qemu-* podman abrt plymouth kernel-modules-extra xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* PackageKit-* git nano cpp sos orca tcpdump traceroute binutils uresourced whois words dnsmasq gamemode python-systemd-doc fros pcsc-lite-* libsane-* evince-* geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
   gnome-software gnome-remote-desktop gnome-connections gnome-browser-connector gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
-  git nano cpp sos orca paps toolbox tcpdump traceroute binutils uresourced whois words dnsmasq python-systemd-doc pcsc-lite-* system-config-printer-* libsane-* evince-* gamemode geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
-  gnome-backgrounds desktop-backgrounds-gnome fedora-workstation-backgrounds fedora-bookmarks fedora-third-party fedora-logos-httpd fedora-chromium-* \
   ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
-  default-fonts-core-math default-fonts-core-emoji default-fonts-other-* urw-base35-*
-# anaconda-install-env-deps mesa-dri-drivers
-python -c "$(printf "import sqlite3\nconn=sqlite3.connect('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nconn.execute('vacuum;')")" # tidy database
+  desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
+  default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts adobe-source-code-pro-fonts
+# dnf remove anaconda-install-env-deps mesa-dri-drivers dracut-* firewalld systemd-resolved chrony
+printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files
-rm -rf /var/lib/dnf/* /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
+rm -rf /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
 rm -rf /usr/share/ibus/dicts/emoji-* # emoji in ibus
 EOF
 cat <<EOF >out/usr/share/anaconda/gnome/fedora-welcome
@@ -54,6 +52,7 @@ gsettings set org.gnome.TextEditor spellcheck false
 rm -f /usr/share/applications/org.fedoraproject.welcome-screen.desktop
 # systemctl disable dnf-makecache.service
 # systemctl disable dnf-makecache.timer
+# setenforce 0
 EOF
 
 [ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.9/adw-gtk3v4-9.tar.xz
@@ -78,7 +77,7 @@ umount out rootfs-img
 rm -rf out-w out-u out rootfs-img
 
 rm -rf out.iso
-xorriso -indev official.iso -outdev out.iso -boot_image isolinux keep -pathspecs on -add /LiveOS/squashfs.img=out.img # -boot_image any keep
+xorriso -indev $official_iso -outdev out.iso -boot_image isolinux keep -pathspecs on -add /LiveOS/squashfs.img=out.img # -boot_image any keep
 rm -rf out.img
 implantisomd5 out.iso
 
