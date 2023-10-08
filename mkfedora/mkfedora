@@ -3,26 +3,51 @@
 mkdir -p /tmp/mkfedora
 cd /tmp/mkfedora
 
-# dnf install xorriso squashfs-tools isomd5sum
+# dnf install xorriso squashfs-tools
+# mount -o remount,size=80%,noatime /tmp
+# curl 'https://mirrors.fedoraproject.org/metalink?repo=fedora-39&arch=x86_64'
 # mirror_root="https://mirror.23m.com/fedora/linux"
 # mirror_root="https://mirror.alwyzon.net/fedora/linux"
 # curl -o official.iso -L $mirror_root/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-xxx.iso
 
-official_iso="/run/media/kkocdko/data/official.iso"
-if [ ! -e squashfs-root/LiveOS/rootfs.img ]; then
-  mkdir official-iso
-  mount -r $official_iso official-iso
-  unsquashfs official-iso/LiveOS/squashfs.img
-  umount official-iso
-  rm -rf official-iso
+in_iso="/run/media/kkocdko/data/official.iso" # the input iso, fedora workstations 39 is recommended
+if [ ! -e $in_iso.img ]; then # skip unsquashfs every time, faster develop-debug loop
+  mkdir in-iso
+  mount -r $in_iso in-iso
+  unsquashfs in-iso/LiveOS/squashfs.img
+  mv squashfs-root/LiveOS/rootfs.img $in_iso.img
+  umount in-iso
+  rm -rf in-iso squashfs-root
 fi
-mkdir rootfs-img out out-u out-w
-mount -r squashfs-root/LiveOS/rootfs.img rootfs-img
-mount -t overlay overlay -o lowerdir=rootfs-img,upperdir=out-u,workdir=out-w out
+cp $in_iso.img cur.img # copy to current dir
+mkdir cur
+mount -o loop,rw cur.img cur # mount as read-write
 
-cat <<EOF | chroot out /bin/bash # inner chroot
+cat <<EOF >cur/usr/share/glib-2.0/schemas/01_mkfedora.gschema.override # override default config
+[org.gnome.settings-daemon.plugins.power]
+idle-brightness=100
+[org.gnome.mutter]
+check-alive-timeout=7200000
+[org.gnome.desktop.peripherals.touchpad]
+tap-to-click=true
+[org.gnome.desktop.background]
+primary-color="#000000"
+[org.gnome.desktop.interface]
+enable-animations=false
+cursor-blink=false
+gtk-theme="adw-gtk3"
+font-name="Noto Sans 11"
+document-font-name="Noto Sans 11"
+monospace-font-name="Noto Sans Mono 10"
+[org.gnome.desktop.wm.preferences]
+titlebar-font="Noto Sans Bold 11"
+[org.gnome.TextEditor]
+spellcheck=false
+EOF
+cat <<EOF | chroot cur /bin/bash # inner chroot
+glib-compile-schemas /usr/share/glib-2.0/schemas
 dnf mark install git-core tmux # keep these packages
-dnf group remove -y firefox printing libreoffice uest-desktop-agents container-management multimedia
+dnf group remove -y firefox printing libreoffice guest-desktop-agents container-management multimedia # remove groups first
 dnf remove -y \
   libreoffice-* qemu-* podman abrt plymouth kernel-modules-extra xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* PackageKit-* git nano cpp sos orca tcpdump traceroute binutils uresourced whois words dnsmasq gamemode python-systemd-doc fros pcsc-lite-* libsane-* evince-* geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
   gnome-software gnome-remote-desktop gnome-connections gnome-browser-connector gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
@@ -30,55 +55,45 @@ dnf remove -y \
   desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
   default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts adobe-source-code-pro-fonts
 # dnf remove anaconda-install-env-deps mesa-dri-drivers dracut-* firewalld systemd-resolved chrony
+# dnf remove anaconda-core yelp
 printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files
 rm -rf /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
 rm -rf /usr/share/ibus/dicts/emoji-* # emoji in ibus
-EOF
-cat <<EOF >out/usr/share/anaconda/gnome/fedora-welcome
-#!/bin/sh
-gsettings set org.gnome.settings-daemon.plugins.power idle-brightness 100 # 无操作不降亮度
-gsettings set org.gnome.mutter check-alive-timeout 7200000 # 弹出 not responsing 时间，单位 ms，勿设为 0 否则会出现 bug
-gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-gsettings set org.gnome.desktop.background primary-color "#000000"
-gsettings set org.gnome.desktop.interface cursor-blink false
-gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
-gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
-gsettings set org.gnome.desktop.interface document-font-name "Noto Sans 11"
-gsettings set org.gnome.desktop.interface monospace-font-name "Noto Sans Mono 10"
-gsettings set org.gnome.desktop.wm.preferences titlebar-font "Noto Sans Bold 11"
-gsettings set org.gnome.TextEditor spellcheck false
-rm -f /usr/share/applications/org.fedoraproject.welcome-screen.desktop
+# rm -f /usr/share/applications/org.fedoraproject.welcome-screen.desktop
 # systemctl disable dnf-makecache.service
 # systemctl disable dnf-makecache.timer
 # setenforce 0
 EOF
-
 [ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v4.9/adw-gtk3v4-9.tar.xz
-tar -xf adw-gtk3.tar.xz -C out/usr/share/themes/
+tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
 
+# > rootfs: ext4 over squashfs
 # dd if=/dev/zero of=rootfs.img bs=1 count=0 seek=8192M
 # mkfs.ext4 rootfs.img -L Anaconda -b 4096 -m 0
-# mkdir out-rootfs-img
-# mount -t ext4 rootfs.img out-rootfs-img
-# rsync -axHAXv out/ out-rootfs-img/ >/dev/null
+# mkdir rootfs
+# mount -t ext4 rootfs.img rootfs
+# rsync -axHAXv cur/ rootfs/ >/dev/null
+# umount rootfs cur
+# rm -rf rootfs cur cur.img
 # # cp -a out/* out-rootfs-img
-# umount out-rootfs-img
-# mkdir out-rootfs-img/LiveOS
-# mv rootfs.img out-rootfs-img/LiveOS/rootfs.img
-# # cp squashfs-root/LiveOS/rootfs.img out-rootfs-img/LiveOS/rootfs.img
-# mksquashfs out-rootfs-img out.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4
-# rm -rf out-rootfs-img
+# mkdir -p squashfs/LiveOS
+# mv rootfs.img squashfs/LiveOS/rootfs.img
+# mksquashfs squashfs squashfs.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4
+# rm -rf squashfs
 
-# mksquashfs out out.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4 # fast, for debug
-mksquashfs out out.img -no-recovery -b 1M -comp zstd -Xcompression-level 22
-umount out rootfs-img
-rm -rf out-w out-u out rootfs-img
+# > rootfs: direct squashfs
+# mksquashfs cur squashfs.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4 # fast, for debug
+mksquashfs cur squashfs.img -no-recovery -b 1M -comp zstd -Xcompression-level 22
+umount cur
+rm -rf cur cur.img
 
 rm -rf out.iso
-xorriso -indev $official_iso -outdev out.iso -boot_image isolinux keep -pathspecs on -add /LiveOS/squashfs.img=out.img # -boot_image any keep
-rm -rf out.img
-implantisomd5 out.iso
+xorriso -indev $in_iso -outdev out.iso -boot_image isolinux keep -pathspecs on -add /LiveOS/squashfs.img=squashfs.img # -boot_image any keep
+rm -rf squashfs.img
 
-qemu-system-x86_64 -machine q35,accel=kvm -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 4G -cdrom out.iso
+exit
+
+qemu-img create -f qcow2 a.qcow2 32G
+qemu-system-x86_64 -machine q35,accel=kvm -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 4G -cdrom out.iso -hda a.qcow2
