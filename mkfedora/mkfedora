@@ -55,7 +55,7 @@ dnf remove -y \
   desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
   default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts adobe-source-code-pro-fonts
 # dnf remove anaconda-install-env-deps mesa-dri-drivers dracut-* firewalld systemd-resolved chrony
-# dnf remove anaconda-core yelp
+# dnf remove anaconda-core yelp livesys-scripts # you can run these after install to disk
 printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files
@@ -95,5 +95,9 @@ rm -rf squashfs.img
 
 exit
 
+rm -rf qcow2 a.qcow2
 qemu-img create -f qcow2 a.qcow2 32G
-qemu-system-x86_64 -machine q35,accel=kvm -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 4G -cdrom out.iso -hda a.qcow2
+qemu-system-x86_64 -machine q35,vmport=off,accel=kvm -no-user-config -nodefaults -device qemu-xhci -device usb-tablet -cpu host -smp 4 -m 3G -cdrom out.iso -hda a.qcow2 -display gtk,gl=on -device virtio-vga-gl
+
+dnf remove -y qemu-device-display-virtio-*
+dnf install -y qemu-device-display-virtio-gpu qemu-device-display-virtio-gpu-gl qemu-device-display-virtio-vga qemu-device-display-virtio-vga-gl
