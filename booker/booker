@@ -7,9 +7,7 @@ $HOME/misc/apps/miniserve --header Cache-Control:no-store -p 9005 .
 fi
 
 if [ "$1" = "init" ]; then
-if [ ! -e pdfjs-dist.zip ]; then
-  curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v3.11.174/pdfjs-3.11.174-dist.zip
-fi
+[ ! -e pdfjs-dist.zip ] && curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v3.11.174/pdfjs-3.11.174-dist.zip
 rm -rf pdfjs
 unzip -qq -d pdfjs pdfjs-dist.zip
 mv pdfjs/web/locale/en-US/viewer.properties pdfjs/web/locale/locale.properties
@@ -19,7 +17,7 @@ rm -rf \
   pdfjs/web/cmaps/ \
   pdfjs/web/locale/*/ \
   pdfjs/build/pdf.sandbox.js
-cat > pdfjs/web/booker.css << EOF
+cat <<EOF >pdfjs/web/booker.css
   ::-webkit-scrollbar {
     display: none;
   }
@@ -39,10 +37,8 @@ cat > pdfjs/web/booker.css << EOF
     --page-border: none;
     background: none !important;
   }
-  html[x-text-enhance] .textLayer {
+  html[x-text-enhance] :is(.textLayer, .textLayer *) {
     opacity: 1;
-  }
-  html[x-text-enhance] .textLayer * {
     color: #000;
   }
   html[x-text-enhance][x-invert] .textLayer * {
@@ -52,7 +48,7 @@ cat > pdfjs/web/booker.css << EOF
     filter: brightness(0.77) contrast(2.4) hue-rotate(180deg) invert(1);
   }
 EOF
-cat > pdfjs/web/booker.js << EOF
+cat <<EOF >pdfjs/web/booker.js
   addEventListener("keypress", ({ key: k }) => {
     if (k === "]") viewerContainer.scrollBy(0, innerHeight / 3);
     if (k === "[") viewerContainer.scrollBy(0, innerHeight / -3);
