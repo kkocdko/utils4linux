@@ -7,3 +7,5 @@
 /mkfedora/root.*
 /mkfedora/fedora-kickstarts
 /katago/venv/
+/gfw/inner/
+/gfw/*.gz
