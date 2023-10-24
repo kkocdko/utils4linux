@@ -50,7 +50,7 @@ dnf remove -y \
   desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
   default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts adobe-source-code-pro-fonts
 # dnf remove anaconda-install-env-deps dracut-* firewalld systemd-resolved chrony
-# dnf remove anaconda-core yelp livesys-scripts systemd-resolved # you can remove these after install to disk
+# dnf remove anaconda-core yelp livesys-scripts # you can remove these after install to disk
 printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files
@@ -86,21 +86,3 @@ rm -rf cur cur.img
 rm -rf out.iso
 xorriso -dev $in_iso -outdev out.iso -boot_image any replay -map squashfs.img /LiveOS/squashfs.img
 rm -rf squashfs.img
-
-exit
-
-rm -rf qcow2 a.qcow2
-qemu-img create -f qcow2 a.qcow2 32G
-qemu-system-x86_64 -no-user-config -nodefaults -machine q35,accel=kvm,vmport=off -cpu host -smp 4 -m 3G -cdrom out.iso -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet
-# -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/ovmf/OVMF_CODE.fd
-
-dnf remove -y qemu-device-display-virtio-*
-dnf install -y qemu-device-display-virtio-gpu qemu-device-display-virtio-gpu-gl qemu-device-display-virtio-vga qemu-device-display-virtio-vga-gl
-
-qemu-img create -f qcow2 a.qcow2 32G
-winpe_iso="/run/media/kkocdko/data/pkgs/WinPE/WePE_2.2_10-64.iso"
-install_iso="/home/kkocdko/misc/YLX_Windows_11_25967.1000_2N1_x64_2023.10.7_90A96599.iso"
-sudo qemu-system-x86_64 -no-user-config -nodefaults -machine q35,accel=kvm,vmport=off -cpu host \
-  -smp 4 -m 3G \
-  -drive file=$winpe_iso,media=cdrom -drive file=$install_iso,media=cdrom -drive file=a.qcow2,media=disk \
-  -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet

@@ -11,7 +11,7 @@ Build your custom Fedora 39 Workstation ISO.
 - Q: Why not remove SELinux? A:
 
 <details>
-<summary>Note</summary>
+<summary>Notes</summary>
 
 - https://old.reddit.com/r/Fedora/comments/6gnwr5/reducing_idle_bandwidth_consumption_in_fedora/
 - https://utcc.utoronto.ca/~cks/space/blog/linux/FedoraDnfMakecacheOff
@@ -61,6 +61,24 @@ chroot root /bin/bash
 # mirror_root="https://mirror.23m.com/fedora/linux"
 # mirror_root="https://mirror.alwyzon.net/fedora/linux"
 # curl -o official.iso -L $mirror_root/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-xxx.iso
+
+exit
+
+rm -rf qcow2 a.qcow2
+qemu-img create -f qcow2 a.qcow2 32G
+qemu-system-x86_64 -no-user-config -nodefaults -machine q35,accel=kvm,vmport=off -cpu host -smp 4 -m 3G -cdrom out.iso -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet
+# -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/ovmf/OVMF_CODE.fd
+
+dnf remove -y qemu-device-display-virtio-*
+dnf install -y qemu-device-display-virtio-gpu qemu-device-display-virtio-gpu-gl qemu-device-display-virtio-vga qemu-device-display-virtio-vga-gl
+
+qemu-img create -f qcow2 a.qcow2 32G
+winpe_iso="/run/media/kkocdko/data/pkgs/WinPE/WePE_2.2_10-64.iso"
+install_iso="/home/kkocdko/misc/YLX_Windows_11_25967.1000_2N1_x64_2023.10.7_90A96599.iso"
+sudo qemu-system-x86_64 -no-user-config -nodefaults -machine q35,accel=kvm,vmport=off -cpu host \
+  -smp 4 -m 3G \
+  -drive file=$winpe_iso,media=cdrom -drive file=$install_iso,media=cdrom -drive file=a.qcow2,media=disk \
+  -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet
 ```
 
 </details>
