@@ -8,4 +8,5 @@
 /mkfedora/fedora-kickstarts
 /katago/venv/
 /gfw/inner/
+/gfw/config.yaml
 /gfw/*.gz

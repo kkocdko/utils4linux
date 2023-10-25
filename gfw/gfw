@@ -11,12 +11,10 @@ cd inner
 gzip -d <../clash-meta.gz >clash-meta
 chmod +x clash-meta
 tar -xf ../subconverter.tar.gz --strip-components 1 subconverter/subconverter
-cat <<EOF >generate.ini
-[profile_1]
-target=clash
-path=out.yaml
-url=https://dy.xfltd.cc/api/v1/client/subscribe?token=xxxxxxxxxx
-EOF
+printf "[profile_1]\ntarget=clash\npath=out.yaml\n" >>generate.ini
+echo "url=https://dy.xfltd.cc/api/v1/client/subscribe?token=8effb01d696e9b0499013350eaa0d614" >>generate.ini
+# curl https://ymjc.cfd/api/v1/client/subscribe?token=8db239a34f208dd47df7c53be8757ac8 2>/dev/null | base64 -d
+
 ./subconverter -g
 # Then use only the tun mode.
 fi
@@ -26,3 +24,5 @@ cd inner
 ./clash-meta -d . -f ../config.yaml
 exit
 fi
+
+# https://community.nssurge.com/d/439-url-testtimeoutintervaltolerance-0

@@ -1,0 +1,54 @@
+# mixed-port: 7890
+# allow-lan: true
+# unified-delay: false
+# tcp-concurrent: true
+ipv6: false
+geodata-mode: true
+geox-url:
+  geoip: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
+  geosite: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
+  mmdb: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb"
+dns:
+  enable: true
+  listen: :1053
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 28.0.0.1/8
+  fake-ip-filter: ["*", "+.lan", "+.local"]
+  nameserver: [223.5.5.5, 119.29.29.29, 114.114.114.114]
+  # fallback: [tls://1.1.1.1, tls://8.8.8.8]
+  # fallback-filter:
+  #   geosite: [cn]
+tun:
+  enable: true
+  stack: system
+  dns-hijack: ["any:53"]
+  auto-route: true
+  auto-detect-interface: true
+sniffer:
+  enable: true
+  sniff:
+    TLS:
+      ports: [443, 8443]
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+rules:
+  - GEOSITE,CN,DIRECT # Use dns-hijack with geosite instead of lots of annoy DOMAIN-SUFFIX rules
+  - GEOIP,CN,DIRECT
+  - DOMAIN-SUFFIX,github.dev,crucial # GitHub Codespace
+  - IP-CIDR,1.1.1.1/32,crucial-sg # VPS in Singapore
+  - MATCH,normal
+# prettier-ignore
+proxy-groups:
+  - { name: normal, proxies: [foo-美国 x0.1, foo-美国2 x0.1], type: url-test, interval: 300, url: http://www.gstatic.com/generate_204 }
+  - { name: crucial, proxies: [bar-日本, crucial-sg], type: url-test, interval: 300, url: http://www.gstatic.com/generate_204 }
+  - { name: crucial-sg, proxies: [bar-新加坡 | 10倍], type: url-test, interval: 300, url: http://www.gstatic.com/generate_204 }
+# prettier-ignore
+proxies:
+  # foo - paid - cheap - https://foo
+  - { name: foo-美国 x0.1, server: 1.1.1.1, port: 443, type: trojan, password: pwd }
+  - { name: foo-美国2 x0.1, server: 1.1.1.1, port: 443, type: trojan, password: pwd }
+  # bar - paid - https://bar
+  - { name: bar-日本, server: 1.1.1.1, port: 443, type: ss, password: pwd }
+  - { name: bar-新加坡 | 10倍, server: 1.1.1.1, port: 38200, type: vmess, password: pwd }
