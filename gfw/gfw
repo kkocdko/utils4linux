@@ -1,28 +1,36 @@
 #!/bin/sh
+
+cd $(dirname $0)
+
 # Here's my way to fight against the GFW. Maybe not fit your preference.
 # The init part. Execute "./gfw init" will run this part.
+
 if [ "$1" = "init" ]; then
 rm -rf inner ; mkdir inner
 # Use clash-meta because many of the proxy providers (sometimes called as "airport" in chinese) uses modern protocol like vless + xtls that was not supported by classic clash. And, always uses only the core, but not any gui tools.
 [ ! -e clash-meta.gz ] && curl -o clash-meta.gz -L https://github.com/MetaCubeX/Clash.Meta/releases/download/v1.16.0/clash.meta-linux-amd64-v1.16.0.gz
-# It sucks but we needs it.
-[ ! -e subconverter.tar.gz ] && curl -o subconverter.tar.gz -L https://github.com/tindy2013/subconverter/releases/download/v0.8.1/subconverter_linux64.tar.gz
 cd inner
 gzip -d <../clash-meta.gz >clash-meta
 chmod +x clash-meta
-tar -xf ../subconverter.tar.gz --strip-components 1 subconverter/subconverter
-printf "[profile_1]\ntarget=clash\npath=out.yaml\n" >>generate.ini
-echo "url=https://dy.xfltd.cc/api/v1/client/subscribe?token=8effb01d696e9b0499013350eaa0d614" >>generate.ini
-# curl https://ymjc.cfd/api/v1/client/subscribe?token=8db239a34f208dd47df7c53be8757ac8 2>/dev/null | base64 -d
-
-./subconverter -g
-# Then use only the tun mode.
 fi
-# The main part. Execute "./gfw" will run this part.
-if [ "$1" = "" ]; then
+
+if [ "$1" = "fetch" ]; then
 cd inner
-./clash-meta -d . -f ../config.yaml
-exit
+rm -rf proxies
+./clash-meta -d . -f ../fetch.yaml
 fi
 
+if [ "$1" = "run" ]; then
+cd inner
+rm -rf proxies
+sudo ./clash-meta -d . -f ../config.yaml
+fi
+
+# https://blog.skk.moe/post/what-happend-to-dns-in-proxy/
+# https://github.com/MetaCubeX/Clash.Meta/blob/Alpha/docs/config.yaml
+# https://github.com/MetaCubeX/Clash.Meta/blob/79626189f33631dc6bcd7d6503e2b2a5ff509453/common/convert/converter.go#L16
 # https://community.nssurge.com/d/439-url-testtimeoutintervaltolerance-0
+# https://github.com/shadowsocks/shadowsocks-org/blob/3363ad106a01ac905f5139e257646752c5f7be1a/docs/doc/sip002.md
+# https://github.com/v2ray/Planning/issues/39
+# https://github.com/XTLS/Xray-core/discussions/716
+# https://wiki.metacubex.one/config/proxies/vless/

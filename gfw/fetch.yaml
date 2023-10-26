@@ -1,0 +1,5 @@
+mode: direct
+proxy-providers:
+  provider-0:
+    type: http
+    url: https://example.com
