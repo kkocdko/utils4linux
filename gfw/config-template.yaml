@@ -15,13 +15,17 @@ tun:
   auto-detect-interface: true
 dns:
   enable: true
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
-  fake-ip-filter: ["*", "+.lan", "+.local"]
   proxy-server-nameserver: ["tls://1.12.12.12:853", "tls://223.5.5.5:853"]
   nameserver-policy:
     "geosite:cn": ["tls://1.12.12.12:853", "tls://223.5.5.5:853"]
   nameserver: ["tls://1.1.1.1:853#proxy", "tls://8.8.8.8:853#proxy"]
+sniffer:
+  enable: true
+  sniff:
+    TLS:
+      ports: [443, 8443]
+    HTTP:
+      ports: [80, 8080-8880]
 rules:
   - GEOSITE,CN,DIRECT # Use dns-hijack with geosite instead of lots of annoy DOMAIN-SUFFIX rules
   - GEOIP,CN,DIRECT
