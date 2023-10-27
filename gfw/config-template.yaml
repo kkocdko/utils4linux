@@ -1,7 +1,10 @@
 # mixed-port: 7890
 # allow-lan: true
 # unified-delay: false
-tcp-concurrent: true
+# tcp-concurrent: true
+# profile:
+#   store-selected: true
+#   store-fake-ip: true
 ipv6: false
 geox-url:
   geoip: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
@@ -15,6 +18,9 @@ tun:
   auto-detect-interface: true
 dns:
   enable: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter: ["*", "+.lan", "+.local"]
   proxy-server-nameserver: ["tls://1.12.12.12:853", "tls://223.5.5.5:853"]
   nameserver-policy:
     "geosite:cn": ["tls://1.12.12.12:853", "tls://223.5.5.5:853"]
