@@ -49,8 +49,8 @@ dnf remove -y \
   ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
   desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
   default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts adobe-source-code-pro-fonts
-# dnf remove anaconda-install-env-deps dracut-* firewalld systemd-resolved chrony
-# dnf remove anaconda-core yelp livesys-scripts # you can remove these after install to disk
+# dnf remove anaconda-install-env-deps dracut-*
+# dnf remove anaconda-core yelp livesys-scripts systemd-resolved chrony firewalld # you can remove these after install to disk
 printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files

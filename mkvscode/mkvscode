@@ -1,0 +1,34 @@
+#!/bin/sh
+cd $(dirname $0)
+# [ ! -e vscode.tar.gz ] && curl -o vscode.tar.gz -L https://github.com/microsoft/vscode/archive/refs/tags/1.83.1.tar.gz
+# rm -rf inner
+# mkdir inner
+# tar -xf vscode.tar.gz -C inner --strip-components 1
+cd inner
+# exit
+rm -rf out
+
+mkdir -p out/vs/code/browser/workbench
+sed 's/{{WORKBENCH_WEB_BASE_URL}}//' src/vs/code/browser/workbench/workbench.html >out/vs/code/browser/workbench/workbench.html
+cp src/vs/loader.js out/vs/loader.js
+
+mkdir -p out/vs/workbench
+for file in $(find src -name '*.css' -not -name '*_utf16*'); do
+    cat $file >>out/vs/workbench/workbench.web.main.css
+done
+esbuild src/vs/workbench/workbench.web.main.nls.js --bundle --minify --target=esnext --external:vs/css* >out/vs/workbench/workbench.web.main.nls.js
+esbuild src/vs/workbench/workbench.web.main.ts --bundle --minify --target=esnext --external:vs/css* >out/vs/workbench/workbench.web.main.js
+
+mkdir -p out/vs/code/browser/workbench/
+esbuild src/vs/code/browser/workbench/workbench.ts --bundle --minify --target=esnext --external:vs/css* >out/vs/code/browser/workbench/workbench.js
+
+/home/kkocdko/misc/apps/miniserve . -p 9433
+# esbuild src/server-main.js --outdir=out --platform=node $extra_args
+# src/vs/loader.js
+# http://localhost:8109/
+# esbuild --bundle `find src -name *.css` --outfile=out/workbench.web.main.css
+# esbuild src/vs/code/browser/workbench/workbench.ts --outdir=out $extra_args
+# ~/misc/apps/miniserve -p 9423 --index src/vs/code/browser/workbench/workbench.html .
+# src/vs/code/browser/workbench/workbench.html
+#  '' --serve=9423  # --bundle --minify --sourcemap --jsx=automatic --legal-comments=none --watch
+# https://github.com/microsoft/vscode/wiki/How-to-Contribute
