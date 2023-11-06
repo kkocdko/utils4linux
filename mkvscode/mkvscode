@@ -1,10 +1,10 @@
 #!/bin/sh
 cd $(dirname $0)
 # [ ! -e vscode.tar.gz ] && curl -o vscode.tar.gz -L https://github.com/microsoft/vscode/archive/refs/tags/1.83.1.tar.gz
-# rm -rf inner
-# mkdir inner
-# tar -xf vscode.tar.gz -C inner --strip-components 1
-cd inner
+# rm -rf dist
+# mkdir dist
+# tar -xf vscode.tar.gz -C dist --strip-components 1
+cd dist
 # exit
 rm -rf out
 

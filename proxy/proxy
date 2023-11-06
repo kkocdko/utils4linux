@@ -6,22 +6,22 @@ cd $(dirname $0)
 # The init part. Execute "./gfw init" will run this part.
 
 if [ "$1" = "init" ]; then
-rm -rf inner ; mkdir inner
+rm -rf dist ; mkdir dist
 # Use clash-meta because many of the proxy providers (sometimes called as "airport" in chinese) uses modern protocol like vless + xtls that was not supported by classic clash. And, always uses only the core, but not any gui tools.
 [ ! -e clash-meta.gz ] && curl -o clash-meta.gz -L https://github.com/MetaCubeX/Clash.Meta/releases/download/v1.16.0/clash.meta-linux-amd64-v1.16.0.gz
-cd inner
+cd dist
 gzip -d <../clash-meta.gz >clash-meta
 chmod +x clash-meta
 fi
 
 if [ "$1" = "fetch" ]; then
-cd inner
+cd dist
 rm -rf proxies
 ./clash-meta -d . -f ../fetch.yaml
 fi
 
 if [ "$1" = "run" ]; then
-cd inner
+cd dist
 rm -rf proxies
 sudo ./clash-meta -d . -f ../config.yaml
 fi

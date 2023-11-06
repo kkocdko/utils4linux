@@ -75,6 +75,7 @@ mkdir chunks
 archive_dir="/run/media/kkocdko/data/docs/ebook"
 ln -s "$archive_dir/Computer Networking A Top Down Approach 8th.pdf" chunks/cnatda.pdf
 ln -s "$archive_dir/Computer Systems A Programmer s Perspective 3th.pdf" chunks/csapp.pdf
+ln -s "$archive_dir/mysql-crash-course-zh.pdf" chunks/mysqlcc-zh.pdf
 ln -s "$archive_dir/深入理解计算机系统（第三版）.pdf" chunks/csapp-zh.pdf
 ln -s "$archive_dir/计算机网络自顶向下方法 第七版.pdf" chunks/cnatda-zh.pdf
 ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" chunks/aoapc.pdf
