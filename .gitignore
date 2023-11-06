@@ -6,9 +6,9 @@
 /mkfedora/root
 /mkfedora/root.*
 /mkfedora/fedora-kickstarts
-/mkvscode/inner/
+/mkvscode/dist/
 /mkvscode/*.gz
 /katago/venv/
-/proxy/inner/
+/proxy/dist/
 /proxy/config.yaml
 /proxy/*.gz

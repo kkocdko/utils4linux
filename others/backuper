@@ -1,12 +1,31 @@
 #!/bin/sh
 
-echo backup ~/misc/code to /tmp/code-backup
+if [ "$1" = "pack-code-dir" ]; then
+echo ">>> pack ~/misc/code directory"
+rsync --recursive --times --links --delete --filter=":- ~/misc/code/.rsyncignore" ~/misc/code /tmp/bakcode
+cd /tmp/bakcode
+filename="code_$(date +%Y%m%d).tar.xz"
+tar -cJf $filename code
+ls -lh $filename
+rm -rf code
+exit
+fi
 
-rsync -r --delete --filter=':- ~/misc/code/.rsyncignore' ~/misc/code /tmp/code-backup
-pushd /tmp/code-backup
-file_name="code_$(date +%Y%m%d).tar.xz"
-# tar -cf $file_name code
-XZ_OPT='-9e' tar -cJf $file_name code
-ls -lh $file_name
-rm -rf /tmp/code-backup/code
-popd
+if [ "$1" = "encrypt-zip" ]; then
+echo ">>> (manually use please) encrypt-zip"
+exit
+filename="code_20181014-20231106.7z"
+password="137920"
+zip -0 -P $password < $filename > $filename.$password.zip
+~/misc/apps/7zzs a -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 out.7z code_20181014-20231106/*
+exit
+fi
+
+if [ "$1" = "compress-code-cold" ]; then
+echo ">>> (manually use please) compress many code backups"
+exit
+~/misc/apps/7zzs a -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 out.7z code_20181014-20231106/*
+exit
+fi
+
+echo "Usage: $0 [ pack-code-dir | compress-code-cold ]"
