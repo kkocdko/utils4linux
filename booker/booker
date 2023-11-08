@@ -3,20 +3,24 @@
 cd $(dirname $0)
 
 if [ "$1" = "" ]; then
-$HOME/misc/apps/miniserve --header Cache-Control:no-store -p 9005 .
+$HOME/misc/apps/miniserve --header Cache-Control:no-store -p 9005 . # https://github.com/svenstaro/miniserve/releases/download/v0.24.0/miniserve-0.24.0-x86_64-unknown-linux-musl
 fi
 
 if [ "$1" = "init" ]; then
-[ ! -e pdfjs-dist.zip ] && curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v3.11.174/pdfjs-3.11.174-dist.zip
+[ ! -e pdfjs-dist.zip ] && curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v4.0.189/pdfjs-4.0.189-dist.zip
 rm -rf pdfjs
 unzip -qq -d pdfjs pdfjs-dist.zip
-mv pdfjs/web/locale/en-US/viewer.properties pdfjs/web/locale/locale.properties
+mv pdfjs/web/locale/en-US/viewer.ftl pdfjs/web/locale/viewer.ftl
+sed -i pdfjs/web/locale/locale.json -e 's|/|/../|g'
+sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
+sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg/>|'
+sed -i pdfjs/build/pdf.mjs -e 's|(CanvasGraphics\.prototype|(xopts["x-text-enhance"]){CanvasGraphics.prototype.showText=()=>{}}if&|'
 rm -rf \
   pdfjs/**/*.map \
   pdfjs/**/*.pdf \
   pdfjs/web/cmaps/ \
   pdfjs/web/locale/*/ \
-  pdfjs/build/pdf.sandbox.js
+  pdfjs/build/pdf.sandbox.mjs
 cat <<EOF >pdfjs/web/booker.css
   ::-webkit-scrollbar {
     display: none;
@@ -67,9 +71,6 @@ cat <<EOF >pdfjs/web/booker.js
   // <button class=secondaryToolbarButton onclick=document.body.requestFullscreen()><span>Fullscreen</span></button>
   // viewBookmark.replaceWith()
 EOF
-sed -i pdfjs/build/pdf.js -e 's|CanvasGraphics;|&if(xopts["x-text-enhance"])CanvasGraphics.prototype.showText=()=>{};|'
-sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
-sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg/>|'
 rm -rf chunks
 mkdir chunks
 archive_dir="/run/media/kkocdko/data/docs/ebook"
