@@ -79,6 +79,15 @@ sudo qemu-system-x86_64 -no-user-config -nodefaults -machine q35,accel=kvm,vmpor
   -smp 4 -m 3G \
   -drive file=$winpe_iso,media=cdrom -drive file=$install_iso,media=cdrom -drive file=a.qcow2,media=disk \
   -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet
+
+
+mkdir -p /tmp/win11
+cd /tmp/win11
+# rm -rf qcow2 a.qcow2
+qemu-img create -f qcow2 a.qcow2 64G
+winpe_iso="/run/media/kkocdko/data/pkgs/WinPE/WePE_2.2_10-64.iso"
+install_iso="/run/media/kkocdko/data/pkgs/sys-imgs/Win11_23H2_English_x64.iso"
+
 ```
 
 </details>

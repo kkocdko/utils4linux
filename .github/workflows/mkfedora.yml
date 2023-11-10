@@ -1,7 +1,7 @@
 name: mkfedora
-on:
-  release:
-    types: [created]
+# on:
+#   release:
+#     types: [created]
 jobs:
   mkfedora:
     runs-on: ubuntu-22.04

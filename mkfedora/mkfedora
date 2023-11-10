@@ -61,7 +61,7 @@ rm -rf /usr/share/ibus/dicts/emoji-* # emoji in ibus
 # systemctl disable dnf-makecache.timer
 # setenforce 0
 EOF
-[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.0/adw-gtk3v5-0.tar.xz
+[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.1/adw-gtk3v5-1.tar.xz
 tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
 
 # > rootfs: ext4 over squashfs
