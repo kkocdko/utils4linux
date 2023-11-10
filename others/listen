@@ -1,0 +1,11 @@
+#!/bin/sh
+file="/run/media/kkocdko/data/media/audio/listen/童话镇.f4a"
+[ "$1" != "" ] && file="$1"
+~/misc/apps/ffmpeg -y -hide_banner -i $file -ac 1 /tmp/listen.wav
+ls -lh /tmp/listen.wav
+while [ "" = "" ]; do
+aplay /tmp/listen.wav
+done
+# http://trac.ffmpeg.org/wiki/audio%20types
+# https://ffmpeg.org/ffmpeg.html
+# https://superuser.com/q/826669/

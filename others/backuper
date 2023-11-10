@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# My backup proposal:
+# - The code dir backup with history, upload to cloud drive.
+# - Other asserts like photo, software and more, phone and pc backup each other.
+
 if [ "$1" = "pack-code-dir" ]; then
 echo ">>> pack ~/misc/code directory"
 rsync --recursive --times --links --delete --filter=":- ~/misc/code/.rsyncignore" ~/misc/code /tmp/bakcode
@@ -17,7 +21,6 @@ exit
 filename="code_20181014-20231106.7z"
 password="137920"
 zip -0 -P $password < $filename > $filename.$password.zip
-~/misc/apps/7zzs a -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 out.7z code_20181014-20231106/*
 exit
 fi
 
@@ -28,4 +31,18 @@ exit
 exit
 fi
 
-echo "Usage: $0 [ pack-code-dir | compress-code-cold ]"
+if [ "$1" = "sync-from-phone" ]; then
+echo ">>> sync from phone"
+exit
+fi
+
+if [ "$1" = "sync-to-phone" ]; then
+echo ">>> sync to phone"
+# /backuper
+/run/media/kkocdko/data
+/home/kkocdko/misc/res
+/home/kkocdko/misc/apps
+fi
+
+echo "The backup script for kkocdko, see source code for usage and other info."
+echo "Usage: $0 <command> [options]"
