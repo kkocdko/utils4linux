@@ -1,10 +1,8 @@
-# mixed-port: 7890
-# allow-lan: true
-# unified-delay: false
-# tcp-concurrent: true
 # profile:
 #   store-selected: true
 #   store-fake-ip: true
+# allow-lan: true
+mixed-port: 7890
 ipv6: false
 geox-url:
   geoip: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
@@ -35,8 +33,11 @@ sniffer:
 rules:
   - GEOSITE,CN,DIRECT # Use dns-hijack with geosite instead of lots of annoy DOMAIN-SUFFIX rules
   - GEOIP,CN,DIRECT
-  - DOMAIN-SUFFIX,github.dev,crucial # GitHub Codespace
   - IP-CIDR,1.1.1.1/32,crucial-sg # VPS in Singapore
+  - DOMAIN-SUFFIX,github.dev,crucial # GitHub Codespace
+  - DOMAIN-SUFFIX,deepl.com,crucial
+  - DOMAIN-SUFFIX,leetcode.com,crucial
+  - DOMAIN-SUFFIX,update.googleapis.com,REJECT
   - MATCH,normal
 # prettier-ignore
 proxy-groups:
