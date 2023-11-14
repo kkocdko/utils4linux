@@ -9,6 +9,7 @@
 /mkvscode/dist/
 /mkvscode/*.gz
 /katago/venv/
-/proxy/dist/
+/*/dist/
 /proxy/config.yaml
 /proxy/*.gz
+/rt4web/*.zip

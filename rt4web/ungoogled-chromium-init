@@ -1,0 +1,5 @@
+#!/bin/sh
+# https://github.com/ungoogled-software/ungoogled-chromium-portablelinux/releases/download/119.0.6045.105-1/ungoogled-chromium_119.0.6045.105-1.1_linux.tar.xz
+strip chrome
+strip chromedriver
+find locales/* -not -name 'en-US.*' -delete

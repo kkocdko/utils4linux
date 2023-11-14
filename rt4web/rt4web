@@ -1,0 +1,7 @@
+#!/bin/sh
+cd $(dirname $0)
+[ ! -e electron.zip ] && curl -o electron.zip -L https://registry.npmmirror.com/-/binary/electron/v28.0.0-beta.4/electron-v28.0.0-beta.4-linux-x64.zip
+unzip -q electron.zip -d dist
+# dist/electron
+# tar -xf vscode.tar.gz -C dist --strip-components 1
+# exit
