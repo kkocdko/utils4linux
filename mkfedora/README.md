@@ -29,10 +29,17 @@ Build your custom Fedora 39 Workstation ISO.
 - https://www.server-world.info/en/note?os=Fedora_31&p=kvm&f=7
 - https://www.kraxel.org/blog/2019/09/display-devices-in-qemu/
 - https://wiki.qemu.org/Documentation/Networking
+- https://github.com/rpm-software-management/dnf5/pull/630
+- https://fedoraproject.org/wiki/Changes/ReplaceDnfWithDnf5
+- https://bugzilla.redhat.com/show_bug.cgi?id=2214520
+- https://yeasy.gitbook.io/docker_practice/install/mirror
 
 ```json
 {
-  "registry-mirrors": ["http://hub-mirror.c.163.com"],
+  "registry-mirrors": [
+    "https://hub-mirror.c.163.com",
+    "https://mirror.baidubce.com"
+  ],
   "max-concurrent-downloads": 8,
   "data-root": "/tmp/docker"
 }
