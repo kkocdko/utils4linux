@@ -20,7 +20,7 @@ rm -rf proxies
 ./clash-meta -d . -f ../fetch.yaml
 fi
 
-if [ "$1" = "run" ]; then
+if [ "$1" = "" ]; then
 cd dist
 rm -rf proxies
 sudo ./clash-meta -d . -f ../config.yaml

@@ -1,14 +1,15 @@
 #!/bin/sh
-builder="rade-builder-0"
+builder="mknodejs-0"
 docker run -d --name $builder --network host fedora:38 tail -f /dev/null
 docker exec -it $builder find /etc/yum.repos.d -not -name 'fedora.repo' -not -name 'fedora-updates.repo' -not -name 'yum.repos.d' -delete
 docker exec -it $builder dnf install ninja-build gcc-c++ glibc-static libstdc++-static make python3-pip xz -y --setopt=install_weak_deps=False --setopt=max_parallel_downloads=6
-docker exec -it $builder sh -c 'rm -rf /node ; mkdir /node ; curl -L https://nodejs.org/download/release/v20.3.1/node-v20.3.1.tar.xz | tar -xJ -C /node --strip-components 1' # https://registry.npmmirror.com/-/binary/node/v20.3.1/node-v20.3.1.tar.xz
-docker exec -it -w /node $builder ./configure --ninja --without-npm --without-corepack --without-inspector --with-intl=small-icu --enable-lto --partly-static --experimental-enable-pointer-compression
+docker exec -it $builder sh -c 'rm -rf /node ; mkdir /node ; curl -L https://nodejs.org/download/release/v21.1.0/node-v21.1.0.tar.xz | tar -xJ -C /node --strip-components 1'
+docker exec -it -w /node $builder ./configure --ninja --without-npm --without-corepack --with-intl=small-icu --enable-lto --partly-static --experimental-enable-pointer-compression
 docker exec -it -w /node $builder make -j`nproc`
 docker exec -it -w /node $builder strip out/Release/node
 docker cp $builder:/node/out/Release/node node
 # -mavx2
+# --without-inspector
 # --v8-enable-snapshot-compression
 # --with-intl=none # will break some apps like vscode
 # --fully-static # will break napi
