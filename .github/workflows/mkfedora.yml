@@ -1,7 +1,6 @@
 name: mkfedora
-# on:
-#   release:
-#     types: [created]
+on:
+  workflow_dispatch:
 jobs:
   mkfedora:
     runs-on: ubuntu-22.04

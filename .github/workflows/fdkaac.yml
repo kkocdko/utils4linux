@@ -1,0 +1,26 @@
+name: fdkaac
+on:
+  workflow_dispatch:
+jobs:
+  fdkaac:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Build
+        run: |
+          curl -o fdkaac.tar.gz -L https://github.com/nu774/fdkaac/archive/f95566ee8ed1623e0d683cc94ca5f50c897bef79.tar.gz
+          mkdir -p fdkaac
+          tar -xf fdkaac.tar.gz --strip-component 1 -C fdkaac
+          cd fdkaac
+          sudo apt install libfdk-aac-dev
+          autoreconf -fiv
+          ./configure CFLAGS='-static'
+          make
+          sudo make install
+          cp $(type fdkaac | cut -d ' ' -f 3) /tmp/fdkaac
+          strip -s /tmp/fdkaac
+          ldd /tmp/fdkaac
+          echo "the end" # avoid ldd returns non-zero code
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: /tmp/fdkaac
