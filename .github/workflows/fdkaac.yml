@@ -9,17 +9,16 @@ jobs:
         run: |
           curl -o fdkaac.tar.gz -L https://github.com/nu774/fdkaac/archive/f95566ee8ed1623e0d683cc94ca5f50c897bef79.tar.gz
           mkdir -p fdkaac
-          tar -xf fdkaac.tar.gz --strip-component 1 -C fdkaac
           cd fdkaac
-          sudo apt install libfdk-aac-dev
+          tar -xf ../fdkaac.tar.gz --strip-component 1
+          sed -i Makefile.am -e 's|-lfdk-aac|-l:libfdk-aac.a|'
+          sudo apt -y install libfdk-aac-dev # must be above libfdk-aac-dev_2.0.2-1_amd64.deb
           autoreconf -fiv
-          ./configure CFLAGS='-static'
+          ./configure
           make
-          sudo make install
-          cp $(type fdkaac | cut -d ' ' -f 3) /tmp/fdkaac
+          mv ./fdkaac /tmp/fdkaac
           strip -s /tmp/fdkaac
-          ldd /tmp/fdkaac
-          echo "the end" # avoid ldd returns non-zero code
+          ldd /tmp/fdkaac || printf "" # avoid ldd returns non-zero code
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
