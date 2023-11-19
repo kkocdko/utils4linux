@@ -9,6 +9,7 @@ if [ "$1" = "init" ]; then
 rm -rf dist ; mkdir dist
 # Use clash-meta because many of the proxy providers (sometimes called as "airport" in chinese) uses modern protocol like vless + xtls that was not supported by classic clash. And, always uses only the core, but not any gui tools.
 [ ! -e clash-meta.gz ] && curl -o clash-meta.gz -L https://github.com/MetaCubeX/Clash.Meta/releases/download/Prerelease-Alpha/clash.meta-linux-amd64-alpha-8c3557e.gz # https://github.com/MetaCubeX/Clash.Meta/releases/download/v1.16.0/clash.meta-linux-amd64-v1.16.0.gz
+# [ ! -e sing-box.tar.gz ] && curl -o sing-box.tar.gz -L https://github.com/SagerNet/sing-box/releases/download/v1.6.5/sing-box-1.6.5-linux-amd64.tar.gz
 cd dist
 gzip -d <../clash-meta.gz >clash-meta
 chmod +x clash-meta

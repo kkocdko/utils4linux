@@ -1,0 +1,108 @@
+{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "ntp": {
+    "enabled": true,
+    "server": "time.apple.com",
+    "server_port": 123,
+    "interval": "30m",
+    "detour": "direct"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "dns_block",
+        "address": "rcode://refused"
+      },
+      {
+        "tag": "dns_direct",
+        "address": "tls://1.12.12.12",
+        "strategy": "ipv4_only",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns_proxy",
+        "address": "tls://1.1.1.1",
+        "strategy": "ipv4_only",
+        "detour": "proxy"
+      }
+    ],
+    "rules": [
+      {
+        "geosite": ["category-ads-all"],
+        "server": "dns_block",
+        "disable_cache": true
+      },
+      {
+        "geosite": ["cn"],
+        "server": "dns_direct"
+      },
+      {
+        "outbound": ["any"],
+        "server": "dns_proxy"
+      }
+    ]
+  },
+  "route": {
+    "geoip": {
+      "download_url": "https://github.com/SagerNet/sing-geoip/releases/latest/download/geoip-cn.db",
+      "download_detour": "proxy"
+    },
+    "geosite": {
+      "download_url": "https://github.com/SagerNet/sing-geosite/releases/latest/download/geosite.db",
+      "download_detour": "proxy"
+    },
+    "rules": [
+      {
+        "protocol": ["dns"],
+        "outbound": "dns-out"
+      },
+      {
+        "protocol": ["quic"],
+        "outbound": "block"
+      },
+      {
+        "geosite": ["cn", "private"],
+        "outbound": "direct"
+      },
+      {
+        "geoip": ["cn", "private"],
+        "outbound": "direct"
+      }
+    ],
+    "final": "proxy",
+    "auto_detect_interface": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "inet4_address": "172.19.0.1/30",
+      "inet6_address": "fdfe:dcba:9876::1/126",
+      "auto_route": true,
+      "strict_route": true,
+      "sniff": true,
+      "sniff_override_destination": false
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
+    },
+    {
+      // 粘贴你的客户端配置，需要保留 "tag": "proxy"
+      "tag": "proxy"
+    }
+  ]
+}

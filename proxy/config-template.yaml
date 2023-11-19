@@ -1,8 +1,5 @@
-# profile:
-#   store-selected: true
-#   store-fake-ip: true
 # allow-lan: true
-mixed-port: 7890
+mixed-port: 7890 # used by apps that support proxy env vars, and tun is the fallback
 ipv6: false
 geox-url:
   geoip: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
@@ -16,9 +13,6 @@ tun:
   auto-detect-interface: true
 dns:
   enable: true
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
-  fake-ip-filter: ["*", "+.lan", "+.local"]
   proxy-server-nameserver: ["tls://1.12.12.12:853", "tls://223.5.5.5:853"]
   nameserver-policy:
     "geosite:cn": ["tls://1.12.12.12:853", "tls://223.5.5.5:853"]
@@ -33,6 +27,7 @@ sniffer:
 rules:
   - GEOSITE,CN,DIRECT # Use dns-hijack with geosite instead of lots of annoy DOMAIN-SUFFIX rules
   - GEOIP,CN,DIRECT
+  - IP-CIDR,1.1.1.1/32,DIRECT # VPS in China Aliyun
   - IP-CIDR,1.1.1.1/32,crucial-sg # VPS in Singapore
   - DOMAIN-SUFFIX,github.dev,crucial # GitHub Codespace
   - DOMAIN-SUFFIX,deepl.com,crucial
@@ -41,14 +36,14 @@ rules:
   - MATCH,normal
 # prettier-ignore
 proxy-groups:
-  - { name: normal, proxies: [foo-美国 x0.1, foo-美国2 x0.1], type: url-test, interval: 300, url: http://www.gstatic.com/generate_204 }
-  - { name: crucial, proxies: [bar-日本, crucial-sg], type: url-test, interval: 300, url: http://www.gstatic.com/generate_204 }
-  - { name: crucial-sg, proxies: [bar-新加坡 | 10倍], type: url-test, interval: 300, url: http://www.gstatic.com/generate_204 }
+  - { name: normal, proxies: [foo-us-1-x0.1, foo-us-2-x0.1, DIRECT], type: select }
+  - { name: crucial, proxies: [bar-jp, crucial-sg], type: select }
+  - { name: crucial-sg, proxies: [bar-sg-x10], type: select }
 # prettier-ignore
 proxies:
   # foo - paid - cheap - https://foo
-  - { name: foo-美国 x0.1, server: 1.1.1.1, port: 443, type: trojan, password: pwd }
-  - { name: foo-美国2 x0.1, server: 1.1.1.1, port: 443, type: trojan, password: pwd }
+  - { name: foo-us-1-x0.1, server: 1.1.1.1, port: 443, type: trojan, password: pwd }
+  - { name: foo-us-2-x0.1, server: 1.1.1.1, port: 443, type: trojan, password: pwd }
   # bar - paid - https://bar
-  - { name: bar-日本, server: 1.1.1.1, port: 443, type: ss, password: pwd }
-  - { name: bar-新加坡 | 10倍, server: 1.1.1.1, port: 38200, type: vmess, password: pwd }
+  - { name: bar-jp, server: 1.1.1.1, port: 443, type: ss, password: pwd }
+  - { name: bar-sg-x10, server: 1.1.1.1, port: 38200, type: vmess, password: pwd }
