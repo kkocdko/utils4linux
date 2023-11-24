@@ -1,31 +1,37 @@
 #!/bin/sh
 
-if [ "$(whoami)" != "root" ]; then
-    echo "Should be run as root."
-    exit
-fi
-if [ "$(pwd)" != "$(dirname $(realpath $0))" ]; then
-    echo "Should be run in current directory."
-    exit
-fi
+mkdir -p /tmp/mkdebian
+cd /tmp/mkdebian
 
-if [ "$1" = "" ]; then
-    name=mkdebian0
-    # docker kill $name
-    # docker rm $name
-    # docker exec -it $name bash
-    docker run --privileged -d --network host --name $name debian:testing-20230904 tail -f /dev/null
-    docker cp $0 $name:/
-    docker exec -it $name /$(basename $0) inner-docker
-    exit
-fi
+# https://mirrors.ustc.edu.cn/debian-cd/12.2.0/amd64/iso-dvd/debian-12.2.0-amd64-DVD-1.iso
+# https://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20231013-1532/debian-12-nocloud-amd64-20231013-1532.tar.xz
 
-[ "$1" != "inner-docker" ] && exit 1
+# if [ "$(whoami)" != "root" ]; then
+#     echo "Should be run as root."
+#     exit
+# fi
+# if [ "$(pwd)" != "$(dirname $(realpath $0))" ]; then
+#     echo "Should be run in current directory."
+#     exit
+# fi
 
-# http://127.0.0.1:9304/mirror/debian/
-# sed -i.bak 's|deb.debian.org|mirrors.ustc.edu.cn|g' /etc/apt/sources.list.d/debian.sources
-sed -i.bak 's|deb.debian.org|127.0.0.1:9304/mirror|g' /etc/apt/sources.list.d/debian.sources
-echo "'Acquire::http::Pipeline-Depth \"0\";" >/etc/apt/apt.conf.d/99nopipelining
-apt update
-apt install live-build
-lb config -d bookworm --debian-installer live --debian-installer-distribution bookworm --archive-areas "main non-free-firmware" --debootstrap-options "--variant=minbase"
+# if [ "$1" = "" ]; then
+#     name=mkdebian0
+#     # docker kill $name
+#     # docker rm $name
+#     # docker exec -it $name bash
+#     docker run --privileged -d --network host --name $name debian:testing-20230904 tail -f /dev/null
+#     docker cp $0 $name:/
+#     docker exec -it $name /$(basename $0) inner-docker
+#     exit
+# fi
+
+# [ "$1" != "inner-docker" ] && exit 1
+
+# # http://127.0.0.1:9304/mirror/debian/
+# # sed -i.bak 's|deb.debian.org|mirrors.ustc.edu.cn|g' /etc/apt/sources.list.d/debian.sources
+# sed -i.bak 's|deb.debian.org|127.0.0.1:9304/mirror|g' /etc/apt/sources.list.d/debian.sources
+# echo "'Acquire::http::Pipeline-Depth \"0\";" >/etc/apt/apt.conf.d/99nopipelining
+# apt update
+# apt install live-build
+# lb config -d bookworm --debian-installer live --debian-installer-distribution bookworm --archive-areas "main non-free-firmware" --debootstrap-options "--variant=minbase"
