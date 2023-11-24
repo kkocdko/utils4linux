@@ -3,7 +3,7 @@
 mkdir -p /tmp/mkfedora
 cd /tmp/mkfedora
 
-in_iso="/run/media/kkocdko/data/official.iso" # the input iso, fedora workstations 39 is recommended
+in_iso="/run/media/kkocdko/data/in.iso" # the input iso, currently it's Fedora-Workstation-Live-x86_64-39-1.5.iso
 if [ -e $in_iso.img ]; then # avoid running unsquashfs every time, faster develop-debug loop
   cp $in_iso.img cur.img # copy to current dir
 else
@@ -44,23 +44,28 @@ glib-compile-schemas /usr/share/glib-2.0/schemas # compile config
 dnf mark install tmux # keep these packages
 dnf group remove -y firefox printing libreoffice guest-desktop-agents container-management multimedia # remove groups first
 dnf remove -y \
-  libreoffice-* qemu-* podman abrt plymouth kernel-modules-extra xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* PackageKit-* git nano cpp sos orca tcpdump traceroute binutils uresourced whois words dnsmasq gamemode python-systemd-doc fros pcsc-lite-* libsane-* evince-* geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB \
+  libreoffice-* qemu-* podman abrt plymouth kernel-modules-extra xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* PackageKit-* git nano cpp sos orca tcpdump traceroute binutils uresourced whois words dnsmasq avahi firewalld gamemode python-systemd-doc fros pcsc-lite-* libsane-* evince-* geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB bash-color-prompt  \
   gnome-software gnome-remote-desktop gnome-connections gnome-browser-connector gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
   ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
   desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
-  default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts adobe-source-code-pro-fonts
-# dnf remove anaconda-core anaconda-install-env-deps yelp livesys-scripts systemd-resolved chrony firewalld avahi # you can remove these after install to disk
-# dnf install git-core gcc-c++ google-noto-emoji-fonts docker pipewire-utils java-17-openjdk wireshark --setopt=install_weak_deps=False # recommand packages
+  default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts abattis-cantarell-fonts adobe-source-code-pro-fonts
 printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files
 rm -rf /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
 rm -rf /usr/share/ibus/dicts/emoji-* # emoji in ibus
-# rm -f /usr/share/applications/org.fedoraproject.welcome-screen.desktop
+sed -i /etc/selinux/config -e 's|SELINUX=enforcing|SELINUX=disabled|' # it sucks, cause systemd-xxx failed even after removing a normal package like qemu
+mkdir -p /etc/systemd/logind.conf.d
+printf "[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n" >/etc/systemd/logind.conf.d/90-ignore-lid.conf
+mkdir -p /etc/systemd/journald.conf.d
+printf "[Journal]\nSystemMaxUse=128M\nCompress=1M\n" >/etc/systemd/journald.conf.d/90-less-log.conf
+# dnf remove anaconda-core anaconda-install-env-deps yelp livesys-scripts systemd-resolved chrony flatpak-libs NetworkManager-config-connectivity-fedora # you can remove these after install to disk
+# dnf install git-core gcc-c++ google-noto-emoji-fonts docker pipewire-utils java-17-openjdk wireshark --setopt=install_weak_deps=False # recommand packages
 # systemctl disable dnf-makecache.service
 # systemctl disable dnf-makecache.timer
-# setenforce 0
+# grub2-mkconfig -o /boot/grub2/grub.cfg # apply "/etc/default/grub", GRUB_CMDLINE_LINUX="amd_pstate=passive mitigations=off selinux=0"
 EOF
+
 [ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.1/adw-gtk3v5-1.tar.xz
 tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
 
@@ -78,8 +83,8 @@ tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
 # rm -rf squashfs
 
 # > rootfs: direct squashfs
-# mksquashfs cur squashfs.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4 # fast, for debug
-mksquashfs cur squashfs.img -no-recovery -b 1M -comp zstd -Xcompression-level 22
+# mksquashfs cur squashfs.img -b 1M -no-recovery -no-duplicates -no-sparse -not-reproducible -comp lz4 # fast, for debug
+mksquashfs cur squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 22 # slow, but smaller
 umount cur
 rm -rf cur cur.img
 
