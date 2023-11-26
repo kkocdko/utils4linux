@@ -1,0 +1,16 @@
+{
+  "inbounds": [
+    {
+      "type": "trojan",
+      "listen": "::",
+      "listen_port": 9549,
+      "users": [{ "password": "PT5RuyROerMsDHlfUD4EA" }],
+      "tls": {
+        "enabled": true,
+        "certificate_path": "trojan-cert.pem",
+        "key_path": "trojan-key.pem"
+      }
+    }
+  ],
+  "outbounds": [{ "type": "direct" }]
+}

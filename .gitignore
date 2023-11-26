@@ -10,6 +10,6 @@
 /mkvscode/*.gz
 /katago/venv/
 /*/dist/
-/proxy/config.yaml
+/proxy/private/
 /proxy/*.gz
 /rt4web/*.zip

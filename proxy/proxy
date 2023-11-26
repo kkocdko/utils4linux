@@ -9,7 +9,7 @@ if [ "$1" = "init" ]; then
 rm -rf dist ; mkdir dist
 # Use clash-meta because many of the proxy providers (sometimes called as "airport" in chinese) uses modern protocol like vless + xtls that was not supported by classic clash. And, always uses only the core, but not any gui tools.
 [ ! -e clash-meta.gz ] && curl -o clash-meta.gz -L https://github.com/MetaCubeX/Clash.Meta/releases/download/Prerelease-Alpha/clash.meta-linux-amd64-alpha-8c3557e.gz # https://github.com/MetaCubeX/Clash.Meta/releases/download/v1.16.0/clash.meta-linux-amd64-v1.16.0.gz
-# [ ! -e sing-box.tar.gz ] && curl -o sing-box.tar.gz -L https://github.com/SagerNet/sing-box/releases/download/v1.6.5/sing-box-1.6.5-linux-amd64.tar.gz
+# [ ! -e sing-box.tar.gz ] && curl -o sing-box.tar.gz -L https://github.com/SagerNet/sing-box/releases/download/v1.6.6/sing-box-1.6.6-linux-amd64.tar.gz
 cd dist
 gzip -d <../clash-meta.gz >clash-meta
 chmod +x clash-meta
@@ -18,14 +18,17 @@ fi
 if [ "$1" = "fetch" ]; then
 cd dist
 rm -rf proxies
-./clash-meta -d . -f ../fetch.yaml
+./clash-meta -d . -f ../private/clash-meta-fetch.yaml
 fi
 
 if [ "$1" = "" ]; then
 cd dist
 rm -rf proxies
-sudo ./clash-meta -d . -f ../config.yaml
+sudo ./clash-meta -d . -f ../private/clash-meta-config.yaml
 fi
+
+# openssl req -newkey rsa:2048 -nodes -keyout trojan-key.pem -x509 -days 3650 -out trojan-cert.pem
+# ./sing-box run -c ../config-template-server.json -D .
 
 # https://blog.skk.moe/post/what-happend-to-dns-in-proxy/
 # https://github.com/MetaCubeX/Clash.Meta/blob/Alpha/docs/config.yaml
