@@ -1,40 +1,18 @@
 {
-  "log": {
-    "level": "info",
-    "timestamp": true
-  },
-  "ntp": {
-    "enabled": true,
-    "server": "time.apple.com",
-    "server_port": 123,
-    "interval": "30m",
-    "detour": "direct"
-  },
   "dns": {
     "servers": [
       {
-        "tag": "dns_block",
-        "address": "rcode://refused"
-      },
-      {
         "tag": "dns_direct",
         "address": "tls://1.12.12.12",
-        "strategy": "ipv4_only",
         "detour": "direct"
       },
       {
         "tag": "dns_proxy",
         "address": "tls://1.1.1.1",
-        "strategy": "ipv4_only",
         "detour": "proxy"
       }
     ],
     "rules": [
-      {
-        "geosite": ["category-ads-all"],
-        "server": "dns_block",
-        "disable_cache": true
-      },
       {
         "geosite": ["cn"],
         "server": "dns_direct"
