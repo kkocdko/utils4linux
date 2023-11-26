@@ -2,33 +2,22 @@
 cd $(dirname $0)
 
 if [ "$1" = "init" ]; then
-rm -rf dist ; mkdir dist
-[ ! -e sing-box.tar.gz ] && curl -o sing-box.tar.gz -L https://github.com/SagerNet/sing-box/releases/download/v1.6.6/sing-box-1.6.6-linux-amd64.tar.gz
-cd dist
-gzip -d <../clash-meta.gz >clash-meta
-chmod +x clash-meta
+rm -rf dist
+mkdir dist
+curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 > dist/clash2singbox
+curl -L https://github.com/SagerNet/sing-box/releases/download/v1.6.6/sing-box-1.6.6-linux-amd64.tar.gz | tar -xzO sing-box-1.6.6-linux-amd64/sing-box > dist/sing-box
+chmod +x dist/clash2singbox dist/sing-box
 fi
 
 if [ "$1" = "fetch" ]; then
 cd dist
-rm -rf proxies
-./clash-meta -d . -f ../private/clash-meta-fetch.yaml
+rm -f sub.jsonc
+./clash2singbox -o sub.jsonc -url https://example.com
+node ../tidy.mjs airport
 fi
 
 if [ "$1" = "" ]; then
 cd dist
-rm -rf proxies
-sudo ./clash-meta -d . -f ../private/clash-meta-client.yaml
-fi
-
+./sing-box run -c ../config.jsonc -D .
 # openssl req -newkey rsa:2048 -nodes -keyout trojan-key.pem -x509 -days 3650 -out trojan-cert.pem
-# ./sing-box run -c ../config-template-server.jsonc -D .
-
-# https://blog.skk.moe/post/what-happend-to-dns-in-proxy/
-# https://github.com/MetaCubeX/Clash.Meta/blob/Alpha/docs/config.yaml
-# https://github.com/MetaCubeX/Clash.Meta/blob/79626189f33631dc6bcd7d6503e2b2a5ff509453/common/convert/converter.go#L16
-# https://community.nssurge.com/d/439-url-testtimeoutintervaltolerance-0
-# https://github.com/shadowsocks/shadowsocks-org/blob/3363ad106a01ac905f5139e257646752c5f7be1a/docs/doc/sip002.md
-# https://github.com/v2ray/Planning/issues/39
-# https://github.com/XTLS/Xray-core/discussions/716
-# https://wiki.metacubex.one/config/proxies/vless/
+fi

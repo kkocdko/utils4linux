@@ -1,0 +1,53 @@
+{
+  "log": { "disabled": true },
+  "dns": {
+    "servers": [
+      { "tag": "google", "address": "https://8.8.8.8/dns-query" },
+      { "tag": "aliyun", "address": "tls://223.5.5.5", "detour": "direct" }
+    ],
+    "rules": [{ "geosite": ["cn"], "server": "aliyun" }]
+  },
+  "route": {
+    "auto_detect_interface": true,
+    "geoip": { "download_detour": "proxy-normal" },
+    "geosite": { "download_detour": "proxy-normal" },
+    "rules": [
+      { "ip_cidr": ["111.111.111.111/32"], "outbound": "direct" },
+      { "ip_cidr": ["111.111.111.111/32"], "outbound": "proxy-crucial-sg" },
+      { "domain_suffix": "github.dev", "outbound": "proxy-crucial" },
+      { "domain_suffix": "deepl.com", "outbound": "proxy-crucial" },
+      { "domain_suffix": "leetcode.com", "outbound": "proxy-crucial" },
+      { "domain_suffix": "update.googleapis.com", "outbound": "block" },
+      { "protocol": ["dns"], "outbound": "dns" },
+      { "protocol": ["quic"], "outbound": "block" },
+      { "geoip": ["cn", "private"], "outbound": "direct" },
+      { "geosite": ["cn", "category-companies@cn"], "outbound": "direct" }
+    ],
+    "final": "proxy-normal"
+  },
+  "inbounds": [
+    { "type": "socks", "listen": "127.0.0.1", "listen_port": 1080 },
+    {
+      "type": "tun",
+      "inet4_address": "172.19.0.1/30",
+      "auto_route": true,
+      "strict_route": true,
+      "sniff": true
+    }
+  ],
+  // prettier-ignore
+  "outbounds": [
+    // builtin
+    { "type": "direct", "tag": "direct" },
+    { "type": "block", "tag": "block" },
+    { "type": "dns", "tag": "dns" },
+    // groups
+    { "tag": "proxy-normal", "type": "selector", "outbounds": ["foo-1-x0.1","proxy-crucial"] },
+    { "tag": "proxy-crucial", "type": "selector", "outbounds": ["proxy-crucial-sg"] },
+    { "tag": "proxy-crucial-sg", "type": "selector", "outbounds": ["bar-1-sg-x10"] },
+    // foo - paid - cheap - https://example.com
+    {"tag":"foo-1-x0.1","server":"111.111.111.111","server_port":443},
+    // bar - paid - https://example.com/api/v1/client/subscribe?token=xxx
+    {"tag":"bar-1-sg-x10","password":"134r893489ry","server":"xxx"}
+  ]
+}
