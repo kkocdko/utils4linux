@@ -7,7 +7,7 @@ $HOME/misc/apps/miniserve --header Cache-Control:no-store -p 9005 . # https://gi
 fi
 
 if [ "$1" = "init" ]; then
-[ ! -e pdfjs-dist.zip ] && curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v4.0.189/pdfjs-4.0.189-dist.zip
+[ ! -e pdfjs-dist.zip ] && curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v4.0.269/pdfjs-4.0.269-dist.zip
 rm -rf pdfjs
 unzip -qq -d pdfjs pdfjs-dist.zip
 mv pdfjs/web/locale/en-US/viewer.ftl pdfjs/web/locale/viewer.ftl
