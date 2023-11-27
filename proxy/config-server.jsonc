@@ -1,0 +1,17 @@
+{
+  "inbounds": [
+    {
+      "type": "trojan",
+      "listen": "::",
+      "listen_port": 9549,
+      "users": [{ "password": "xxx" }],
+      "tls": {
+        "enabled": true,
+        "server_name": "www.xiaohongshu.com",
+        "key_path": "trojan-key.pem",
+        "certificate_path": "trojan-cert.pem"
+      }
+    }
+  ],
+  "outbounds": [{ "type": "direct", "tag": "direct" }]
+}
