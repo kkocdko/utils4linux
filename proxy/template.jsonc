@@ -30,15 +30,24 @@
     "geosite": { "download_detour": "proxy-normal" },
     "rules": [
       { "package_name": ["com.eg.android.AlipayGphone"], "outbound": "direct" },
-      { "package_name": ["com.tencent.mm"], "outbound": "direct" },
       { "package_name": ["com.autonavi.minimap"], "outbound": "direct" },
-      { "ip_cidr": ["111.111.111.111/32"], "outbound": "direct" }, // 在国内的 VPS
-      { "ip_cidr": ["111.111.111.111/32"], "outbound": "proxy-crucial-sg" }, // 在新加坡的 VPS
+      { "package_name": ["com.tencent.mm"], "outbound": "direct" },
+      { "package_name": ["com.tencent.tim"], "outbound": "direct" },
+      { "package_name": ["com.tencent.mobileqq"], "outbound": "direct" },
+      { "package_name": ["com.tencent.wemeet.app"], "outbound": "direct" },
+      { "package_name": ["com.xunmeng.pinduoduo"], "outbound": "direct" },
+      { "package_name": ["com.chinamworld.main"], "outbound": "direct" },
+      { "package_name": ["com.chinamworld.bocmbci"], "outbound": "direct" },
+      { "package_name": ["com.chaoxing.mobile"], "outbound": "direct" },
+      { "domain_suffix": ".events.data.microsoft.com", "outbound": "block" },
+      { "domain_suffix": ".vo.msecnd.net", "outbound": "block" },
+      { "domain_suffix": "update.googleapis.com", "outbound": "block" },
       { "domain_suffix": "github.dev", "outbound": "proxy-crucial" },
       { "domain_suffix": "deepl.com", "outbound": "proxy-crucial" },
-      { "domain_suffix": "update.googleapis.com", "outbound": "block" },
       { "domain_suffix": "leetcode.com", "outbound": "proxy-normal" },
       { "domain_suffix": "gstatic.com", "outbound": "proxy-normal" },
+      { "ip_cidr": ["111.111.111.111/32"], "outbound": "direct" }, // 在国内的 VPS
+      { "ip_cidr": ["111.111.111.111/32"], "outbound": "proxy-crucial-sg" }, // 在新加坡的 VPS
       { "protocol": ["dns"], "outbound": "dns" }, // 劫持 DNS，省去手动设置 DNS
       { "protocol": ["quic"], "outbound": "block" }, // QUIC 对于代理非常不友好，直接禁止，强迫应用 fallback 到其他协议
       { "geoip": ["cn", "private"], "outbound": "direct" },

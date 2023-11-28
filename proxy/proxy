@@ -12,7 +12,7 @@ fi
 if [ "$1" = "fetch" ]; then
 cd dist
 rm -f sub.jsonc
-./clash2singbox -o sub.jsonc -url https://example.com
+./clash2singbox -o sub.jsonc -url 'https://example.com'
 node ../tidy.mjs airport
 fi
 
