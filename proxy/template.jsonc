@@ -51,6 +51,7 @@
       { "package_name": ["com.chinamworld.main"], "outbound": "direct" },
       { "package_name": ["com.chinamworld.bocmbci"], "outbound": "direct" },
       { "package_name": ["com.chaoxing.mobile"], "outbound": "direct" },
+      { "package_name": ["com.zmzx.college.search"], "outbound": "direct" },
       { "domain_suffix": ".events.data.microsoft.com", "outbound": "block" },
       { "domain_suffix": ".vo.msecnd.net", "outbound": "block" },
       { "domain_suffix": "update.googleapis.com", "outbound": "block" },
@@ -58,10 +59,11 @@
       { "domain_suffix": "deepl.com", "outbound": "proxy-crucial" },
       { "domain_suffix": "leetcode.com", "outbound": "proxy" },
       { "domain_suffix": "gstatic.com", "outbound": "proxy" },
-      { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的 vps
       { "ip_cidr": ["x.x.x.x/32"], "outbound": "proxy-crucial-sg" }, // 在新加坡的 vps
+      { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的 vps
       { "protocol": ["dns"], "outbound": "dns" }, // 劫持 dns，省去手动设置 dns
       { "protocol": ["quic"], "outbound": "block" }, // quic 对于代理非常不友好，直接禁止，强迫应用 fallback 到其他协议
+      { "ip_is_private": true, "outbound": "direct" },
       { "rule_set": "geoip-cn", "outbound": "direct" },
       { "rule_set": "geosite-cn", "outbound": "direct" },
       { "network": ["tcp", "udp"], "outbound": "proxy" } // 和 "final": "proxy" 差不多

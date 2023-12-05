@@ -5,7 +5,7 @@ if [ "$1" = "init" ]; then
 rm -rf dist
 mkdir dist
 curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 > dist/clash2singbox
-curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-alpha.1/sing-box-1.8.0-alpha.1-linux-amd64.tar.gz | tar -xzO sing-box-1.8.0-alpha.1-linux-amd64/sing-box > dist/sing-box
+curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-alpha.11/sing-box-1.8.0-alpha.11-linux-amd64.tar.gz | tar -xzO sing-box-1.8.0-alpha.11-linux-amd64/sing-box > dist/sing-box
 chmod +x dist/clash2singbox dist/sing-box
 fi
 
