@@ -1,0 +1,60 @@
+name: nodepty
+on:
+  workflow_dispatch:
+jobs:
+  on-windows-x64:
+    runs-on: windows-2022
+    steps:
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: test
+        run: |
+          git clone --depth 1 https://github.com/kkocdko/node-pty
+          cd node-pty
+          node -v
+          npm i
+          npm test
+          npm run lint
+          dumpbin /dependents build\Release\pty.node
+          del build\Release\*.pdb
+      - name: upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-pty-napi-windows-x64
+          path: node-pty/build/Release/
+  on-macos-x64:
+    runs-on: macos-12
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: test
+        run: |
+          git clone --depth 1 https://github.com/kkocdko/node-pty
+          cd node-pty
+          node -v
+          npm i
+          npm test
+          npm run lint
+          otool -L build/Release/pty.node
+      - name: upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-pty-napi-macos-x64
+          path: node-pty/build/Release/
+  on-linux-x64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: test
+        run: |
+          git clone --depth 1 https://github.com/kkocdko/node-pty
+          cd node-pty
+          node -v
+          npm i
+          npm test
+          npm run lint
+          ldd build/Release/pty.node
+      - name: upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-pty-napi-linux-x64
+          path: node-pty/build/Release/
