@@ -27,21 +27,29 @@ fi
 if [ "$1" = "compress-code-cold" ]; then
 echo ">>> (manually use please) compress many code backups"
 exit
-~/misc/apps/7zzs a -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 out.7z code_20181014-20231106/*
+alias 7z="$HOME/misc/apps/7zzs"
+7z a -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 out.7z code_20181014-20231106/*
 exit
 fi
 
 if [ "$1" = "sync-from-phone" ]; then
 echo ">>> sync from phone"
+from_root="/run/user/1000/gvfs/mtp:host=LGE_LM-V409N_LMV409N1c42ce3d/Internal shared storage"
+to_root="/run/media/kkocdko/data/backup/phone"
+rsync_args="--progress --recursive --times --links --delete"
+rsync $rsync_args "$from_root/Pictures/Screenshots" "$to_root/"
+rsync $rsync_args "$from_root/DCIM" "$to_root/"
+rsync $rsync_args "$from_root/DataBackup" "$to_root/"
 exit
 fi
 
 if [ "$1" = "sync-to-phone" ]; then
 echo ">>> sync to phone"
-# /backuper
+to_root="/run/user/1000/gvfs/mtp:host=LGE_LM-V409N_LMV409N1c42ce3d/Internal shared storage/pc"
 /run/media/kkocdko/data
 /home/kkocdko/misc/res
-/home/kkocdko/misc/apps
+# /home/kkocdko/misc/apps
+rsync --recursive --times --links --delete "/home/kkocdko/misc/apps" "$to_root/"
 fi
 
 echo "The backup script for kkocdko, see source code for usage and other info."
