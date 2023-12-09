@@ -137,6 +137,8 @@ cd /tmp/win11
 qemu-img create -f qcow2 a.qcow2 64G
 winpe_iso="/run/media/kkocdko/data/pkgs/WinPE/WePE_2.2_10-64.iso"
 install_iso="/run/media/kkocdko/data/pkgs/sys-imgs/Win11_23H2_English_x64.iso"
+
+sudo systemctl list-unit-files
 ```
 
 </details>

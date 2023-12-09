@@ -12,9 +12,8 @@ sudo docker cp "$vscode_path" "$codespace_name:/vscode-dist"
 sudo docker cp "$nodejs_path" "$codespace_name:/vscode-dist/node"
 sudo docker exec -it $codespace_name sh -c 'rm -rf /etc/apt/sources.list.d'
 sudo docker exec -it $codespace_name sh -c 'printf "deb http://mirrors.ustc.edu.cn/debian bookworm main\ndeb http://mirrors.ustc.edu.cn/debian bookworm-updates main\n" > /etc/apt/sources.list'
+sudo docker exec -it $codespace_name sh -c 'mkdir -p /root/projects/hi'
 sudo docker exec -it -w /vscode-dist -e UV_USE_IO_URING=0 $codespace_name ./node ./out/server-main.js --accept-server-license-terms --host 0.0.0.0 --port 9448 --without-connection-token
-# ssh -R 10448:127.0.0.1:9448 root@1.1.1.1 # ensure "GatewayPorts yes" in /etc/ssh/sshd_config
-# http://1.1.1.1:10448/?folder=/root/projects/hi
 # apt install -y python3 tmux curl procps busybox libasan8 gcc
 # apt install default-mysql-server
 # mysqld --user root --port 13306
