@@ -1,0 +1,36 @@
+{
+  "admin": { "disabled": true },
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "automatic_https": { "disable_redirects": true },
+          "listen": ["127.0.0.1:9458"],
+          "protocols": ["h2", "h1"],
+          "routes": [
+            {
+              "match": [{ "host": ["127.0.0.1"] }, {}],
+              "handle": [
+                {
+                  "handler": "encode",
+                  "encodings": { "gzip": {} }
+                },
+                {
+                  "handler": "reverse_proxy",
+                  "upstreams": [{ "dial": "127.0.0.1:9448" }]
+                }
+              ]
+            }
+          ],
+          "tls_connection_policies": [{ "protocol_min": "tls1.3" }]
+        }
+      }
+    },
+    "pki": {
+      "certificate_authorities": { "local": { "install_trust": false } }
+    },
+    "tls": {
+      "automation": { "policies": [{ "issuers": [{ "module": "internal" }] }] }
+    }
+  }
+}

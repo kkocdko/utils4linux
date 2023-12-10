@@ -12,4 +12,4 @@
 /*/dist/
 /proxy/config.jsonc
 /rt4web/*.zip
-/shcodespace/nginx
+/shcodespace/caddy

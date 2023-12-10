@@ -1,5 +1,4 @@
 #!/bin/sh
-
 codespace_name="shcs-0"
 vscode_path="$HOME/misc/apps/vscode-dist"
 nodejs_path="$(type node | cut -d ' ' -f 3)"

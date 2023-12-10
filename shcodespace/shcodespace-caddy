@@ -1,0 +1,10 @@
+#!/bin/sh
+cd $(dirname $0)
+if [ ! -e ./caddy ]; then
+mkdir -p ./caddy
+curl -L https://github.com/caddyserver/caddy/releases/download/v2.7.6/caddy_2.7.6_linux_amd64.tar.gz | tar -xz -C ./caddy caddy
+fi
+cd ./caddy
+./caddy run -c ../caddy.json
+# ssh -R 10448:127.0.0.1:9458 root@1.1.1.1 # ensure "GatewayPorts yes" in /etc/ssh/sshd_config
+# https://1.1.1.1:10448/?folder=/root/projects/hi
