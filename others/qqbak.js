@@ -1,4 +1,13 @@
+/*
 // du -s $(find -type f) | sort -n
+// find -name "Cache_*"
+#!/bin/sh
+for p in $(find -name "Cache_*"); do
+  # mv "$p" "$p.png"
+  mv "$p" "$(echo $p | sed -e 's/\.png$//')"
+done
+
+*/
 let raw = `
 `;
 let files = new Set(

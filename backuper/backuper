@@ -33,7 +33,7 @@ exit
 fi
 
 if [ "$1" = "sync-from-phone" ]; then
-echo ">>> sync from phone"
+echo ">>> sync from phone, please reconnect mtp before this to ensure the bcache cleared"
 from_root="/run/user/1000/gvfs/mtp:host=LGE_LM-V409N_LMV409N1c42ce3d/Internal shared storage"
 to_root="/run/media/kkocdko/data/backup/phone"
 rsync_args="--progress --recursive --times --links --delete"
@@ -54,3 +54,12 @@ fi
 
 echo "The backup script for kkocdko, see source code for usage and other info."
 echo "Usage: $0 <command> [options]"
+
+exit
+mkdir -p dist
+curl -o rclone.zip -L https://github.com/rclone/rclone/releases/download/v1.65.0/rclone-v1.65.0-linux-amd64.zip
+unzip -p rclone.zip rclone-v1.65.0-linux-amd64/rclone > rclone
+chmod +x rclone
+rm -f rclone.zip
+cd ..
+./dist/rclone --config rclone.conf sync --progress ../proxy onedrive_kkocdko_163_com:/rclone/proxy
