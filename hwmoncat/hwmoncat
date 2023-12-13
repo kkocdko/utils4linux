@@ -2,8 +2,8 @@
 BEGIN {
 cmd = "ls /sys/class/hwmon/*/*_input"
 device = "_"
-while ( ( cmd | getline result ) != 0 ) {
-  split(result, sections, "/")
+while ( ( cmd | getline entry ) != 0 ) {
+  split(entry, sections, "/")
   if (device != sections[5]) {
     device = sections[5]
     getline name < ("/sys/class/hwmon/" device "/name")
@@ -11,7 +11,7 @@ while ( ( cmd | getline result ) != 0 ) {
   }
   split(sections[6], item, "_")
   value = "unavaliable"
-  getline value < result
+  getline value < entry
   label = ""
   getline label < ("/sys/class/hwmon/" device "/" item[1] "_label")
   if (label != "") {
@@ -34,6 +34,5 @@ while ( ( cmd | getline result ) != 0 ) {
     printf("%s: %d\n", label, value)
   }
 }
-close(cmd)
 exit(0)
 }

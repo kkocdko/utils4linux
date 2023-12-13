@@ -25,18 +25,19 @@ This script shows:
 ```
 [kkocdko@klf apps]$ ./hwmoncat
 - bat1
-in0: 15.671 V
-
+in0: 15.76 V
 - nvme
-temp1_composite: 23.85 C
-
-- amdgpu
-freq1_sclk: 200 MHz
-in0_vddgfx: 0.656 V
-temp1_edge: 24.00 C
-
+temp1_composite: 30.85 C
 - k10temp
-temp1_tctl: 24.88 C
+temp1_tctl: 44.38 C
+- iwlwifi_1
+temp1: 34.00 C
+- amdgpu
+freq1_sclk: 1800 MHz
+in0_vddgfx: 1.30 V
+in1_vddnb: 0.84 V
+power1_ppt: 18.00 W
+temp1_edge: 35.00 C
 ```
 
 Compare to the lm-sensors:
@@ -70,6 +71,5 @@ in0:          15.67 V
 - <https://www.gnu.org/software/gawk/manual/gawk.html>
 
 <!--
-ln -s ~/misc/code/utils4linux/hwmoncat/hwmoncat ./hwmoncat
-./hyperfine -r 20 --warmup 5 ./hwmoncat
+./hyperfine -w 5 -r 32 -p 'sleep 0.1' ./hwmoncat
 -->
