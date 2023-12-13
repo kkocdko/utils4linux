@@ -1,26 +1,39 @@
-#!/bin/sh
-cd /sys/class/hwmon
-for device in `ls`; do
-  echo -n "- "
-  tr [:upper:] [:lower:] <$device/name
-  for kind in "fan" "freq" "in" "temp"; do
-    for i in 0 1 2 3 4 5 6 7; do
-      if [ ! -e $device/$kind$i\_input ]; then
-        continue
-      fi
-      v=0
-      read v <$device/$kind$i\_input 2>/dev/null
-      [ "$v" = "" ] && v=0
-      echo -n $kind$i
-      if [ -e $device/$kind$i\_label ]; then
-        echo -n _
-        tr [:upper:] [:lower:] <$device/$kind$i\_label | tr -d \\n
-      fi
-      [ $kind = "fan" ] && printf ": %d RPM\n" "$v"
-      [ $kind = "freq" ] && printf ": %.0f MHz\n" "$(($v))e-6"
-      [ $kind = "in" ] && printf ": %.3f V\n" "$(($v))e-3"
-      [ $kind = "temp" ] && printf ": %.2f C\n" "$(($v))e-3"
-    done
-  done
-  echo ""
-done
+#!/bin/awk -f
+BEGIN {
+cmd = "ls /sys/class/hwmon/*/*_input"
+device = "_"
+while ( ( cmd | getline result ) != 0 ) {
+  split(result, sections, "/")
+  if (device != sections[5]) {
+    device = sections[5]
+    getline name < ("/sys/class/hwmon/" device "/name")
+    print("- " tolower(name))
+  }
+  split(sections[6], item, "_")
+  value = "unavaliable"
+  getline value < result
+  label = ""
+  getline label < ("/sys/class/hwmon/" device "/" item[1] "_label")
+  if (label != "") {
+    label = ("_" label)
+  }
+  label = tolower(item[1] label)
+  if (value == "unavaliable") {
+    printf("%s: unavaliable\n", label)
+  } else if (item[1] ~ "^fan[0-9]") {
+    printf("%s: %d RPM\n", label, value)
+  } else if (item[1] ~ "^freq[0-9]") {
+    printf("%s: %d MHz\n", label, value / 1000000)
+  } else if (item[1] ~ "^in[0-9]") {
+    printf("%s: %.2f V\n", label, value / 1000)
+  } else if (item[1] ~ "^temp[0-9]") {
+    printf("%s: %.2f C\n", label, value / 1000)
+  } else if (item[1] ~ "^power[0-9]") {
+    printf("%s: %.2f W\n", label, value / 1000000)
+  } else {
+    printf("%s: %d\n", label, value)
+  }
+}
+close(cmd)
+exit(0)
+}
