@@ -1,5 +1,10 @@
 #!/bin/sh
-# https://github.com/ungoogled-software/ungoogled-chromium-portablelinux/releases/download/119.0.6045.105-1/ungoogled-chromium_119.0.6045.105-1.1_linux.tar.xz
+cd /tmp
+[ ! -e ungoogled-chromium.tar.xz ] && curl -o ungoogled-chromium.tar.xz -L https://github.com/ungoogled-software/ungoogled-chromium-portablelinux/releases/download/120.0.6099.71-1/ungoogled-chromium_120.0.6099.71-1.1_linux.tar.xz
+rm -rf ungoogled-chromium
+mkdir ungoogled-chromium
+tar -xf ungoogled-chromium.tar.xz --strip-components 1 -C ungoogled-chromium
+cd ungoogled-chromium
 strip chrome
 strip chromedriver
 find locales/* -not -name 'en-US.*' -delete
