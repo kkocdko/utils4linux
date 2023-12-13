@@ -5,7 +5,7 @@
 # https://docs.kernel.org/admin-guide/pm/amd-pstate.html
 
 # output pids which should be stop / resume
-heavy_tasks_pids(){ echo `pidof chrome node miniserve gopls esbuild` `pgrep -f qemu-kvm` ;}
+heavy_tasks_pids(){ echo `pidof chrome node miniserve gopls esbuild sing-box` `pgrep -f qemu-kvm` ;}
 # $1 = low-power | balanced | performance
 acpi_profile(){ echo $1 >/sys/firmware/acpi/platform_profile ;}
 # $1 = low | high | auto
@@ -33,7 +33,7 @@ elif [ "$1" = "info" ]; then
   for freq in $(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq 2>/dev/null); do
     printf "%.0f " "$(($freq))e-3"
   done
-  printf "(MHz)\n\n"
+  printf "MHz\n"
   ./hwmoncat
   # cat /sys/class/hwmon/hwmon1/device/power_now
 elif [ "$1" = "min" ]; then
