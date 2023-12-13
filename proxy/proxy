@@ -1,12 +1,13 @@
 #!/bin/sh
 cd $(dirname $0)
 
-if [ "$1" = "init" ]; then
-rm -rf dist
+if [ ! -e dist ]; then
 mkdir dist
-curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 > dist/clash2singbox
-curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-alpha.11/sing-box-1.8.0-alpha.11-linux-amd64.tar.gz | tar -xzO sing-box-1.8.0-alpha.11-linux-amd64/sing-box > dist/sing-box
-chmod +x dist/clash2singbox dist/sing-box
+cd dist
+curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 > clash2singbox
+curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-alpha.11/sing-box-1.8.0-alpha.11-linux-amd64.tar.gz | tar -xzO sing-box-1.8.0-alpha.11-linux-amd64/sing-box > sing-box
+chmod +x clash2singbox sing-box
+exit
 fi
 
 if [ "$1" = "fetch" ]; then
@@ -14,10 +15,12 @@ cd dist
 rm -f sub.jsonc
 ./clash2singbox -o sub.jsonc -url 'https://example.com'
 node ../tidy.mjs airport
+exit
 fi
 
 if [ "$1" = "" ]; then
 cd dist
 ./sing-box run -c ../config.jsonc -D .
 # openssl req -newkey rsa:2048 -nodes -keyout trojan-key.pem -x509 -days 3650 -out trojan-cert.pem
+exit
 fi

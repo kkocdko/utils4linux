@@ -60,11 +60,13 @@
       { "package_name": ["com.jiongji.andriod.card"], "outbound": "direct" },
       { "domain_suffix": ".events.data.microsoft.com", "outbound": "block" },
       { "domain_suffix": ".vo.msecnd.net", "outbound": "block" },
+      { "domain_suffix": ".prss.microsoft.com", "outbound": "direct" },
       { "domain_suffix": "update.googleapis.com", "outbound": "block" },
       { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-sg" }, // github codespace
       { "domain_suffix": "deepl.com", "outbound": "proxy-sg" },
       { "domain_suffix": "leetcode.com", "outbound": "proxy" },
       { "domain_suffix": "gstatic.com", "outbound": "proxy" },
+      { "domain_suffix": "wuyou.net", "outbound": "direct" },
       { "domain_suffix": "burningvocabulary.com", "outbound": "direct" },
       { "ip_cidr": ["x.x.x.x/32"], "outbound": "proxy-sg" }, // 在新加坡的 vps
       { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的 vps
