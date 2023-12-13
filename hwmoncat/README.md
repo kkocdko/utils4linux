@@ -67,6 +67,8 @@ in0:          15.67 V
 
 - <https://unix.stackexchange.com/questions/558112/>
 
+- <https://www.gnu.org/software/gawk/manual/gawk.html>
+
 <!--
 ln -s ~/misc/code/utils4linux/hwmoncat/hwmoncat ./hwmoncat
 ./hyperfine -r 20 --warmup 5 ./hwmoncat

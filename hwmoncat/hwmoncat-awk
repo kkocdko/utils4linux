@@ -1,0 +1,39 @@
+#!/bin/awk -f
+BEGIN {
+  cmd = "ls /sys/class/hwmon/*/*_input"
+  device = "_"
+  while ( ( cmd | getline result ) != 0 ) {
+    split(result, sections, "/")
+    if (device != sections[5]) {
+      device = sections[5]
+      getline name < ("/sys/class/hwmon/" device "/name")
+      print("- " tolower(name))
+    }
+    split(sections[6], item, "_")
+    value = "unavaliable"
+    getline value < result
+    label = ""
+    getline label < ("/sys/class/hwmon/" device "/" item[1] "_label")
+    if (label != "") {
+      label = ("_" label)
+    }
+    label = tolower(item[1] label)
+    if (value == "unavaliable") {
+      printf("%s: unavaliable\n", label)
+    } else if (item[1] ~ "^fan[0-9]") {
+      printf("%s: %d RPM\n", label, value)
+    } else if (item[1] ~ "^freq[0-9]") {
+      printf("%s: %d MHz\n", label, value / 1000000)
+    } else if (item[1] ~ "^in[0-9]") {
+      printf("%s: %.2f V\n", label, value / 1000)
+    } else if (item[1] ~ "^temp[0-9]") {
+      printf("%s: %.2f C\n", label, value / 1000)
+    } else if (item[1] ~ "^power[0-9]") {
+      printf("%s: %.2f W\n", label, value / 1000000)
+    } else {
+      printf("%s: %d\n", label, value)
+    }
+  }
+  close(cmd)
+  exit(0)
+}
