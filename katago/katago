@@ -1,19 +1,27 @@
 #!/bin/sh
-if [ ! -e venv ]; then
-  python3 -m venv venv
-  source venv/bin/activate
-  pip install katrain # 1.14.0
-  curl -o venv/katago.zip -L https://github.com/lightvector/KataGo/releases/download/v1.13.0/katago-v1.13.0-eigenavx2-linux-x64.zip
-  unzip -p venv/katago.zip katago >venv/katago
-  rm venv/katago.zip
-  strip -s venv/katago
-  chmod +x venv/katago
-  spdir=`python3 -c "import site;print(site.getsitepackages()[0])"`
-  mv venv/katago $spdir/katrain/KataGo/katago
-  rm -rf $spdir/ffpyplayer.libs $spdir/pip
-  strip `find $spdir -name '*.so'`
-  # strip `find $spdir/kivy -name '*.so'`
-else
-  source venv/bin/activate
+cd $(dirname $0)
+
+if [ ! -e dist ]; then
+echo ">>> init"
+python3 -m venv dist
+cd dist
+source bin/activate
+pip install katrain # 1.14.0
+# pip install -i https://pypi.tuna.tsinghua.edu.cn/simple katrain
+spdir=$(python3 -c "import site;print(site.getsitepackages()[0])")
+curl -o katago.zip -L https://github.com/lightvector/KataGo/releases/download/v1.13.0/katago-v1.13.0-eigenavx2-linux-x64.zip
+unzip -p katago.zip katago >$spdir/katrain/KataGo/katago
+rm -f katago.zip
+strip -s $spdir/katrain/KataGo/katago
+chmod +x $spdir/katrain/KataGo/katago
+rm -rf $spdir/ffpyplayer.libs $spdir/pip
+strip $(find $spdir -name "*.so")
+exit
 fi
+
+if [ "$1" = "" ]; then
+cd dist
+source bin/activate
 katrain
+exit
+fi

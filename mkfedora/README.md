@@ -81,8 +81,16 @@ https://access.redhat.com/discussions/6978850
 {
   "registry-mirrors": [
     "https://hub-mirror.c.163.com",
-    "https://mirror.baidubce.com"
-  ],
+    "https://mirror.baidubce.com",
+    "https://docker.nju.edu.cn",
+    "https://docker.mirrors.sjtug.sjtu.edu.cn"
+  ]
+}
+```
+
+```json
+{
+  "registry-mirrors": [],
   "max-concurrent-downloads": 8,
   "data-root": "/tmp/docker"
 }
