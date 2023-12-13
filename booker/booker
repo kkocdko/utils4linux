@@ -1,14 +1,15 @@
 #!/bin/sh
-
 cd $(dirname $0)
 
-if [ "$1" = "" ]; then
-$HOME/misc/apps/miniserve --header Cache-Control:no-store -p 9005 . # https://github.com/svenstaro/miniserve/releases/download/v0.24.0/miniserve-0.24.0-x86_64-unknown-linux-musl
-fi
-
-if [ "$1" = "init" ]; then
-[ ! -e pdfjs-dist.zip ] && curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v4.0.269/pdfjs-4.0.269-dist.zip
-rm -rf pdfjs
+if [ ! -e dist ]; then
+echo ">>> init"
+mkdir dist
+cd dist
+echo ">>> download miniserve" # because python's http.server doesn't support http range
+curl -o miniserve -L https://github.com/svenstaro/miniserve/releases/download/v0.24.0/miniserve-0.24.0-x86_64-unknown-linux-gnu
+chmod +x miniserve
+echo ">>> download and modify pdfjs"
+curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v4.0.269/pdfjs-4.0.269-dist.zip
 unzip -qq -d pdfjs pdfjs-dist.zip
 mv pdfjs/web/locale/en-US/viewer.ftl pdfjs/web/locale/viewer.ftl
 sed -i pdfjs/web/locale/locale.json -e 's|/|/../|g'
@@ -71,7 +72,7 @@ cat <<EOF >pdfjs/web/booker.js
   // <button class=secondaryToolbarButton onclick=document.body.requestFullscreen()><span>Fullscreen</span></button>
   // viewBookmark.replaceWith()
 EOF
-rm -rf chunks
+echo ">>> create symbolic links to books"
 mkdir chunks
 archive_dir="/run/media/kkocdko/data/docs/ebook"
 ln -s "$archive_dir/Computer Networking A Top Down Approach 8th.pdf" chunks/cnatda.pdf
@@ -81,9 +82,19 @@ ln -s "$archive_dir/深入理解计算机系统（第三版）.pdf" chunks/csapp
 ln -s "$archive_dir/计算机网络自顶向下方法 第七版.pdf" chunks/cnatda-zh.pdf
 ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" chunks/aoapc.pdf
 ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" chunks/bulletproof-ssl-and-tls-zh.pdf
+ls chunks
+exit
+fi
+
+if [ "$1" = "" ]; then
+cd dist
+./miniserve --header Cache-Control:no-store -p 9005 . # https://github.com/svenstaro/miniserve/releases/download/v0.24.0/miniserve-0.24.0-x86_64-unknown-linux-gnu
+exit
 fi
 
 # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
 # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda.pdf&x-text-enhance&x-invert
 # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
 # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+
+# trap exit SIGINT
