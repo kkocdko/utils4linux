@@ -5,7 +5,7 @@
 # https://docs.kernel.org/admin-guide/pm/amd-pstate.html
 
 # output pids which should be stop / resume
-heavy_tasks_pids(){ echo `pidof chrome node miniserve gopls esbuild sing-box` `pgrep -f qemu-kvm` ;}
+heavy_tasks_pids(){ echo `pidof chrome node gopls esbuild sing-box` `pgrep -f qemu-kvm` ;}
 # $1 = low-power | balanced | performance
 acpi_profile(){ echo $1 >/sys/firmware/acpi/platform_profile ;}
 # $1 = low | high | auto
