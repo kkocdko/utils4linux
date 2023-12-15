@@ -1,0 +1,34 @@
+#!/bin/sh
+trap exit SIGINT
+cd $(dirname $0)
+
+if [ ! -e dist ]; then
+echo ">>> init"
+mkdir dist
+cd dist
+echo ">>> download bun"
+curl -o bun.zip -L https://github.com/oven-sh/bun/releases/download/bun-v1.0.18/bun-linux-x64.zip
+unzip -p bun.zip bun-linux-x64/bun > bun
+chmod +x bun
+rm -rf bun.zip
+echo ">>> download node-api-headers and node-addon-api"
+curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/js_native_api.h &
+curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/js_native_api_types.h &
+curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/node_api.h &
+curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/node_api_types.h &
+curl -s -O -L https://github.com/nodejs/node-addon-api/raw/v7.0.0/napi.h &
+curl -s -O -L https://github.com/nodejs/node-addon-api/raw/v7.0.0/napi-inl.h &
+wait
+exit
+fi
+
+if [ "$1" = "" ]; then
+g++ native.cc -o dist/native.node -I dist -shared -fPIC
+echo ""
+echo "> bun"
+./dist/bun main.js
+echo ""
+echo "> node"
+node main.js
+exit
+fi
