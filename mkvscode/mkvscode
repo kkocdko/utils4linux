@@ -1,5 +1,27 @@
 #!/bin/sh
 cd $(dirname $0)
+
+trap exit SIGINT
+# sudo dnf install libxkbfile-devel.x86_64 libsecret-devel krb5-devel
+
+mkdir dist
+cd dist
+git clone --depth=2 https://kkocdko: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@github.com/kkocdko/vscode.git
+cd vscode
+sed -i "s|://registry.yarnpkg.com|://registry.npmmirror.com|g" $(find -name "*.lock")
+git update-index --assume-unchanged  $(find -name "*.lock" -not -path "./node_modules/*")
+rm build/azure-pipelines/common/installPlaywright.js
+export -n ALL_PROXY
+export -n all_proxy
+# npm i -g yarn
+npm config set registry 'https://registry.npmmirror.com'
+npm config set registry --global 'https://registry.npmmirror.com'
+yarn config set registry 'https://registry.npmmirror.com'
+yarn config set registry --global 'https://registry.npmmirror.com'
+# yarn
+./scripts/code-server.sh --launch
+exit
+
 [ ! -e vscode.tar.gz ] && curl -o vscode.tar.gz -L https://github.com/microsoft/vscode/archive/refs/tags/1.83.1.tar.gz
 rm -rf dist
 mkdir dist
@@ -7,9 +29,6 @@ tar -xf vscode.tar.gz -C dist --strip-components 1
 cd dist
 exit
 corepack prepare yarn@1 --activate
-# npm config set registry 'https://registry.npmmirror.com'
-yarn config set registry 'https://registry.npmmirror.com'
-./scripts/code-server.sh --launch
 
 rm -rf out
 
@@ -37,3 +56,9 @@ esbuild src/vs/code/browser/workbench/workbench.ts --bundle --minify --target=es
 # src/vs/code/browser/workbench/workbench.html
 #  '' --serve=9423  # --bundle --minify --sourcemap --jsx=automatic --legal-comments=none --watch
 # https://github.com/microsoft/vscode/wiki/How-to-Contribute
+
+# https://github.com/microsoft/vscode-l10n/issues/104#issuecomment-1511659944
+#! Although this allows the build to continue, it renders vscode unusable
+einfo "Fixing l10n-dev"
+sed -i 's/return await import_web_tree_sitter/return null; await import_web_tree_sitter/' node_modules/@vscode/l10n-dev/dist/main.js || die
+
