@@ -49,18 +49,17 @@ udpSocket.on("error", console.error);
 http
   .createServer(({ url }, res) => {
     console.log({ url });
-    if (url === "/") return void res.writeHead(200).end(page);
     if (url === "/stream") {
-      try {
-        // http.get("http://127.0.0.1:9255", (got) => void got.pipe(res));
-        res.writeHead(200);
-        const h = (buf) => void res.write(buf);
-        udpSocket.on("message", h);
-        res.on("close", () => {
-          udpSocket.removeListener("message", h);
-          console.log("res closed");
-        });
-      } catch (e) {}
+      // http.get("http://127.0.0.1:9255", (got) => void got.pipe(res));
+      res.writeHead(200);
+      const h = (buf) => void res.write(buf);
+      udpSocket.on("message", h);
+      res.on("close", () => {
+        udpSocket.removeListener("message", h);
+        console.log("res closed");
+      });
+    } else {
+      res.writeHead(200).end(page);
     }
   })
   .listen(9254);
