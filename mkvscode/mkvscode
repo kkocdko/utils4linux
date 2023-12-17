@@ -2,33 +2,42 @@
 cd $(dirname $0)
 
 trap exit SIGINT
-# sudo dnf install libxkbfile-devel.x86_64 libsecret-devel krb5-devel
 
+if [ ! -e dist ]; then
+echo ">>> init"
 mkdir dist
 cd dist
-git clone --depth=2 https://kkocdko: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@github.com/kkocdko/vscode.git
+# sudo dnf install libxkbfile-devel.x86_64 libsecret-devel krb5-devel
+# git clone --depth=2 https://kkocdko:ghp_xxx@github.com/kkocdko/vscode.git
+curl -o vscode.tar.gz -L https://github.com/microsoft/vscode/archive/main.tar.gz
+# curl -o vscode.tar.gz -L https://github.com/microsoft/vscode/archive/refs/tags/1.85.1.tar.gz
+mkdir vscode
 cd vscode
-sed -i "s|://registry.yarnpkg.com|://registry.npmmirror.com|g" $(find -name "*.lock")
-git update-index --assume-unchanged  $(find -name "*.lock" -not -path "./node_modules/*")
-rm build/azure-pipelines/common/installPlaywright.js
+tar -xf ../vscode.tar.gz --strip-components 1
+echo "console.log('skip');" > build/azure-pipelines/common/installPlaywright.js
 export -n ALL_PROXY
 export -n all_proxy
 # npm i -g yarn
-npm config set registry 'https://registry.npmmirror.com'
-npm config set registry --global 'https://registry.npmmirror.com'
-yarn config set registry 'https://registry.npmmirror.com'
-yarn config set registry --global 'https://registry.npmmirror.com'
-# yarn
-./scripts/code-server.sh --launch
+# npm config set registry 'https://registry.npmmirror.com'
+# npm config set registry --global 'https://registry.npmmirror.com'
+# yarn config set registry 'https://registry.npmmirror.com'
+# yarn config set registry --global 'https://registry.npmmirror.com'
+# git update-index --assume-unchanged $(find -name "*.lock" -not -path "./node_modules/*")
+sed -i "s|://registry.yarnpkg.com|://registry.npmmirror.com|g" $(find -name "*.lock")
+exit
+fi
+
+echo "exit"
+
 exit
 
-[ ! -e vscode.tar.gz ] && curl -o vscode.tar.gz -L https://github.com/microsoft/vscode/archive/refs/tags/1.83.1.tar.gz
-rm -rf dist
-mkdir dist
-tar -xf vscode.tar.gz -C dist --strip-components 1
-cd dist
-exit
-corepack prepare yarn@1 --activate
+# code-web only currently
+
+
+https://github.com/microsoft/vscode/archive/main.tar.gz
+
+# yarn
+./scripts/code-server.sh --launch
 
 rm -rf out
 
@@ -62,3 +71,5 @@ esbuild src/vs/code/browser/workbench/workbench.ts --bundle --minify --target=es
 einfo "Fixing l10n-dev"
 sed -i 's/return await import_web_tree_sitter/return null; await import_web_tree_sitter/' node_modules/@vscode/l10n-dev/dist/main.js || die
 
+~/misc/apps/miniserve -p 9429  --header 'Access-Control-Allow-Origin:*' --  .
+./scripts/code-web.sh --host 127.0.0.1 --port 9888

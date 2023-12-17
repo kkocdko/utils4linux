@@ -98,9 +98,11 @@
     // groups
     { "tag": "proxy", "type": "selector", "outbounds": ["foo-1-x0.1","proxy-sg"] },
     { "tag": "proxy-sg", "type": "selector", "outbounds": ["bar-1-sg-x10"] },
+    // self-hosted
+    {"tag":"sh-aliyun","detour":"shadowtls-out-sh-aliyun","type":"shadowsocks","method":"2022-blake3-aes-128-gcm","password":"xxx"},{"type":"shadowtls","tag":"shadowtls-out-sh-aliyun","server":"1.1.1.1","server_port":11111,"version":3,"password":"xxx","tls":{"enabled":true,"server_name":"registry.npmmirror.com"}},
     // foo - paid - cheap - https://example.com
     {"tag":"foo-1-x0.1","server":"111.111.111.111","server_port":443},
     // bar - paid - https://example.com/api/v1/client/subscribe?token=xxx
-    {"tag":"bar-1-sg-x10","password":"134r893489ry","server":"xxx"}
+    {"tag":"bar-1-sg-x10","password":"xxx","server":"xxx"}
   ]
 }
