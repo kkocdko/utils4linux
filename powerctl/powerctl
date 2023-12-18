@@ -19,7 +19,7 @@ cpu_boost(){ echo $1 >/sys/devices/system/cpu/cpufreq/boost ;}
 # for amd-pstate-epp only
 cpu_epp(){ echo power | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference ;}
 
-if [ `whoami` != "root" ] && [ "$1" != "info" ] && [ "$1" != "" ]; then
+if [ "$(id -u)" != "0" ] && [ "$1" != "info" ] && [ "$1" != "" ]; then
   sudo $0 $*
   $0 info # must be run as non-root user
   exit

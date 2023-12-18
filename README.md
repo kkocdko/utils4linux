@@ -1,13 +1,19 @@
 # utils4linux
 
-## hwmoncat
+Many tools for Linux.
 
-Used for sensors reading. A lightweight alternative to lm-sensors.
+## [hwmoncat](hwmoncat)
 
-## lazymirror
+Used for sensors reading. A lightweight alternative to [lm-sensors](https://github.com/lm-sensors/lm-sensors).
 
-HTTP proxy cache for rpm / deb packages.
+## [mkfedora](mkfedora)
 
-## mkfedora
+Build your custom Fedora 39 Workstation ISO.
 
-Build your custom Fedora 39 ISO with Docker.
+## [shcodespace](shcodespace)
+
+Self-hosted codespace, like [GitHub Codespaces](https://github.com/features/codespaces).
+
+## [proxy](proxy)
+
+Personal preferences about proxy stack.

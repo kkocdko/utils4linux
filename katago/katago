@@ -3,6 +3,8 @@ cd $(dirname $0)
 
 if [ ! -e dist ]; then
 echo ">>> init"
+export ALL_PROXY=
+export all_proxy=
 python3 -m venv dist
 cd dist
 source bin/activate
@@ -25,3 +27,7 @@ source bin/activate
 katrain
 exit
 fi
+
+# https://github.com/lightvector/KataGo
+# https://github.com/leela-zero/leela-zero
+# https://github.com/kaorahi/lizgoban

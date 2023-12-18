@@ -15,6 +15,26 @@ A radical Node.js distro with smaller binary, pointer compression, and more opti
 - mimalloc
 
 ```sh
+#!/bin/sh
+builder="mknodejs-0"
+docker run -d --name $builder --network host fedora:38 tail -f /dev/null
+docker exec -it $builder find /etc/yum.repos.d -not -name 'fedora.repo' -not -name 'fedora-updates.repo' -not -name 'yum.repos.d' -delete
+docker exec -it $builder dnf install ninja-build gcc-c++ glibc-static libstdc++-static make python3-pip xz -y --setopt=install_weak_deps=False --setopt=max_parallel_downloads=6
+docker exec -it $builder sh -c 'rm -rf /node ; mkdir /node ; curl -L https://nodejs.org/download/release/v21.1.0/node-v21.1.0.tar.xz | tar -xJ -C /node --strip-components 1'
+docker exec -it -w /node $builder ./configure --ninja --without-npm --without-corepack --with-intl=small-icu --enable-lto --partly-static --experimental-enable-pointer-compression
+docker exec -it -w /node $builder make -j`nproc`
+docker exec -it -w /node $builder strip out/Release/node
+docker cp $builder:/node/out/Release/node node
+# -mavx2
+# --without-inspector
+# --v8-enable-snapshot-compression
+# --with-intl=none # will break some apps like vscode
+# --fully-static # will break napi
+# sudo -D `pwd` bash # kk 自用, 保持 root 权限并进入项目目录
+# docker kill $builder ; docker rm $builder
+```
+
+```sh
 # pgo?
 sudo docker run --name rade0 -it fedora:37
 sed -e 's|^metalink=|#metalink=|g' -e 's|^#baseurl=http://download.example/pub/fedora/linux|baseurl=https://repo.huaweicloud.com/fedora|g' -i.bak /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-updates.repo

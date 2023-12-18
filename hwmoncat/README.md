@@ -18,7 +18,7 @@ Install  59 Packages
 Installed size: 26 M
 ```
 
-However, after kernel `5.6`, we can read sensors easily through the [hwmon module](https://www.kernel.org/doc/html/latest/hwmon/), without any other dependencies. So I write this helper script.
+However, after kernel `5.6`, we can read sensors easily through the [hwmon module](https://www.kernel.org/doc/html/latest/hwmon/), without any other dependencies. So I make this.
 
 This script shows:
 
@@ -71,11 +71,11 @@ in0:          15.75 V
 
 ## Thanks
 
-- <https://www.kernel.org/doc/html/latest/hwmon/>
+- https://www.kernel.org/doc/html/latest/hwmon/
 
-- <https://unix.stackexchange.com/questions/558112/>
+- https://unix.stackexchange.com/questions/558112/
 
-- <https://www.gnu.org/software/gawk/manual/gawk.html>
+- https://www.gnu.org/software/gawk/manual/gawk.html
 
 <!--
 ./hyperfine -w 5 -r 32 -p 'sleep 0.1' ./hwmoncat
