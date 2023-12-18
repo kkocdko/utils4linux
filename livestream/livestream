@@ -12,14 +12,17 @@ fi
 
 if [ "$1" = "" ]; then
 cd dist
+# ./mediamtx ../mediamtx.yml
 ./mediamtx ../mediamtx.yml &
 ffmpeg="/home/kkocdko/misc/apps/ffmpeg"
 sudo $ffmpeg -hide_banner \
   -f kmsgrab -device /dev/dri/card1 -framerate 30 -i - -vf 'hwmap=derive_device=vaapi,hwdownload,format=bgr0' \
-  -an -c:v libx264 -pix_fmt yuv420p -bf 0 -crf 20 -maxrate 1M -preset veryfast -threads 2 \
+  -an -c:v libx264 -pix_fmt yuv420p -bf 0 -crf 20 -preset veryfast -threads 4 \
   -f mpegts udp://127.0.0.1:9254?pkt_size=1316
-# ffmpeg -i i.mp4 -y -c:v h264 -pix_fmt yuv420p -profile:v high -level 4.1 -vf scale=-1:720 o.mp4
 # -tune:v zerolatency -x264opts opencl
 wait
 exit
 fi
+
+# http://127.0.0.1:9254/s0
+# http://127.0.0.1:9254/s1/publish

@@ -50,4 +50,5 @@ webrtcICEServers2:
 
 paths:
   s0:
-    source: udp://127.0.0.1:9254 # ffmpeg -xxx -f mpegts udp://127.0.0.1:9254?pkt_size=1316
+    source: udp://127.0.0.1:9254
+  s1:
