@@ -31,6 +31,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/kkocdko/node-pty
           cd node-pty
+          curl -o src/unixTerminal.ts -L https://github.com/kkocdko/node-pty/raw/rm_deprecated/src/unixTerminal.ts
           node -v
           npm i
           npm test
@@ -48,6 +49,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/kkocdko/node-pty
           cd node-pty
+          curl -o src/unixTerminal.ts -L https://github.com/kkocdko/node-pty/raw/rm_deprecated/src/unixTerminal.ts
           node -v
           npm i
           npm test
@@ -70,6 +72,7 @@ jobs:
           unzip bun.zip
           mv bun-linux-x64/bun ./bun
           rm -rf bun.zip bun-linux-x64
-          ./bun i
+          npm i
+          npm test
+          npm run lint
           ./bun test
-          ./bun run lint
