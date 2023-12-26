@@ -3,6 +3,7 @@ const out = eval("(\n" + fs.readFileSync("sub.jsonc").toString() + "\n)")
   .outbounds.filter((e) => e.server)
   .map((e) => {
     const tag = (process.argv.at(-1) + "-" + e.tag)
+      .replace("×", "x")
       .replace(/[\|\s_\u00FF-\u4E00\u9FFF-\uFFFF]/g, "-") // remove emoji but keep cjk chars \u4E00-\u9FFF
       .replace(/-+/g, "-");
     delete e.tag;
