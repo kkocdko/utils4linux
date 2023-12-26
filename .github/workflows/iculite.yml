@@ -1,0 +1,19 @@
+name: iculite
+on:
+  workflow_dispatch:
+jobs:
+  iculite:
+    runs-on: windows-2022
+    steps:
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Build
+        run: |
+          git clone --depth=1 https://github.com/elsemieni/icu4c-me-customized-lite
+          cd icu4c-me-customized-lite\source
+          msbuild allinone\allinone.sln -property:Configuration=Release
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: icu4c-me-customized-lite\source\dist
