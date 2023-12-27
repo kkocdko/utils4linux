@@ -1,0 +1,29 @@
+name: qemu-img
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Build
+        shell: sudo bash -e {0}
+        run: |
+          apt update
+          DEBIAN_FRONTEND=noninteractive apt install -y build-essential curl python3 python3-pip ninja-build pkg-config libgtk2.0-dev git
+          curl -L https://github.com/facebook/zstd/archive/refs/tags/v1.5.5.tar.gz | tar -zx
+          cd zstd-1.5.5
+          make install -j$(nproc)
+          cd ..
+          curl -L https://github.com/qemu/qemu/archive/refs/tags/v8.2.0.tar.gz | tar -zx
+          cd qemu-8.2.0
+          ./configure --without-default-features --disable-system --disable-user --enable-zstd --enable-tools --enable-lto --static
+          sed -i block/qcow2-threads.c -e 's|zstd_ret = ZSTD_compressStream2|ZSTD_CCtx_setParameter(cctx, ZSTD_c_strategy, ZSTD_btultra2); ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, ZSTD_maxCLevel()); ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, 1);&|'
+          sed -i build/build.ninja -e 's|-static-pie||g' -e 's|/libz.a|/libz.so|g' -e 's|/libc.a|/libc.so|g' -e 's|/libm.a|/libm.so|g'
+          make qemu-img -j$(nproc)
+          strip build/qemu-img
+          ldd build/qemu-img
+          ls -lh build/qemu-img
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: qemu-8.2.0/build/qemu-img
