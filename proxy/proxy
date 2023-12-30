@@ -23,5 +23,3 @@ cd dist
 # openssl req -newkey rsa:2048 -nodes -keyout proxy-key.pem -x509 -days 3650 -out proxy-cert.pem
 exit
 fi
-
-# TODO: consider change urltest to "https://www.google.com/robots.txt"
