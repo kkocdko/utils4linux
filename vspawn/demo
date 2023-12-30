@@ -1,0 +1,15 @@
+#!/bin/sh
+
+ffmpeg="/home/kkocdko/misc/apps/ffmpeg"
+
+source ./vspawn $(nproc) dist/vspawn_cmds.mk
+
+OIFS="$IFS"
+IFS="
+"
+for entry in $(ls dist/i/*); do
+  vspawn $ffmpeg -hide_banner -i "$entry" -vn "dist/o/$(basename "$entry").m4a"
+done
+IFS="$OIFS"
+
+vspawn_wait
