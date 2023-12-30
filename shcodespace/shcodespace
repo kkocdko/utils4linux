@@ -1,18 +1,22 @@
 #!/bin/sh
+if [ "$(id -u)" != "0" ]; then
+echo "please run as root"
+exit
+fi
 codespace_name="shcs-0"
-vscode_path="$HOME/misc/apps/vscode-dist"
-nodejs_path="$(type node | cut -d ' ' -f 3)"
-if [ "$(sudo docker ps -aqf name=$codespace_name)" != "" ]; then
+vscode_path="/home/kkocdko/misc/apps/vscode-dist"
+nodejs_path="/home/kkocdko/misc/apps/node-20-pc"
+if [ "$(docker ps -aqf name=$codespace_name)" != "" ]; then
 echo "container $codespace_name is already existed"
 exit
 fi
-sudo docker run -d --network host --name $codespace_name --hostname $codespace_name debian:12 tail -f /dev/null
-sudo docker cp "$vscode_path" "$codespace_name:/vscode-dist"
-sudo docker cp "$nodejs_path" "$codespace_name:/vscode-dist/node"
-sudo docker exec -it $codespace_name sh -c 'rm -rf /etc/apt/sources.list.d'
-sudo docker exec -it $codespace_name sh -c 'printf "deb http://mirrors.ustc.edu.cn/debian bookworm main\ndeb http://mirrors.ustc.edu.cn/debian bookworm-updates main\n" > /etc/apt/sources.list'
-sudo docker exec -it $codespace_name sh -c 'mkdir -p /root/projects/hi'
-sudo docker exec -it -w /vscode-dist -e UV_USE_IO_URING=0 $codespace_name ./node ./out/server-main.js --accept-server-license-terms --host 0.0.0.0 --port 9448 --without-connection-token
+docker run -d --network host --name $codespace_name --hostname $codespace_name debian:12 tail -f /dev/null
+docker cp "$vscode_path" "$codespace_name:/vscode-dist"
+docker cp "$nodejs_path" "$codespace_name:/vscode-dist/node"
+docker exec -it $codespace_name sh -c 'rm -rf /etc/apt/sources.list.d'
+docker exec -it $codespace_name sh -c 'printf "deb http://mirrors.ustc.edu.cn/debian bookworm main\ndeb http://mirrors.ustc.edu.cn/debian bookworm-updates main\n" > /etc/apt/sources.list'
+docker exec -it $codespace_name sh -c 'mkdir -p /root/projects/hi'
+docker exec -it -w /vscode-dist -e UV_USE_IO_URING=0 $codespace_name ./node ./out/server-main.js --accept-server-license-terms --host 0.0.0.0 --port 9448 --without-connection-token
 # apt install -y python3 tmux curl procps busybox libasan8 gcc
 # apt install default-mysql-server
 # mysqld --user root --port 13306
