@@ -2,19 +2,18 @@
 cd $(dirname $0)
 
 if [ ! -e dist ]; then
+echo ">>> init"
 mkdir dist
 cd dist
-curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 > clash2singbox
-curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-alpha.11/sing-box-1.8.0-alpha.11-linux-amd64.tar.gz | tar -xzO sing-box-1.8.0-alpha.11-linux-amd64/sing-box > sing-box
-chmod +x clash2singbox sing-box
+curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-rc.7/sing-box-1.8.0-rc.7-linux-amd64.tar.gz | tar -xz --strip-component 1
+curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 -o clash2singbox
+chmod +x clash2singbox
+# rm logo.png registerSW.js sw.js yacd.ico yacd.png apple-touch-icon-precomposed.png manifest.webmanifest
 exit
 fi
 
 if [ "$1" = "fetch" ]; then
-cd dist
-rm -f sub.jsonc
-./clash2singbox -o sub.jsonc -url 'https://example.com'
-node ../tidy.mjs airport
+node --experimental-detect-module fetch.js
 exit
 fi
 
@@ -24,3 +23,5 @@ cd dist
 # openssl req -newkey rsa:2048 -nodes -keyout proxy-key.pem -x509 -days 3650 -out proxy-cert.pem
 exit
 fi
+
+# TODO: consider change urltest to "https://www.google.com/robots.txt"

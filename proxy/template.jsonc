@@ -4,44 +4,33 @@
     "clash_api": {
       "external_controller": "127.0.0.1:9090",
       "external_ui": "ui", // 打开 http://127.0.0.1:9090/ui 即可，默认会自动下载 yacd-meta
-      "external_ui_download_detour": "proxy"
+      "external_ui_download_detour": "proxy" // 需要从 github 下载，走代理会稳一些，请确保第一个代理能连上
     },
-    "cache_file": { "enabled": true, "store_fakeip": true }
+    "cache_file": { "enabled": true, "store_fakeip": true } // 记录 fakeip，缓解极端情况
   },
   "dns": {
     "fakeip": {
       "enabled": true,
       "inet4_range": "198.18.0.0/15"
-      // "inet6_range": "fc00::/18" // 此处以及后续配置需禁止 ipv6。通常本机无 ipv6 地址时不会发起 ipv6 请求，但 tun device 的 ipv6 地址会让应用误以为可用
+      // "inet6_range": "fc00::/18" // 此处以及后续配置需禁止 ipv6。通常本机无 v6 地址时不会发起 v6 请求，但 tun device 的 v6 地址会让应用误以为可用
     },
     "strategy": "ipv4_only",
-    "independent_cache": true, // 不知为何但官方的 example 有这个
+    "independent_cache": true, // 不要让 fakeip 和其他 dns 缓存混淆
     "servers": [
       { "address": "tls://223.5.5.5", "detour": "direct" }, // 默认是第一个，约等于 final
       { "tag": "remote", "address": "fakeip" }
     ],
-    "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，其余查询（如 direct 和 outbound server 中的域名）则会用默认的 dns
+    "rules": [{ "clash_mode": "Direct", "invert": true, "server": "remote" }] // 尽量让落地服务器做 dns 查询，其余查询（如 direct 和 outbound server 的域名）则会用默认的 dns
   },
   "route": {
-    "auto_detect_interface": true, // 防止 tun device 出现环路
-    "rule_set": [
-      {
-        "tag": "geoip-cn",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
-        "download_detour": "proxy" // 需要从 github 下载，走代理会稳一些
-      },
-      {
-        "tag": "geosite-cn",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
-        "download_detour": "proxy"
-      }
-    ],
+    "auto_detect_interface": true, // 防止 tun device 环路
+    // prettier-ignore
+    "rule_set": [{"tag":"geoip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"geosite-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs","download_detour":"proxy"},{"tag":"geosite-at-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-companies@cn.srs","download_detour":"proxy"}],
     "rules": [
-      { "clash_mode": "Direct", "outbound": "direct" },
+      { "protocol": ["dns"], "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved
+      { "protocol": ["quic"], "outbound": "block" }, // quic 对代理不友好，直接禁止，强迫应用回落到其他协议
+      { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 quic 依然会被上一条禁止
+      { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" },
       { "package_name": ["com.eg.android.AlipayGphone"], "outbound": "direct" },
       { "package_name": ["com.autonavi.minimap"], "outbound": "direct" },
@@ -49,33 +38,26 @@
       { "package_name": ["com.tencent.tim"], "outbound": "direct" },
       { "package_name": ["com.tencent.mobileqq"], "outbound": "direct" },
       { "package_name": ["com.tencent.wemeet.app"], "outbound": "direct" },
-      { "package_name": ["com.xunmeng.pinduoduo"], "outbound": "direct" },
       { "package_name": ["com.chinamworld.main"], "outbound": "direct" },
       { "package_name": ["com.chinamworld.bocmbci"], "outbound": "direct" },
       { "package_name": ["com.chaoxing.mobile"], "outbound": "direct" },
       { "package_name": ["com.zmzx.college.search"], "outbound": "direct" },
-      { "package_name": ["com.coolapk.market"], "outbound": "direct" },
       { "package_name": ["com.mixplorer"], "outbound": "direct" },
       { "package_name": ["com.taou.maimai"], "outbound": "direct" },
       { "package_name": ["com.jiongji.andriod.card"], "outbound": "direct" },
-      { "domain_suffix": ".events.data.microsoft.com", "outbound": "block" },
+      { "domain_suffix": ".azureedge.net", "outbound": "block" },
       { "domain_suffix": ".vo.msecnd.net", "outbound": "block" },
-      { "domain_suffix": ".prss.microsoft.com", "outbound": "direct" },
+      { "domain_suffix": ".events.data.microsoft.com", "outbound": "block" },
       { "domain_suffix": "update.googleapis.com", "outbound": "block" },
-      { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-sg" }, // github codespace
+      { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-sg" }, // 给 github codespace 特殊待遇，别断了
       { "domain_suffix": "deepl.com", "outbound": "proxy-sg" },
       { "domain_suffix": "leetcode.com", "outbound": "proxy" },
       { "domain_suffix": "gstatic.com", "outbound": "proxy" },
-      { "domain_suffix": "wuyou.net", "outbound": "direct" },
-      { "domain_suffix": "burningvocabulary.com", "outbound": "direct" },
-      { "ip_cidr": ["x.x.x.x/32"], "outbound": "proxy-sg" }, // 在新加坡的 vps
-      { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的 vps
-      { "protocol": ["dns"], "outbound": "dns" }, // 劫持 dns，省去手动设置 dns
-      { "protocol": ["quic"], "outbound": "block" }, // quic 对于代理非常不友好，直接禁止，强迫应用 fallback 到其他协议
-      { "ip_is_private": true, "outbound": "direct" },
-      { "rule_set": "geoip-cn", "outbound": "direct" },
-      { "rule_set": "geosite-cn", "outbound": "direct" },
-      { "network": ["tcp", "udp"], "outbound": "proxy" } // 和 "final": "proxy" 差不多
+      { "ip_cidr": ["x.x.x.x/32"], "outbound": "proxy-sg" }, // 在新加坡的服务器
+      { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的服务器
+      { "rule_set": ["geoip-cn"], "outbound": "direct" }, // 在国内的 IP
+      { "rule_set": ["geosite-cn", "geosite-at-cn"], "outbound": "direct" }, // 在国内的域名 和 在国内有服务器的域名（例如微软在国内的 CDN）
+      { "domain": "-", "invert": true, "outbound": "proxy" } // 约等于 final
     ]
   },
   "inbounds": [
@@ -92,9 +74,9 @@
   // prettier-ignore
   "outbounds": [
     // builtin
-    { "type": "direct", "tag": "direct" },
-    { "type": "block", "tag": "block" },
-    { "type": "dns", "tag": "dns" },
+    { "tag": "direct", "type": "direct" },
+    { "tag": "block", "type": "block" },
+    { "tag": "dns", "type": "dns" },
     // groups
     { "tag": "proxy", "type": "selector", "outbounds": ["foo-1-x0.1","proxy-sg"] },
     { "tag": "proxy-sg", "type": "selector", "outbounds": ["bar-1-sg-x10"] },
@@ -106,3 +88,4 @@
     {"tag":"bar-1-sg-x10","password":"xxx","server":"xxx"}
   ]
 }
+// curl --data-binary @config.jsonc -X PUT http://user:password@1.1.1.1:1111/dav/somewhat/config.jsonc
