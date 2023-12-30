@@ -1,4 +1,4 @@
-name: nodepty
+name: node-pty
 on:
   workflow_dispatch:
 jobs:
