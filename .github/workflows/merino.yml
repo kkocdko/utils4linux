@@ -1,0 +1,23 @@
+name: merino
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-gnu
+          override: true
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: target/release/merino*
+

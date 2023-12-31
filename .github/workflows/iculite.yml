@@ -2,7 +2,7 @@ name: iculite
 on:
   workflow_dispatch:
 jobs:
-  iculite:
+  main:
     runs-on: windows-2022
     steps:
       - name: Add msbuild to PATH

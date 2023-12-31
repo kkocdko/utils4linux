@@ -2,7 +2,7 @@ name: fdkaac
 on:
   workflow_dispatch:
 jobs:
-  fdkaac:
+  main:
     runs-on: ubuntu-22.04
     steps:
       - name: Build
