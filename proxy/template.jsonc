@@ -25,7 +25,7 @@
   "route": {
     "auto_detect_interface": true, // 防止 tun device 环路
     // prettier-ignore
-    "rule_set": [{"tag":"geoip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"geosite-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs","download_detour":"proxy"},{"tag":"geosite-at-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-companies@cn.srs","download_detour":"proxy"}],
+    "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs","download_detour":"proxy"},{"tag":"site-for-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-companies@cn.srs","download_detour":"proxy"}],
     "rules": [
       { "protocol": ["dns"], "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved
       { "protocol": ["quic"], "outbound": "block" }, // quic 对代理不友好，直接禁止，强迫应用回落到其他协议
@@ -46,8 +46,7 @@
       { "domain_suffix": "gstatic.com", "outbound": "proxy" },
       { "ip_cidr": ["x.x.x.x/32"], "outbound": "proxy-sg" }, // 在新加坡的服务器
       { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的服务器
-      { "rule_set": ["geoip-cn"], "outbound": "direct" }, // 在国内的 IP
-      { "rule_set": ["geosite-cn", "geosite-at-cn"], "outbound": "direct" }, // 在国内的域名 和 在国内有服务器的域名（例如微软在国内的 CDN）
+      { "rule_set": ["ip-cn", "site-cn", "site-for-cn"], "outbound": "direct" }, // 在国内的 IP，在国内的域名，为国内服务的域名（例如微软国内 CDN）
       { "domain": "-", "invert": true, "outbound": "proxy" } // 约等于 final
     ]
   },
