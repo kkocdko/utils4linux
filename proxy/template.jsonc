@@ -20,45 +20,47 @@
       { "address": "tls://223.5.5.5", "detour": "direct" }, // 默认是第一个，约等于 final
       { "tag": "remote", "address": "fakeip" }
     ],
-    "rules": [{ "clash_mode": "Direct", "invert": true, "server": "remote" }] // 尽量让落地服务器做 dns 查询，其余查询（如 direct 和 outbound server 的域名）则会用默认的 dns
+    "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，server 的域名和 direct 会用默认的 dns
   },
   "route": {
     "auto_detect_interface": true, // 防止 tun device 环路
     // prettier-ignore
     "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs","download_detour":"proxy"},{"tag":"site-for-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-companies@cn.srs","download_detour":"proxy"}],
     "rules": [
-      { "protocol": ["dns"], "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved
-      { "protocol": ["quic"], "outbound": "block" }, // quic 对代理不友好，直接禁止，强迫应用回落到其他协议
+      { "protocol": "dns", "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved
+      { "protocol": "quic", "outbound": "block" }, // quic 对代理不友好，直接禁止，强迫应用回落到其他协议
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 quic 依然会被上一条禁止
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" },
-      { "package_name": ["com.eg.android.AlipayGphone"], "outbound": "direct" },
-      { "package_name": ["com.autonavi.minimap"], "outbound": "direct" },
-      { "package_name": ["com.tencent.mm"], "outbound": "direct" },
-      { "package_name": ["com.tencent.tim"], "outbound": "direct" },
-      { "package_name": ["com.tencent.mobileqq"], "outbound": "direct" },
-      { "package_name": ["com.tencent.wemeet.app"], "outbound": "direct" },
-      { "package_name": ["com.chaoxing.mobile"], "outbound": "direct" },
-      { "package_name": ["com.zmzx.college.search"], "outbound": "direct" },
+      { "package_name": "com.eg.android.AlipayGphone", "outbound": "direct" },
+      { "package_name": "com.autonavi.minimap", "outbound": "direct" },
+      { "package_name": "com.tencent.mm", "outbound": "direct" },
+      { "package_name": "com.tencent.tim", "outbound": "direct" },
+      { "package_name": "com.tencent.mobileqq", "outbound": "direct" },
+      { "package_name": "com.tencent.wemeet.app", "outbound": "direct" },
+      { "package_name": "com.chaoxing.mobile", "outbound": "direct" },
+      { "package_name": "com.zmzx.college.search", "outbound": "direct" },
       { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-sg" }, // 给 github codespace 特殊待遇，别断了
-      { "domain_suffix": "deepl.com", "outbound": "proxy-sg" },
-      { "domain_suffix": "leetcode.com", "outbound": "proxy" },
-      { "domain_suffix": "gstatic.com", "outbound": "proxy" },
-      { "ip_cidr": ["x.x.x.x/32"], "outbound": "proxy-sg" }, // 在新加坡的服务器
-      { "ip_cidr": ["x.x.x.x/32"], "outbound": "direct" }, // 在国内的服务器
+      { "domain_suffix": "deepl.com", "outbound": "proxy-sg" }, // 给 deepl 特殊待遇，多人使用的 ip 有时候会碰到限额
+      { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然 google static 国内能访问，但还是走代理比较好
+      { "domain": "api.openai-proxy.org", "outbound": "direct" }, // gpt api 国内代理商
+      { "domain": "api.basi.monster", "outbound": "direct" }, // gpt api 国内代理商
+      { "domain": "api.gptapi.us", "outbound": "direct" }, // gpt api 国内代理商
+      { "ip_cidr": "x.x.x.x/32", "outbound": "direct" }, // 在国内的服务器
+      { "ip_cidr": "x.x.x.x/32", "outbound": "proxy-sg" }, // 在新加坡的服务器
       { "rule_set": ["ip-cn", "site-cn", "site-for-cn"], "outbound": "direct" }, // 在国内的 IP，在国内的域名，为国内服务的域名（例如微软国内 CDN）
       { "domain": "-", "invert": true, "outbound": "proxy" } // 约等于 final
     ]
   },
   "inbounds": [
-    { "type": "socks", "listen": "127.0.0.1", "listen_port": 1080 }, // 尽量使用 socks，性能损失较小。通常来说，使用流量较多的浏览器、git 等主流应用都支持 socks
+    { "type": "socks", "listen": "127.0.0.1", "listen_port": 1080 }, // 尽量使用 socks，性能损失较小。使用流量较多的浏览器、git 等主流应用一般都支持 socks。如果遇到 pip 警告等情况，可以 unset all_proxy ALL_PROXY
     {
-      "type": "tun", // 有些应用并不理会 socks 环境变量，所以让 tun 作为兜底措施
+      "type": "tun", // 有些应用并不理会 xxx_proxy 环境变量，所以让 tun 作为兜底措施
       "inet4_address": "172.19.0.1/30",
       // "inet6_address": "fdfe:dcba:9876::1/126",
       "auto_route": true,
       "strict_route": true,
-      "sniff": true // 嗅探各种协议。劫持 dns、禁用 quic 等功能都依赖于此
+      "sniff": true // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
     }
   ],
   // prettier-ignore

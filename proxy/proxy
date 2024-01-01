@@ -23,3 +23,7 @@ sudo ./sing-box run -c ../config.jsonc -D .
 # openssl req -newkey rsa:2048 -nodes -keyout proxy-key.pem -x509 -days 3650 -out proxy-cert.pem
 exit
 fi
+
+# printf "[main]\ndns=none\nrc-manager=unmanaged\n" > /etc/NetworkManager/conf.d/70-no-dns.conf # 禁用 nm 自动修改 resolv.conf
+# systemctl restart NetworkManager
+# printf "# manually writen\nnameserver 172.19.0.6\n# nameserver 223.5.5.5\n" > /etc/resolv.conf # 地址最好在 tun device 对应的网段内，防止泄漏。不要设置成 127.0.0.1 否则请求无法被嗅探和拦截
