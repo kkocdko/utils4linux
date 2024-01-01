@@ -1,0 +1,143 @@
+#!/bin/sh
+
+# my experimental script to pack program for many distros
+
+cd $(dirname $0)
+
+if [ ! -e dist ]; then
+echo ">>> init"
+mkdir dist
+cd dist
+# do something here?
+exit
+fi
+
+if [ "$1" = "pack-fedora" ]; then
+echo ">>> "$1
+cd dist
+dist_dir="$(pwd)"
+rm -rf $HOME/rpmbuild # DANGEROUS!
+mkdir -p $HOME/rpmbuild/BUILD
+cp ../hwmoncat $HOME/rpmbuild/BUILD/
+cd $HOME/rpmbuild
+mkdir -p BUILD RPMS SOURCES SPECS SRPMS
+cd SPECS
+cat > hwmoncat.spec << 'EOF'
+Name: hwmoncat
+Version: 1.0.0
+License: Unselected
+Release: 1%{?dist}
+Summary: Used for sensors reading. A lightweight alternative to lm-sensors.
+%description
+See the summary.
+%prep
+%install
+mkdir -p %{buildroot}/usr/bin
+install -m 755 %{_builddir}/hwmoncat %{buildroot}/usr/bin/hwmoncat
+%files
+/usr/bin/hwmoncat
+# /usr/share/info/*
+%changelog
+* Mon Jan 01 2024 kkocdko <kkocdko@gmail.com> 1.0.0-1
+- Initial version of the package
+EOF
+rpmbuild -ba hwmoncat.spec
+mv $(find $HOME/rpmbuild/RPMS/ -name "*.rpm") $dist_dir/
+cd $dist_dir
+rm -rf $HOME/rpmbuild
+# dnf install ~/rpmbuild/RPMS/x86_64/hi-1.0-1.fc32.x86_64.rpm
+# dnf install rpm-build
+# https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/8/html/packaging_and_distributing_software/preparing-software-for-rpm-packaging_packaging-and-distributing-software
+# https://forum.suse.org.cn/t/topic/13623
+# https://zh.opensuse.org/openSUSE:Packaging_guidelines
+exit
+fi
+
+if [ "$1" = "pack-debian" ]; then
+echo ">>> "$1
+cd dist
+pkg="hwmoncat_1.0.0-1_amd64"
+rm -rf $pkg $pkg.deb
+mkdir -p $pkg
+cd $pkg
+mkdir -p DEBIAN
+cat > DEBIAN/control << 'EOF'
+Package: hwmoncat
+Version: 1.0.0
+Architecture: amd64
+# Architecture: any
+Depends: gawk | mawk
+Maintainer: kkocdko <kkocdko@gmail.com>
+Homepage: https://github.com/kkocdko/utils4linux/tree/master/hwmoncat
+Description: Used for sensors reading. A lightweight alternative to lm-sensors.
+EOF
+# example: Depends: libc6 (>= 2.27), libncursesw6 (>= 6)
+# cat > DEBIAN/preinst <<EOF
+# # check if kernel supports
+# EOF
+mkdir -p usr/bin
+cp ../../hwmoncat usr/bin/
+cd ..
+# fedora: dnf install dpkg
+dpkg-deb --build --root-owner-group $pkg
+rm -rf $pkg
+# https://hedzr.com/packaging/deb/creating-deb-file-from-scratch/
+# https://www.small09.top/posts/211019-dpkg_package_guide/
+exit
+fi
+
+if [ "$1" = "pack-arch" ]; then
+echo ">>> "$1
+cd dist
+rm -rf pack-arch
+mkdir pack-arch
+cd pack-arch
+mkdir src # visable in PKGBUILD
+cp ../../hwmoncat src/
+cat > PKGBUILD << 'EOF'
+# Maintainer: kkocdko <kkocdko@gmail.com>
+pkgname=hwmoncat
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Used for sensors reading. A lightweight alternative to lm-sensors.'
+arch=('x86_64')
+# arch=('any')
+url='https://github.com/kkocdko/utils4linux/tree/master/hwmoncat'
+depends=('gawk')
+# depends=('foobar>=1.8.0' 'foobar<2.0.0')
+# install="INSTALL"
+# makedepends=('git' 'qt5-tools' 'gtest')
+# source=("$pkgname::git://github.com/kkocdko/utils4linux.git")
+build() {
+  echo "build()"
+  # cd $pkgdir
+  # make
+}
+package() {
+  echo "package()"
+  mkdir -p $pkgdir/usr/bin
+  mv $srcdir/hwmoncat $pkgdir/usr/bin/hwmoncat
+  # cd $pkgdir
+  # make INSTALL_ROOT="$pkgdir" install
+}
+EOF
+# cat > INSTALL <<EOF
+# pre_install() {
+#   echo "pre_install()"
+# }
+# EOF
+# useradd tom # run makepkg with root is not allowed
+# su tom
+# makepkg -s
+makepkg --repackage
+cp *.pkg.tar.zst ../
+cd ..
+rm -rf pack-arch
+# pacman -S fakeroot binutils
+# pacman -U ./dist/pack-arch/hwmoncat-1.0.0-1-x86_64.pkg.tar.zst
+# echo 'Server = https://mirrors.ustc.edu.cn/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist # use ustc mirror
+# https://gitlab.archlinux.org/pacman/pacman/-/blob/master/proto/PKGBUILD.proto?ref_type=heads
+# https://wiki.archlinux.org/title/PKGBUILD
+# https://harua.me/p/arch-linux-package-quick-start/
+exit
+fi
