@@ -1,4 +1,10 @@
 #!/bin/sh
+alias dusort="du -ad 1 2>/dev/null | sort -n"
+alias 7z="~/misc/apps/7z"
+if [ "$(id -u)" = "0" ]; then
+echo "don't run as root please"
+exit
+fi
 
 # My backup proposal:
 # - The code dir backup with history, upload to cloud drive.
@@ -6,29 +12,15 @@
 
 if [ "$1" = "pack-code-dir" ]; then
 echo ">>> pack ~/misc/code directory"
+rm -rf /tmp/bakcode/*
 rsync --recursive --times --links --delete --filter=":- ~/misc/code/.rsyncignore" ~/misc/code /tmp/bakcode
+password="7777"
+slimname="code_$(date +%Y%m%d)_p$password"
+# slimname="code_20181014-20231106_p$password"
 cd /tmp/bakcode
-filename="code_$(date +%Y%m%d).tar.xz"
-tar -cJf $filename code
-ls -lh $filename
-rm -rf code
-exit
-fi
-
-if [ "$1" = "encrypt-zip" ]; then
-echo ">>> (manually use please) encrypt-zip"
-exit
-filename="code_20181014-20231106.7z"
-password="137920"
-zip -0 -P $password < $filename > $filename.$password.zip
-exit
-fi
-
-if [ "$1" = "compress-code-cold" ]; then
-echo ">>> (manually use please) compress many code backups"
-exit
-alias 7z="$HOME/misc/apps/7zzs"
-7z a -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 out.7z code_20181014-20231106/*
+# 7z a -p$password -mhe=on -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 $slimname.7z archive
+7z a -p$password -mhe=on $slimname.7z code
+# 7z x -p7777 a.7z
 exit
 fi
 
