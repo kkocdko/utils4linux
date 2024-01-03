@@ -35,11 +35,12 @@
       { "package_name": "com.eg.android.AlipayGphone", "outbound": "direct" },
       { "package_name": "com.autonavi.minimap", "outbound": "direct" },
       { "package_name": "com.tencent.mm", "outbound": "direct" },
-      { "package_name": "com.tencent.tim", "outbound": "direct" },
       { "package_name": "com.tencent.mobileqq", "outbound": "direct" },
+      { "package_name": "com.tencent.tim", "outbound": "direct" },
       { "package_name": "com.tencent.wemeet.app", "outbound": "direct" },
       { "package_name": "com.chaoxing.mobile", "outbound": "direct" },
       { "package_name": "com.zmzx.college.search", "outbound": "direct" },
+      { "package_name": "com.jiongji.andriod.card", "outbound": "direct" },
       { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-sg" }, // 给 github codespace 特殊待遇，别断了
       { "domain_suffix": "deepl.com", "outbound": "proxy-sg" }, // 给 deepl 特殊待遇，多人使用的 ip 有时候会碰到限额
       { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然 google static 国内能访问，但还是走代理比较好

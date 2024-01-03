@@ -8,7 +8,7 @@ cd dist
 curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.0-rc.7/sing-box-1.8.0-rc.7-linux-amd64.tar.gz | tar -xz --strip-component 1
 curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.0.2/clash2singbox-linux-amd64 -o clash2singbox
 chmod +x clash2singbox
-# rm logo.png registerSW.js sw.js yacd.ico yacd.png apple-touch-icon-precomposed.png manifest.webmanifest
+# rm -f registerSW.js sw.js *.ico *.png manifest.webmanifest Twemoji_* assets/Twemoji_* assets/roboto-* assets/inter-*
 exit
 fi
 
