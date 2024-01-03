@@ -1,0 +1,51 @@
+name: nextchat
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: build
+        run: |
+          curl -o nextchat.tar.gz -L https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web/archive/refs/tags/v2.10.1.tar.gz
+          tar -xf nextchat.tar.gz --strip-component 1
+          rm -rf nextchat.tar.gz
+          sed -i next.config.mjs -e 's|forceSwcTransforms: true,||'
+          yarn install
+          yarn build
+          rm -rf .next/static/*.ttf .next/static/*.woff # only keep woff2
+          mkdir -p nextchat/_next
+          mv .next/standalone/.next/server/app/index.html nextchat/index.html
+          mv .next/static nextchat/_next/static
+          # miniserve -p 9505 --index index.html .
+      - name: upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: nextchat/
+#
+# https://devops.stackexchange.com/questions/2731/
+# curl -O -L https://raw.githubusercontent.com/moby/moby/master/contrib/download-frozen-image-v2.sh
+# curl -o skopeo.deb -L https://mirrors.ustc.edu.cn/debian/pool/main/s/skopeo/skopeo_1.13.3%2Bds1-2_amd64.deb
+# ar p skopeo.deb data.tar.xz > skopeo.tar.xz
+# rm skopeo.deb
+# tar -xf skopeo.tar.xz --strip-component 1
+# mv usr/bin/skopeo skopeo
+# rm -rf usr skopeo.tar.xz
+# curl -L https://mirrors.ustc.edu.cn/debian/pool/main/s/skopeo/skopeo_1.13.3%2Bds1-2_amd64.deb | ar p - data.tar.xz > data.tar.xz
+# export TOKEN="$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/chatgpt-next-web:pull" | jq -r '.token' )"
+# curl --header "Authorization: Bearer ${TOKEN}" 'https://registry-1.docker.io/v2/yidadaa/chatgpt-next-web/manifests/v2.10.1'
+# docker save yidadaa/chatgpt-next-web:2.10.1 a.tar
+# BLOBSUM="a67553f057cf48b3d827247da051bc5a3ae052283e07a294da193785e31d5f25"
+# curl --silent --location --request GET --header "Authorization: Bearer ${TOKEN}" "https://registry-1.docker.io/v2/yidadaa/chatgpt-next-web/blobs/${BLOBSUM}" > "${BLOBSUM}.gz"
+# curl -o nextchat.tar.gz -L https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web/releases/download/v2.10.1/NextChat_x64.app.tar.gz
+# curl -o regctl -L https://github.com/regclient/regclient/releases/download/v0.5.6/regctl-linux-amd64
+# chmod +x regctl
+# ./regctl
+# ./regctl image manifest yidadaa/chatgpt-next-web
+# ./regctl blob get yidadaa/chatgpt-next-web sha256:2dcb1b4253000f3db7339ae54c7d987c77730468a937c8b18582f726deb65495
+# ./regctl image manifest --format '{{jsonPretty .}}' busybox
+# ./regctl blob get-file busybox sha256:6858809bf669cc5da7cb6af83d0fae838284d12e1be0182f92f6bd96559873e3
+# image="yidadaa/chatgpt-next-web:v2.10.1"
+# sudo docker pull $image
+# sudo docker save $image -o nextchat.tar
+# {"id":"8404815f7dbf9197fcbdf28a2e0bd1988e4b49d13bbbd8dc0a1e9a4e34ce054a","parent":"2dcb1b4253000f3db7339ae54c7d987c77730468a937c8b18582f726deb65495","created":"1970-01-01T08:00:00+08:00","container_config":{"Hostname":"","Domainname":"","User":"","AttachStdin":false,"AttachStdout":false,"AttachStderr":false,"Tty":false,"OpenStdin":false,"StdinOnce":false,"Env":null,"Cmd":null,"Image":"","Volumes":null,"WorkingDir":"","Entrypoint":null,"OnBuild":null,"Labels":null},"os":"linux"}

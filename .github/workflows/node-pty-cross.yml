@@ -1,0 +1,34 @@
+name: node-pty-cross
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: build
+        run: |
+          pip install ziglang==0.11
+          export PATH="$(dirname $(python -c exec"('"'import importlib.util\nprint(importlib.util.find_spec("ziglang").origin)'"')")):$PATH"
+          git clone --depth 1 https://github.com/kkocdko/node-pty
+          cd node-pty
+          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/js_native_api.h &
+          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/js_native_api_types.h &
+          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/node_api.h &
+          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/node_api_types.h &
+          curl -s -O -L https://github.com/nodejs/node-addon-api/raw/v7.0.0/napi.h &
+          curl -s -O -L https://github.com/nodejs/node-addon-api/raw/v7.0.0/napi-inl.h &
+          wait
+          mkdir -p out
+          # zig cc -o out/pty-linux-x64.node src/unix/pty.cc
+          zig c++ -o out/pty-linux-x64.node -target x86_64-linux-gnu src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os
+          zig c++ -o out/pty-linux-arm64.node -target aarch64-linux-gnu src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os
+          zig c++ -o out/pty-macos-x64.node -target x86_64-macos-none src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os -undefined dynamic_lookup
+          zig c++ -o out/pty-macos-arm64.node -target aarch64-macos-none src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os -undefined dynamic_lookup
+          zig c++ -o out/pty-linux-x64.node -target x86_64-linux-gnu src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os
+          zig c++ -o out/pty-linux-arm64.node -target aarch64-linux-gnu src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os
+          # -undefined dynamic_lookup
+      - name: upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-pty-napi-linux-x64
+          path: node-pty/build/Release/
