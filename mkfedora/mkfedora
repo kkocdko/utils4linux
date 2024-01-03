@@ -66,8 +66,14 @@ printf "[Journal]\nSystemMaxUse=128M\nCompress=1M\n" >/etc/systemd/journald.conf
 # grub2-mkconfig -o /boot/grub2/grub.cfg # apply "/etc/default/grub", GRUB_CMDLINE_LINUX="amd_pstate=passive mitigations=off selinux=0"
 EOF
 
-[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.1/adw-gtk3v5-1.tar.xz
+[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.2/adw-gtk3v5-2.tar.xz
 tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
+# https://extensions.gnome.org/extension/3843/just-perfection/
+# https://extensions.gnome.org/extension-data/just-perfection-desktopjust-perfection.v27.shell-extension.zip
+# run as non-root user please
+# gnome-extensions install ./just- # <TAB>
+# reboot
+# gnome-extensions prefs just- # <TAB>
 
 # > rootfs: ext4 over squashfs
 # dd if=/dev/zero of=rootfs.img bs=1 count=0 seek=8192M
