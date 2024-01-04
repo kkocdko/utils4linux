@@ -7,20 +7,23 @@ jobs:
     steps:
       - name: build
         run: |
+          [ "$(curl -L https://api.github.com/repos/ChatGPTNextWeb/ChatGPT-Next-Web/git/ref/tags/v2.10.1 | jq '.object.sha' -r)" != "d17000975fe58c84e576f89be552c76b91bcb827" ] && exit 1
           curl -o nextchat.tar.gz -L https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web/archive/refs/tags/v2.10.1.tar.gz
           tar -xf nextchat.tar.gz --strip-component 1
           rm -rf nextchat.tar.gz
-          sed -i next.config.mjs -e 's|forceSwcTransforms: true,||'
+          sed -i next.config.mjs -e 's|forceSwcTransforms: true,||' # swc output size is bigger
+          sed -i app/constant.ts -e 's|FETCH_COMMIT_URL =|&"";|g' -e 's|FETCH_TAG_URL =|&"";|g' -e 's|DEFAULT_CORS_HOST =|&"";|g' # remove update check
           yarn install
           yarn build
-          rm -rf .next/static/*.ttf .next/static/*.woff # only keep woff2
+          rm -rf .next/static/media/*.ttf .next/static/media/*.woff # only keep woff2, smaller size
           mkdir -p nextchat/_next
           mv .next/standalone/.next/server/app/index.html nextchat/index.html
           mv .next/static nextchat/_next/static
-          # miniserve -p 9505 --index index.html .
+          # miniserve --header Cache-Control:max-age=600,stale-while-revalidate=31536000 -p 9505 --index index.html .
       - name: upload
         uses: actions/upload-artifact@v3
         with:
+          name: nextchat_2.10.1
           path: nextchat/
 #
 # https://devops.stackexchange.com/questions/2731/
