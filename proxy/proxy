@@ -20,7 +20,7 @@ fi
 if [ "$1" = "" ]; then
 cd dist
 sudo ./sing-box run -c ../config.jsonc -D .
-# openssl req -newkey rsa:2048 -nodes -keyout proxy-key.pem -x509 -days 3650 -out proxy-cert.pem
+# ./sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
 exit
 fi
 
