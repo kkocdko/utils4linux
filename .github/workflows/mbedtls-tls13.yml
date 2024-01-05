@@ -1,0 +1,24 @@
+name: mbedtls-tls13
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: test
+        run: |
+          git clone --depth 1 https://github.com/Mbed-TLS/mbedtls
+          cd mbedtls
+          make -j$(nproc) CFLAGS=-DMBEDTLS_SSL_PROTO_TLS1_3=1
+
+          echo "========== curl www.google.com =========="
+          curl -vvvk --tlsv1.3 https://www.google.com > /dev/null
+
+          echo "========== mbedtls www.google.com =========="
+          programs/ssl/ssl_client2 server_name=www.google.com server_port=443 ca_path=/etc/ssl/certs/ force_version=tls13
+
+          echo "========== curl archlinux.org =========="
+          curl -vvvk --tlsv1.3 https://archlinux.org > /dev/null
+
+          echo "========== mbedtls archlinux.org =========="
+          programs/ssl/ssl_client2 server_name=archlinux.org server_port=443 ca_path=/etc/ssl/certs/ force_version=tls13
