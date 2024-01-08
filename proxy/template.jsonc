@@ -6,7 +6,7 @@
       "external_ui": "ui", // 打开 http://127.0.0.1:9090/ui 即可，默认会自动下载 yacd-meta
       "external_ui_download_detour": "proxy" // 需要从 github 下载，走代理会稳一些，请确保第一个代理能连上
     },
-    "cache_file": { "enabled": true, "store_fakeip": true } // 记录 fakeip，缓解极端情况
+    "cache_file": { "enabled": true } // store_fakeip 在极端情况下会让错误无法恢复，建议不要使用
   },
   "dns": {
     "fakeip": {
