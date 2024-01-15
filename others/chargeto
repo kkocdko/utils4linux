@@ -1,14 +1,14 @@
 #!/bin/sh
-if [ `whoami` != "root" ]; then
-  sudo $0 $*
-  exit
+if [ "$(id -u)" != "0" ]; then
+echo "please run as root please"
+exit
 fi
 /home/kkocdko/misc/apps/lenopow disable
 while true; do
   read -rd "" v </sys/class/hwmon/hwmon1/device/capacity
   printf "$(date +%H:%M:%S) - "
   if [ $v -gt 70 ]; then
-    sudo /home/kkocdko/misc/apps/lenopow enable
+    /home/kkocdko/misc/apps/lenopow enable
     echo "greater"
     exit
   else

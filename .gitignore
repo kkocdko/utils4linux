@@ -12,4 +12,5 @@
 /katago/venv/
 /*/dist/
 /proxy/config.jsonc
+/proxy/config-server.jsonc
 /rt4web/*.zip

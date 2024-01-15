@@ -30,3 +30,4 @@ tar -xf linux.tar.xz -C linux --strip-components 1
 - https://unix.stackexchange.com/q/138188/
 
 - https://stackoverflow.com/q/2856438/
+                                                                      

@@ -1,0 +1,7 @@
+#!/bin/sh
+# my simple benchmark
+mimalloc_so="/home/kkocdko/misc/apps/mimalloc_2.1.2_debian.so"
+ts_js="/home/kkocdko/misc/apps/nodejs/lib/node_modules/typescript/lib/typescript.js"
+# export LD_PRELOAD="$mimalloc_so"
+# /home/kkocdko/misc/apps/node-20-ptrcomp
+node -e "const ts_js=('"$ts_js"');const ts=require(ts_js);const ts_s=require('fs').readFileSync(ts_js).toString();console.time();const result=ts.transpileModule(ts_s,{});console.log(result.outputText.length);console.timeEnd();"
