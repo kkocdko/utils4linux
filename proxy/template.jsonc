@@ -11,10 +11,10 @@
   "dns": {
     "fakeip": {
       "enabled": true,
-      "inet4_range": "198.18.0.0/15"
-      // "inet6_range": "fc00::/18" // 此处以及后续配置需禁止 ipv6。通常本机无 v6 地址时不会发起 v6 请求，但 tun device 的 v6 地址会让应用误以为可用
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18" // 此处以及后续配置可能需禁止 ipv6。通常本机无 v6 地址时不会发起 v6 请求，但 tun device 的 v6 地址会让应用误以为可用
     },
-    "strategy": "ipv4_only",
+    // "strategy": "ipv4_only",
     "independent_cache": true, // 不要让 fakeip 和其他 dns 缓存混淆
     "servers": [
       { "address": "tls://223.5.5.5", "detour": "direct" }, // 默认是第一个，约等于 final
@@ -25,7 +25,7 @@
   "route": {
     "auto_detect_interface": true, // 防止 tun device 环路
     // prettier-ignore
-    "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs","download_detour":"proxy"},{"tag":"site-for-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-companies@cn.srs","download_detour":"proxy"}],
+    "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs","download_detour":"proxy"}],
     "rules": [
       { "protocol": "dns", "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved
       { "protocol": "quic", "outbound": "block" }, // quic 对代理不友好，直接禁止，强迫应用回落到其他协议
@@ -41,15 +41,16 @@
       { "package_name": "com.chaoxing.mobile", "outbound": "direct" },
       { "package_name": "com.zmzx.college.search", "outbound": "direct" },
       { "package_name": "com.jiongji.andriod.card", "outbound": "direct" },
-      { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-sg" }, // 给 github codespace 特殊待遇，别断了
-      { "domain_suffix": "deepl.com", "outbound": "proxy-sg" }, // 给 deepl 特殊待遇，多人使用的 ip 有时候会碰到限额
+      { "domain_suffix": ".servicebus.windows.net", "outbound": "proxy-picky" }, // 给 github codespace 特殊待遇，别断了
+      { "domain_suffix": "deepl.com", "outbound": "proxy-picky" }, // 给 deepl 特殊待遇，多人使用的 ip 有时候会碰到限额
       { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然 google static 国内能访问，但还是走代理比较好
+      { "domain_suffix": ".bytevcloud.com", "outbound": "direct" }, // 字节飞书 地区检测 或 视频流
+      { "domain_suffix": ".volcvideos.com", "outbound": "direct" }, // 字节 火山引擎
       { "domain": "api.openai-proxy.org", "outbound": "direct" }, // gpt api 国内代理商
       { "domain": "api.basi.monster", "outbound": "direct" }, // gpt api 国内代理商
       { "domain": "api.gptapi.us", "outbound": "direct" }, // gpt api 国内代理商
       { "ip_cidr": "x.x.x.x/32", "outbound": "direct" }, // 在国内的服务器
-      { "ip_cidr": "x.x.x.x/32", "outbound": "proxy-sg" }, // 在新加坡的服务器
-      { "rule_set": ["ip-cn", "site-cn", "site-for-cn"], "outbound": "direct" }, // 在国内的 IP，在国内的域名，为国内服务的域名（例如微软国内 CDN）
+      { "rule_set": ["ip-cn", "site-cn"], "outbound": "direct" }, // 在国内的 IP 和 在国内的域名。原先的 @cn 已合并到 cn
       { "domain": "-", "invert": true, "outbound": "proxy" } // 约等于 final
     ]
   },
@@ -58,7 +59,7 @@
     {
       "type": "tun", // 有些应用并不理会 xxx_proxy 环境变量，所以让 tun 作为兜底措施
       "inet4_address": "172.19.0.1/30",
-      // "inet6_address": "fdfe:dcba:9876::1/126",
+      "inet6_address": "fdfe:dcba:9876::1/126",
       "auto_route": true,
       "strict_route": true,
       "sniff": true // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
