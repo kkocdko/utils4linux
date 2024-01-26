@@ -53,7 +53,7 @@ printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/us
 echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
 rm -rf /usr/share/locale/* # remove useless locale files
 rm -rf /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
-rm -rf /usr/share/ibus/dicts/emoji-* # emoji in ibus
+rm -rf /usr/share/ibus/dicts/emoji-* /usr/lib64/libpinyin/data/bigram.db # emoji and bigram in ibus
 sed -i /etc/selinux/config -e 's|SELINUX=enforcing|SELINUX=disabled|' # it sucks, cause systemd-xxx failed even after removing a normal package like qemu
 mkdir -p /etc/systemd/logind.conf.d
 printf "[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n" >/etc/systemd/logind.conf.d/90-ignore-lid.conf
@@ -68,12 +68,11 @@ EOF
 
 [ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.2/adw-gtk3v5-2.tar.xz
 tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
-# https://extensions.gnome.org/extension/3843/just-perfection/
-# https://extensions.gnome.org/extension-data/just-perfection-desktopjust-perfection.v27.shell-extension.zip
+# https://extensions.gnome.org/extension/3843/just-perfection/ | https://extensions.gnome.org/extension-data/just-perfection-desktopjust-perfection.v27.shell-extension.zip
 # run as non-root user please
-# gnome-extensions install ./just- # <TAB>
+# gnome-extensions install ./just-[TAB]
 # reboot
-# gnome-extensions prefs just- # <TAB>
+# gnome-extensions prefs just-[TAB]
 
 # > rootfs: ext4 over squashfs
 # dd if=/dev/zero of=rootfs.img bs=1 count=0 seek=8192M

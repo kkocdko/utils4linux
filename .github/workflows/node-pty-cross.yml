@@ -9,14 +9,13 @@ jobs:
         run: |
           pip install ziglang==0.11
           export PATH="$(dirname $(python -c exec"('"'import importlib.util\nprint(importlib.util.find_spec("ziglang").origin)'"')")):$PATH"
-          git clone --depth 1 https://github.com/kkocdko/node-pty
-          cd node-pty
-          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/js_native_api.h &
-          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/js_native_api_types.h &
-          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/node_api.h &
-          curl -s -O -L https://github.com/nodejs/node-api-headers/raw/v1.1.0/include/node_api_types.h &
-          curl -s -O -L https://github.com/nodejs/node-addon-api/raw/v7.0.0/napi.h &
-          curl -s -O -L https://github.com/nodejs/node-addon-api/raw/v7.0.0/napi-inl.h &
+          curl -s -o node-pty.tar.gz -L https://github.com/microsoft/node-pty/archive/b1fdda458a09072ea0fd53aa4616573dd6b30421.tar.gz &
+          curl -s -O -L https://raw.githubusercontent.com/nodejs/node-api-headers/v1.1.0/include/js_native_api.h &
+          curl -s -O -L https://raw.githubusercontent.com/nodejs/node-api-headers/v1.1.0/include/js_native_api_types.h &
+          curl -s -O -L https://raw.githubusercontent.com/nodejs/node-api-headers/v1.1.0/include/node_api.h &
+          curl -s -O -L https://raw.githubusercontent.com/nodejs/node-api-headers/v1.1.0/include/node_api_types.h &
+          curl -s -O -L https://raw.githubusercontent.com/nodejs/node-addon-api/v7.1.0/napi.h &
+          curl -s -O -L https://raw.githubusercontent.com/nodejs/node-addon-api/v7.1.0/napi-inl.h &
           wait
           mkdir -p out
           # zig cc -o out/pty-linux-x64.node src/unix/pty.cc

@@ -40,30 +40,34 @@ elif [ "$1" = "min" ]; then
   acpi_profile low-power
   gpu_level low
   cpu_governor powersave
-elif [ "$1" = "high" ]; then
-  acpi_profile low-power
-  gpu_level low
-  cpu_governor conservative
-  # echo 999 >/sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
-  # echo 99 >/sys/devices/system/cpu/cpufreq/ondemand/up_threshold
-  # echo 80000 >/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
-  # https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt
-  cpu_boost 0
 elif [ "$1" = "max" ]; then
   acpi_profile performance
   gpu_level high
   cpu_governor performance
   cpu_boost 1
+elif [ "$1" = "stable" ]; then
+  acpi_profile performance
+  gpu_level high
+  cpu_governor performance
+  cpu_boost 0
 elif [ "$1" = "doze" ]; then
   kill -STOP `heavy_tasks_pids`
+  cpu_boost 0
   acpi_profile low-power
   gpu_level low
   cpu_governor powersave
   cpu_multi_core 0
 elif [ "$1" = "undoze" ]; then
   cpu_multi_core 1
-  cpu_governor ondemand
+  cpu_governor conservative # ondemand
+  cpu_boost 1
+  acpi_profile low-power
+  gpu_level low
   kill -CONT `heavy_tasks_pids`
+  # echo 999 >/sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
+  # echo 99 >/sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+  # echo 80000 >/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+  # https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt
 elif [ "$1" = "suspend" ]; then
   echo suspend was broken
   exit

@@ -21,7 +21,7 @@ jobs:
           sed -i build/build.ninja -e 's|-static-pie||g' -e 's|/libz.a|/libz.so|g' -e 's|/libc.a|/libc.so|g' -e 's|/libm.a|/libm.so|g'
           make qemu-img -j$(nproc)
           strip build/qemu-img
-          ldd build/qemu-img
+          ldd build/qemu-img # static: [zstd], shared: [zlib, pthread, libc]
           ls -lh build/qemu-img
       - name: Upload
         uses: actions/upload-artifact@v3
