@@ -20,6 +20,6 @@ jobs:
           strip -s /tmp/fdkaac
           ldd /tmp/fdkaac || printf "" # avoid ldd returns non-zero code
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: /tmp/fdkaac

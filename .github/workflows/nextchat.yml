@@ -21,7 +21,7 @@ jobs:
           sed -i nextchat/index.html -i $(find nextchat/_next -name webpack-*.js) -e 's|/_next|_next|g' # make it relative
           # miniserve --header Cache-Control:max-age=600,stale-while-revalidate=31536000 -p 9505 --index index.html .
       - name: upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nextchat
           path: nextchat/

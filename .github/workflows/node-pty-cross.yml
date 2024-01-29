@@ -27,7 +27,7 @@ jobs:
           zig c++ -o out/pty-linux-arm64.node -target aarch64-linux-gnu src/unix/pty.cc -I . -shared -fPIC -Wall -Wextra -s -Os
           # -undefined dynamic_lookup
       - name: upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: node-pty-napi-linux-x64
           path: node-pty/build/Release/

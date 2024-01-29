@@ -24,6 +24,6 @@ jobs:
           ldd build/qemu-img # static: [zstd], shared: [zlib, pthread, libc]
           ls -lh build/qemu-img
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: qemu-8.2.0/build/qemu-img
