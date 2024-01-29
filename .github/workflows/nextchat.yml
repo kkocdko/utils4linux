@@ -7,10 +7,10 @@ jobs:
     steps:
       - name: build
         run: |
-          curl -o nextchat.tar.gz -L https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web/archive/91a5f4af9adcf4eef29022f54a1097ba88d1f3c2.tar.gz
+          curl -o nextchat.tar.gz -L https://github.com/ChatGPTNextWeb/ChatGPT-Next-Web/archive/e1b065c74a06ae5850f8aa37a6c8b97ff842fc6c.tar.gz
           tar -xf nextchat.tar.gz --strip-component 1
           rm -rf nextchat.tar.gz
-          sed -i next.config.mjs -e 's|forceSwcTransforms: true,||' # swc output size is bigger
+          sed -i next.config.mjs -e 's|process.env.DISABLE_CHUNK|1|' -e 's|forceSwcTransforms: true,||' # swc output size is bigger
           sed -i app/constant.ts -e 's|FETCH_COMMIT_URL =|&"";|g' -e 's|FETCH_TAG_URL =|&"";|g' -e 's|DEFAULT_CORS_HOST =|&"";|g' # remove update check
           yarn install
           yarn build
