@@ -18,6 +18,11 @@ jobs:
           mkdir -p nextchat/_next
           mv .next/standalone/.next/server/app/index.html nextchat/index.html
           mv .next/static nextchat/_next/static
+          css_all=$(cat nextchat/index.html | grep -E '_next/static/css/\w*\.css' -o | awk '!a[$0]++')
+          css_first=$(echo $css_all | cut -d ' ' -f 1)
+          css_others=$(echo $css_all | cut -d ' ' -f 2-)
+          cd nextchat ; cat $css_others >> $css_first ; truncate -s 0 $css_others ; cd ..
+          sed -i nextchat/$css_first -e 's|/_next/static/media/|../media/|g' # make it relative
           sed -i nextchat/index.html -i $(find nextchat/_next -name webpack-*.js) -e 's|/_next|_next|g' # make it relative
           # miniserve --header Cache-Control:max-age=600,stale-while-revalidate=31536000 -p 9505 --index index.html .
       - name: upload
