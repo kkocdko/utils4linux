@@ -29,7 +29,8 @@
       "tag": "sh-hello-inner",
       "type": "shadowsocks",
       "method": "2022-blake3-aes-128-gcm",
-      "password": "xxx" // 和上面一样的方法生成
+      "password": "xxx", // 和上面一样的方法生成
+      "multiplex": { "enabled": true }
     }
   ],
   "outbounds": [{ "type": "direct" }]
