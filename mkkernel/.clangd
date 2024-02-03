@@ -1,0 +1,12 @@
+CompileFlags:
+  Add:
+  [
+  ]
+  Remove:
+  [
+    -ftrivial-auto-var-init=zero,
+    -mpreferred-stack-boundary=3,
+    -fno-allow-store-data-races,
+    -fconserve-stack,
+    -Wgnu-variable-sized-type-not-at-end,
+  ]
