@@ -1,0 +1,22 @@
+#!/bin/sh
+alias ossutil="/home/kkocdko/misc/apps/ossutil"
+cat <<EOF >/tmp/ossutil.cfg
+[Credentials]
+endpoint=oss-cn-hongkong.aliyuncs.com
+accessKeySecret=xxx
+accessKeyID=xxx
+EOF
+# kkocdko-blog.oss-cn-hongkong.aliyuncs.com
+dist_dir="/home/kkocdko/misc/code/kblog/public"
+find $dist_dir -regex ".*\.\(html\|xml\|js\|svg\)" -exec gzip -9 {} \; -exec mv {}.gz {} \;
+
+h_cache="Cache-Control:max-age=30,stale-while-revalidate=2592000"
+h_gzip="Content-Encoding:gzip"
+
+# ossutil ls oss://kkshare/ -c /tmp/ossutil.cfg
+ossutil sync $dist_dir oss://kkocdko-blog/ --delete -c /tmp/ossutil.cfg -f
+ossutil set-meta oss://kkocdko-blog/ "$h_cache#$h_gzip#Content-Type:text/html;charset=utf-8" --update -r --include "*.html" -c /tmp/ossutil.cfg -f &
+ossutil set-meta oss://kkocdko-blog/ "$h_cache#$h_gzip#Content-Type:text/xml;charset=utf-8" --update -r --include "*.xml" -c /tmp/ossutil.cfg -f &
+ossutil set-meta oss://kkocdko-blog/ "$h_cache#$h_gzip" --update -r --include "*.js" -c /tmp/ossutil.cfg -f &
+ossutil set-meta oss://kkocdko-blog/ "$h_cache#$h_gzip" --update -r --include "*.svg" -c /tmp/ossutil.cfg -f &
+wait
