@@ -17,7 +17,7 @@
     // "strategy": "ipv4_only",
     "independent_cache": true, // 不要让 fakeip 和其他 dns 缓存混淆
     "servers": [
-      { "address": "tls://223.5.5.5", "detour": "direct" }, // 默认是第一个，约等于 final
+      { "address": "tls://1.12.12.12", "detour": "direct" }, // 默认是第一个，约等于 final
       { "tag": "remote", "address": "fakeip" }
     ],
     "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，server 的域名和 direct 会用默认的 dns
@@ -84,4 +84,4 @@
     {"tag":"localhost-http","type":"http","server":"127.0.0.1","server_port":1080} // 小心别回环了
   ]
 }
-// curl --data-binary @config.jsonc -X PUT http://user:password@1.1.1.1:1111/dav/somewhat/config.jsonc
+// curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/proxy/config.jsonc

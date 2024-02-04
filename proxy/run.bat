@@ -1,5 +1,4 @@
 @echo off
 cd /d %~dp0
-:: curl -o config.jsonc -L http://example.com
-:: please set "compatibility > run as administrator" for sing-box.exe in file attribute dialog
+curl -o config.jsonc -L "https://1.1.1.1:1111/dav/proxy/config.jsonc"
 start "sing-box" sing-box run -c config.jsonc -D . --disable-color
