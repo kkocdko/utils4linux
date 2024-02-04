@@ -12,9 +12,9 @@
     "fakeip": {
       "enabled": true,
       "inet4_range": "198.18.0.0/15",
-      "inet6_range": "fc00::/18" // 此处以及后续配置可能需禁止 ipv6。通常本机无 v6 地址时不会发起 v6 请求，但 tun device 的 v6 地址会让应用误以为可用
+      "inet6_range": "fc00::/18"
     },
-    // "strategy": "ipv4_only",
+    "strategy": "prefer_ipv4", // 缓兵之计，兼容没有 ipv6 地址的环境。通常本机无 v6 地址时不会发起 v6 请求，但 tun device 的 v6 地址会让应用误以为可用
     "independent_cache": true, // 不要让 fakeip 和其他 dns 缓存混淆
     "servers": [
       { "address": "tls://1.12.12.12", "detour": "direct" }, // 默认是第一个，约等于 final
