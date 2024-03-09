@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.lbs0912</groupId>
+  <artifactId>wordcount</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <!--添加 apache 镜像源-->
+  <repositories>
+    <repository>
+      <id>apache</id>
+      <url>http://maven.apache.org</url>
+    </repository>
+  </repositories>
+
+  <!--添加如下依赖-->
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>3.3.6</version>
+    </dependency>
+  </dependencies>
+</project>
