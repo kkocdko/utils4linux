@@ -20,6 +20,7 @@ const results = await Promise.allSettled(
     for (const e of parsed.outbounds.filter((e) => e.server)) {
       const tag = (name + "-" + e.tag)
         .replace("×", "x")
+        .replace("倍", "x")
         .replace(/[\|\s_\u00FF-\u4E00\u9FFF-\uFFFF]/g, "-") // remove emoji but keep cjk chars \u4E00-\u9FFF
         .replace(/-+/g, "-")
         .toLowerCase();

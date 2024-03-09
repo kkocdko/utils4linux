@@ -14,11 +14,12 @@
       "inet4_range": "198.18.0.0/15",
       "inet6_range": "fc00::/18"
     },
-    "strategy": "prefer_ipv4", // 缓兵之计，兼容没有 ipv6 地址的环境。通常本机无 v6 地址时不会发起 v6 请求，但 tun device 的 v6 地址会让应用误以为可用
+    "strategy": "prefer_ipv4",
     "independent_cache": true, // 不要让 fakeip 和其他 dns 缓存混淆
     "servers": [
-      { "address": "https://101.226.4.6/dns-query", "detour": "direct" }, // 默认是第一个，约等于 final。实测 360 DoH 比阿里和腾讯更准。resolve?name=www.feishu.cn&type=A
-      // { "address": "https://1.12.12.12/dns-query", "detour": "direct" },
+      // { "address": "https://101.226.4.6/dns-query", "detour": "direct" }, // 默认是第一个，约等于 final。实测我这里 360 DoH 比阿里和腾讯更准。resolve?name=www.feishu.cn&type=A
+      { "address": "https://1.12.12.12/dns-query", "detour": "direct" },
+      // { "address": "dhcp://auto", "detour": "direct" },
       { "tag": "remote", "address": "fakeip" }
     ],
     "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，server 的域名和 direct 会用默认的 dns
@@ -43,7 +44,9 @@
       { "package_name": "com.zmzx.college.search", "outbound": "direct" },
       { "package_name": "com.netease.party", "outbound": "direct" },
       { "package_name": "tv.danmaku.bili", "outbound": "direct" },
-      { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然 google static 国内能访问，但还是走代理比较好
+      { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
+      { "domain_suffix": "google.cn", "outbound": "proxy" }, // 同上
+      { "domain_suffix": "googleapis.com", "outbound": "proxy" }, // 同上
       { "domain_suffix": "bytevcloud.com", "outbound": "direct" }, // 字节 视频流 或 地区检测
       { "domain_suffix": "volcvideos.com", "outbound": "direct" }, // 字节 火山引擎
       { "domain_suffix": "openai-proxy.org", "outbound": "direct" }, // gpt api 国内代理商
@@ -54,11 +57,11 @@
     ]
   },
   "inbounds": [
-    { "type": "mixed", "listen": "127.0.0.1", "listen_port": 1080 }, // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如果遇到 pip 警告等情况，可以 unset all_proxy ALL_PROXY
+    { "type": "mixed", "listen": "127.0.0.1", "listen_port": 1080 }, // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
     {
       "type": "tun", // 有些应用并不理会 xxx_proxy 环境变量，所以让 tun 作为兜底措施
       "inet4_address": "172.19.0.1/30",
-      "inet6_address": "fdfe:dcba:9876::1/126",
+      "inet6_address": "fdfe:dcba:9876::1/126", // tun device 的 ipv6 地址可能会让应用误以为可用，见 issue 932。即便 prefer_ipv4 也无效，因为微信等应用会使用内置 DoH
       "auto_route": true,
       "strict_route": true, // 确保 dns 被劫持，但在 android 上可能导致局域网分享无法连接，详见文档
       "sniff": true // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
