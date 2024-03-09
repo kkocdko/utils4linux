@@ -1,0 +1,24 @@
+name: mp4box
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Build
+        run: |
+          # https://wiki.gpac.io/Build/build/GPAC-Build-Guide-for-Linux/#mp4box-gpac-only-minimal-static-build
+          curl -L https://github.com/gpac/gpac/archive/refs/tags/v2.2.1.tar.gz | tar -zx
+          cd gpac-2.2.1
+          sed -i '1282s/$static_bin/yes/' configure # the line number is locked with version
+          ./configure --disable-qjs --disable-qjs-libc --use-zlib=no
+          make
+          mv bin/gcc/MP4Box bin/gcc/mp4box
+          strip bin/gcc/*
+          ldd bin/gcc/*
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            gpac-2.2.1/bin/gcc/mp4box
+            gpac-2.2.1/bin/gcc/gpac
