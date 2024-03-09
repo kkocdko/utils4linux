@@ -14,8 +14,8 @@ jobs:
           ./configure --disable-qjs --disable-qjs-libc --use-zlib=no
           make
           mv bin/gcc/MP4Box bin/gcc/mp4box
-          strip bin/gcc/*
-          ldd bin/gcc/*
+          strip bin/gcc/* || true
+          ldd bin/gcc/* || true
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
