@@ -1,4 +1,4 @@
-# hello-hadoop
+# hihadoop
 
 https://hub.docker.com/r/apache/hadoop
 
@@ -8,11 +8,10 @@ https://www.gutenberg.org/cache/epub/20417/pg20417.txt
 
 http://liubaoshuai.com/2020/04/21/hadoop-basic-1/
 
-
 ```sh
 docker-compose up
 docker-compose down --volumes
-docker exec -it hello-hadoop_namenode_1 bash
+docker exec -it hihadoop_datanode_1 bash
 
 curl -O -L https://www.gutenberg.org/cache/epub/20417/pg20417.txt
 hdfs dfs -mkdir -p /user/hadoop/in
@@ -26,6 +25,6 @@ hadoop jar contrib/streaming/hadoop-*streaming*.jar \
 -file /home/hduser/reducer.py   -reducer /home/hduser/reducer.py \
 -input /user/hduser/gutenberg/* -output /user/hduser/gutenberg-output
 
-javac *.java
-jar -cf myJar.jar MyApp.class
+mvn compile
+mvn package
 ```
