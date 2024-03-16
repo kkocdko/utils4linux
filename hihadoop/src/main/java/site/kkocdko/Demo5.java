@@ -13,17 +13,17 @@ import java.io.Reader;
 public class Demo5 {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        // 配置集群属性:若提供配置文件时，则自动读取，否则需要手动配置
-        conf.set("fs.defaultFS", "hdfs://master:9000");
-        // 构建 hdfs对象
+        conf.set("fs.defaultFS", "hdfs://127.0.0.1:8020");
         FileSystem hdfs = FileSystem.get(conf);
         // 指定目标文件
-        Path dst = new Path("/books");
+        Path dst = new Path("/tmp");
         // 循环读取指定目录下的文件
+        int cnt=0;
         for (FileStatus fs : hdfs.listStatus(dst)) {
             if (fs.isDirectory()) {
                 continue;
             }
+            cnt++;
             // 读取文件内容
             FSDataInputStream in = hdfs.open(fs.getPath());
             Reader reader = new InputStreamReader(in);
@@ -33,6 +33,7 @@ public class Demo5 {
                 System.out.println(line);
             }
             bufferedReader.close();
+            System.out.printf("读取完成,  %d 个文件\n", cnt);
         }
     }
 }

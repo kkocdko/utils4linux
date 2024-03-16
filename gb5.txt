@@ -1,0 +1,128 @@
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+#            专用于服务器的GB5测试             #
+#                 v2023-10-18                  #
+#         bash <(curl -sL bash.icu/gb5)        #
+#         https://github.com/i-abc/gb5         #
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+
+当前时间：2024-03-15 23:30:36 CST
+净测试时长：2分16秒
+
+Geekbench 5 测试结果
+
+系统信息
+  Operating System              Debian GNU/Linux 12 (bookworm)
+  Kernel                        Linux 6.5.0-0.deb12.4-amd64 x86_64
+  Model                         INTEL Default string
+  Motherboard                   YENTEK STX-LN110
+  BIOS                          American Megatrends International, LLC. 5.19
+
+处理器信息
+  Name                          Intel Core i5-1135G7
+  Topology                      1 Processor, 4 Cores, 8 Threads
+  Identifier                    GenuineIntel Family 6 Model 140 Stepping 1
+  Base Frequency                4.20 GHz
+  L1 Instruction Cache          32.0 KB x 4
+  L1 Data Cache                 48.0 KB x 4
+  L2 Cache                      1.25 MB x 4
+  L3 Cache                      8.00 MB
+
+内存信息
+  Size                          15.4 GB
+
+单核测试分数：1393
+多核测试分数：4283
+详细结果链接：https://browser.geekbench.com/v5/cpu/22321824
+可供参考链接：https://browser.geekbench.com/search?k=v5_cpu&q=Intel%20Core%20i5-1135G7
+
+个人保存链接：https://browser.geekbench.com/v5/cpu/22321824/claim?key=116778
+
+残余文件清除成功
+box-3hL6BET2 /opt # 
+
+==============================
+
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+#            专用于服务器的GB5测试             #
+#                 v2023-10-18                  #
+#         bash <(curl -sL bash.icu/gb5)        #
+#         https://github.com/i-abc/gb5         #
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+
+当前时间：2024-03-15 23:40:41 CST
+净测试时长：2分12秒
+
+Geekbench 5 测试结果
+
+系统信息
+  Operating System              Debian GNU/Linux 12 (bookworm)
+  Kernel                        Linux 6.5.0-0.deb12.4-amd64 x86_64
+  Model                         Default string Default string
+  Motherboard                   Default string Default string
+  BIOS                          AMI BE001.L0.ECM004
+
+处理器信息
+  Name                          Intel(R) CoreTM Ultra 5 125U
+  Topology                      1 Processor, 12 Cores, 14 Threads
+  Identifier                    GenuineIntel Family 6 Model 170 Stepping 4
+  Base Frequency                4.20 GHz
+  L1 Instruction Cache          64.0 KB x 7
+  L1 Data Cache                 48.0 KB x 7
+  L2 Cache                      2.00 MB
+  L3 Cache                      12.0 MB
+
+内存信息
+  Size                          31.1 GB
+
+单核测试分数：1570
+多核测试分数：7665 (PL1 PL2 = 40w 50w)
+详细结果链接：https://browser.geekbench.com/v5/cpu/22321848
+可供参考链接：https://browser.geekbench.com/search?k=v5_cpu&q=Intel%20CoreTM%20Ultra%205%20125U
+
+个人保存链接：https://browser.geekbench.com/v5/cpu/22321848/claim?key=5510
+
+残余文件清除成功
+
+====================================
+
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+#            专用于服务器的GB5测试             #
+#                 v2023-10-18                  #
+#         bash <(curl -sL bash.icu/gb5)        #
+#         https://github.com/i-abc/gb5         #
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+
+当前时间：2024-03-15 10:28:45 UTC
+净测试时长：2分14秒
+
+Geekbench 5 测试结果
+
+系统信息
+  Operating System              Debian GNU/Linux 12 (bookworm)
+  Kernel                        Linux 6.6.8-200.fc39.x86_64 x86_64
+  Model                         LENOVO 21A2
+  Motherboard                   LENOVO LNVNB161216
+  BIOS                          LENOVO GQCN36WW(V1.22)
+
+处理器信息
+  Name                          AMD Ryzen 5 5600U
+  Topology                      1 Processor, 6 Cores, 12 Threads
+  Identifier                    AuthenticAMD Family 25 Model 80 Stepping 0
+  Base Frequency                2.30 GHz
+  L1 Instruction Cache          32.0 KB x 6
+  L1 Data Cache                 32.0 KB x 6
+  L2 Cache                      512 KB x 6
+  L3 Cache                      16.0 MB
+
+内存信息
+  Size                          35.1 GB
+
+单核测试分数：1415
+多核测试分数：6333
+详细结果链接：https://browser.geekbench.com/v5/cpu/22321197
+可供参考链接：https://browser.geekbench.com/search?k=v5_cpu&q=AMD%20Ryzen%205%205600U
+
+个人保存链接：https://browser.geekbench.com/v5/cpu/22321197/claim?key=338632
+
+残余文件清除成功
+root@d5657cd67ef4:/#

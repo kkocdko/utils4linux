@@ -6,6 +6,7 @@ services:
     command: ["hdfs", "namenode"]
     ports:
       - 9870:9870
+      - 8020:8020
     env_file:
       - ./config
     environment:

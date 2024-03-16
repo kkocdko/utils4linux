@@ -9,12 +9,11 @@ import java.io.IOException;
 public class Demo3 {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        // 配置集群属性:若提供配置文件时，则自动读取，否则需要手动配置
-        conf.set("fs.defaultFS", "hdfs://master:9000");
+        conf.set("fs.defaultFS", "hdfs://127.0.0.1:8020");
         // 构建HDFS对象
         FileSystem hdfs = FileSystem.get(conf);
         // 指定目标文件
-        Path dst = new Path("/n.txt");
+        Path dst = new Path("/tmp/pg20417.txt");
         // 读取流
         FSDataInputStream in = hdfs.open(dst);
         // 文件大小
@@ -41,5 +40,6 @@ public class Demo3 {
         }
         // 关闭流
         in.close();
+        System.out.printf("读取完成, 体积 %d\n",size);
     }
 }

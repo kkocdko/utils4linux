@@ -11,11 +11,11 @@ public class Demo2 {
         // 构建配置对象
         Configuration conf = new Configuration();
         // 配置集群属性:若提供配置文件时，则自动读取，否则需要手动配置
-        conf.set("fs.defaultFS", "hdfs://master:9000");
+        conf.set("fs.defaultFS", "hdfs://127.0.0.1:8020");
         // 构建HDFS对象
         FileSystem hdfs = FileSystem.get(conf);
         // 指定目标文件
-        Path dst = new Path("/n.txt");
+        Path dst = new Path("/tmp/a.txt");
         // 准备文件内容
         String content = "Hello, this is the content of the file.";
         // 写入流
