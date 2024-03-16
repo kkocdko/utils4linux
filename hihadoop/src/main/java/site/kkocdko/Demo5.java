@@ -16,7 +16,7 @@ public class Demo5 {
         conf.set("fs.defaultFS", "hdfs://127.0.0.1:8020");
         FileSystem hdfs = FileSystem.get(conf);
         // 指定目标文件
-        Path dst = new Path("/tmp");
+        Path dst = new Path("/tmp/wc/s");
         // 循环读取指定目录下的文件
         int cnt=0;
         for (FileStatus fs : hdfs.listStatus(dst)) {

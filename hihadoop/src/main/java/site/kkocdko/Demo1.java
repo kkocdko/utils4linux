@@ -14,9 +14,9 @@ public class Demo1 {
         // 构建HDFS对象
         FileSystem hdfs = FileSystem.get(conf);
         // 定义源路径:本地
-        Path src = new Path("dist/pg20417.txt");
+        Path src = new Path("target/pg20417.txt");
         // 定义目标路径: HDFS
-        Path dst = new Path("/tmp/pg20417.txt");
+        Path dst = new Path("/tmp/wc/i/pg20417.txt");
         // 执行上传
         hdfs.copyFromLocalFile(src, dst);
         // 输出提示
