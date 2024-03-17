@@ -5,7 +5,6 @@ import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
-import java.io.IOException;
 
 public class Demo6 {
     public static void main(String[] args) throws Exception {

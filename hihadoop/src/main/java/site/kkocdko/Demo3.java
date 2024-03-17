@@ -4,7 +4,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import java.io.IOException;
 
 public class Demo3 {
     public static void main(String[] args) throws Exception {
@@ -40,6 +39,6 @@ public class Demo3 {
         }
         // 关闭流
         in.close();
-        System.out.printf("读取完成, 体积 %d\n",size);
+        System.out.printf("读取完成, 体积 %d\n", size);
     }
 }
