@@ -11,7 +11,7 @@ public class Demo6 {
         Configuration conf = new Configuration();
         conf.set("fs.defaultFS", "hdfs://127.0.0.1:8020");
         FileSystem hdfs = FileSystem.get(conf);
-        Path dst = new Path("/tmp/pg20417.txt");
+        Path dst = new Path("/tmp/1.txt");
         FileStatus status = hdfs.getFileLinkStatus(dst);
         BlockLocation[] blocks = hdfs.getFileBlockLocations(status, 0, status.getLen());
         for (BlockLocation b : blocks) {

@@ -22,7 +22,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.2.0</version>
         <configuration>
-          <mainClass>site.kkocdko.WeatherMain</mainClass>
+          <mainClass>site.kkocdko.Demo6</mainClass>
         </configuration>
       </plugin>
       <!-- 

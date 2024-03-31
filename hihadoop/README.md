@@ -1,8 +1,8 @@
 # hihadoop
 
 ```sh
-docker-compose up
-docker-compose down --volumes
+docker compose up
+docker compose down --volumes
 docker exec -it hihadoop_datanode_1 bash
 hdfs dfs -mkdir -p /user/hadoop/in
 hdfs dfs -rm -r -f /user/hadoop/out
