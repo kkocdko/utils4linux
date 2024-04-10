@@ -120,7 +120,7 @@ chroot root /bin/bash
 # mirror_root="https://mirror.alwyzon.net/fedora/linux"
 mirror_root="https://mirrors.ustc.edu.cn/fedora"
 curl -o official.iso -L $mirror_root/development/39/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-39-1.5.iso
-
+curl -O -L https://dl.fedoraproject.org/pub/fedora/linux/development/40/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-40-20240321.n.0.iso
 exit
 
 rm -rf qcow2 a.qcow2
