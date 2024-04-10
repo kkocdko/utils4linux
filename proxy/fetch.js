@@ -20,11 +20,12 @@ const results = await Promise.allSettled(
     for (const e of parsed.outbounds.filter((e) => e.server)) {
       // 切分边界
       const bound =
-        /[\s\t\-\|_\u00FF-\u4E00\u9FFF-\uFFFF]|(?<![\d\.]|hy|ipv)(?=\d)|(?<=香港|美国|新加坡|荷兰|日本)/g;
+        /[\s\t\-\|_\u00FF-\u4E00\u9FFF-\uFFFF]|(?<![\d\.]|hy|ipv)(?=\d)|(?<=香港|美国|新加坡|荷兰|日本|印度)/g;
       const parts = e.tag
         .toLowerCase()
         .replace("hong kong", "hk")
         .replace("united states", "us")
+        .replace("united kingdom", "uk")
         .replace("tai wan", "tw")
         .split(bound);
       const tag = parts.reduce((prev, cur) => {
@@ -34,6 +35,7 @@ const results = await Promise.allSettled(
         if (/^(jp|japan|日本)$/.test(cur)) cur = "jp";
         if (/^(sg|singapore|新加坡|狮城)$/.test(cur)) cur = "sg";
         if (/^(us|united-states|美国)$/.test(cur)) cur = "us";
+        if (/^(in|india|印度)$/.test(cur)) cur = "in";
         if (/^(nl|holland|荷兰)$/.test(cur)) cur = "nl";
         if (/^(de|germany|德国)$/.test(cur)) cur = "de";
         if (/^(kr|south-korea|韩国)$/.test(cur)) cur = "kr";
@@ -45,12 +47,16 @@ const results = await Promise.allSettled(
         if (/^(th|thailand|泰国)$/.test(cur)) cur = "th";
         if (/^(au|australia|澳大利亚)$/.test(cur)) cur = "au";
         if (/^(pk|pakistan|巴基斯坦)$/.test(cur)) cur = "pk";
+        if (/^(br|brazil|巴西)$/.test(cur)) cur = "br";
+        if (/^(se|sweden|瑞典)$/.test(cur)) cur = "se";
         if (/^(cl|chile|智利)$/.test(cur)) cur = "cl";
         if (/^(tr|turkey|土耳其)$/.test(cur)) cur = "tr";
         if (/^(ar|argentina|阿根廷)$/.test(cur)) cur = "ar";
         if (/^(圣何塞)$/.test(cur)) return prev + ".sj";
         if (/^(凤凰城)$/.test(cur)) return prev + ".phx";
+        if (/^(芝加哥)$/.test(cur)) return prev + ".chi";
         if (/^(洛杉矶)$/.test(cur)) return prev + ".la";
+        if (/^(海得拉巴)$/.test(cur)) return prev + ".hdb";
         if (/^(阿姆斯特丹)$/.test(cur)) return prev + ".ams";
         if (/^(亚马逊)$/.test(cur)) cur = "aws";
         if (/^(香港电讯)$/.test(cur)) cur = "hkt";
@@ -65,7 +71,7 @@ const results = await Promise.allSettled(
         if (/倍计费|\d倍|x\d|\dx/.test(cur))
           cur = "x" + cur.match(/[\d\.]+/)[0];
         const extra =
-          /^(龙涯门|油海七珍|南半球纽约|婆罗多|尼日利亚|坎提普尔|南朝鲜|足球王国|麥克默多站|潘帕斯雄鹰|世界之都日耳曼尼亚|葡萄酒之国|千堡之国|袖珍王国|西非天府之国|第三罗马|奥斯曼苏丹国|大不列颠及北爱尔兰联合王国)$/g;
+          /^(龙涯门|油海七珍|橡胶和锡的王国|南半球纽约|婆罗多|尼日利亚|坎提普尔|南朝鲜|足球王国|麥克默多站|潘帕斯雄鹰|世界之都日耳曼尼亚|葡萄酒之国|千堡之国|袖珍王国|西非天府之国|第三罗马|奥斯曼苏丹国|大不列颠及北爱尔兰联合王国)$/g;
         if (extra.test(cur)) return prev;
         if (!prev.endsWith("-x")) prev += "-";
         return prev + cur;
