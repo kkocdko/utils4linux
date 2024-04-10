@@ -1,4 +1,4 @@
-package com.neuedu.myweather;
+package site.kkocdko;
 
 import org.apache.hadoop.io.WritableComparable;
 import java.io.DataInput;
@@ -6,16 +6,16 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class WeatherWritable implements WritableComparable<WeatherWritable> {
-    private int year;
-    private int maxTemperrature;
+    private int year;  // 年份
+    private int maxTemperature;  // 最高温度
 
     public WeatherWritable() {
 
     }
 
-    public WeatherWritable(int year, int maxTemperrature) {
+    public WeatherWritable(int year, int maxTemperature) {
         this.year = year;
-        this.maxTemperrature = maxTemperrature;
+        this.maxTemperature = maxTemperature;
     }
 
     public int getYear() {
@@ -26,37 +26,37 @@ public class WeatherWritable implements WritableComparable<WeatherWritable> {
         this.year = year;
     }
 
-
-    public int getMaxTemperrature() {
-        return maxTemperrature;
+    public int getMaxTemperature() {
+        return maxTemperature;
     }
 
-
-    public void setMaxTemperrature(int maxTemperrature) {
-        this.maxTemperrature = maxTemperrature;
+    public void setMaxTemperature(int maxTemperature) {
+        this.maxTemperature = maxTemperature;
     }
 
     @Override
     public String toString() {
-        return year+"\t"+maxTemperrature;
+        return year + "\t" + maxTemperature;
     }
 
     @Override
     public int compareTo(WeatherWritable other) {
-        if(other==null)
+        if (other == null)
             return 1;
-        return this.year-other.year;
+        return this.year - other.year;
     }
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
-        //序列化
+        // 将对象序列化为字节流
         dataOutput.writeInt(this.year);
-        dataOutput.writeInt(this.maxTemperrature);
+        dataOutput.writeInt(this.maxTemperature);
     }
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
-        this.year=dataInput.readInt();
-        this.maxTemperrature=dataInput.readInt();    }
+        // 将字节流反序列化为对象
+        this.year = dataInput.readInt();
+        this.maxTemperature = dataInput.readInt();
+    }
 }
