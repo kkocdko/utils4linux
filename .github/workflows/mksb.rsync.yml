@@ -2,43 +2,52 @@ name: mksb.rsync
 on:
   workflow_dispatch:
 jobs:
-  build_job:
-    # The host should always be linux
+  linux-x64:
     runs-on: ubuntu-22.04
-    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
-    # Run steps on a matrix of 4 arch/distro combinations
-    strategy:
-      matrix:
-        include:
-          - arch: aarch64
-            distro: bookworm
     steps:
+      - name: build
+        shell: sudo bash -e {0}
+        run: |
+          apt update
+          apt install -y curl musl-tools make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake python3-cmarkgfm acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev liblz4-dev libssl-dev
+          curl -o rsync.tar.gz -L https://github.com/RsyncProject/rsync/archive/refs/tags/v3.3.0.tar.gz
+          tar -xf rsync.tar.gz --strip-components 1
+          (printf '#include <float.h>\n#include <stdlib.h>\n' ; cat popt/popt.c) > popt/popt.c.tmp ; mv popt/popt.c.tmp popt/popt.c
+          export CFLAGS='-O2 -static'
+          ./configure --disable-openssl --disable-md2man --disable-debug
+          make CFLAGS="$CFLAGS"
+          strip rsync
+          mv rsync rsync_3.3.0_linux-x64
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: rsync_3.3.0_linux-x64
+  linux-arm64:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
       - uses: uraimo/run-on-arch-action@v2
-        name: Build artifact
+        name: build
         id: build
         with:
-          arch: ${{ matrix.arch }}
-          distro: ${{ matrix.distro }}
-          # Create an artifacts directory
-          setup: |
-            mkdir -p "${PWD}/artifacts"
-          # Mount the artifacts directory as /artifacts in the container
+          arch: aarch64
+          distro: bookworm
           dockerRunArgs: |
-            --volume "${PWD}/artifacts:/artifacts"
-          # The shell to run commands with in the container
+            --volume "${PWD}:/workdir"
           shell: /bin/bash
-          # Produce a binary artifact and place it in the mounted volume
           run: |
-            cd /artifacts
-            apt install -y musl-tools make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake python3-cmarkgfm acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev liblz4-dev libssl-dev
+            cd /workdir
+            apt update
+            apt install -y curl musl-tools make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake python3-cmarkgfm acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev liblz4-dev libssl-dev
             curl -o rsync.tar.gz -L https://github.com/RsyncProject/rsync/archive/refs/tags/v3.3.0.tar.gz
             tar -xf rsync.tar.gz --strip-components 1
             (printf '#include <float.h>\n#include <stdlib.h>\n' ; cat popt/popt.c) > popt/popt.c.tmp ; mv popt/popt.c.tmp popt/popt.c
             export CFLAGS='-O2 -static'
             ./configure --disable-openssl --disable-md2man --disable-debug
             make CFLAGS="$CFLAGS"
-      - name: Show the artifact
-        # Items placed in /artifacts in the container will be in
-        # ${PWD}/artifacts on the host.
-        run: |
-          ls -al "${PWD}/artifacts"
+            strip rsync
+            mv rsync rsync_3.3.0_linux-arm64
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: rsync_3.3.0_linux-arm64
