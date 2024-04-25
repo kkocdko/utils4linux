@@ -1,3 +1,3 @@
 #!/bin/sh
 export ELECTRON_RUN_AS_NODE=1
-$(dirname $0)/../dist/electron $*
+exec /home/kkocdko/misc/apps/electron/electron $@
