@@ -15,74 +15,59 @@ const results = await Promise.allSettled(
     await new Promise((r) => child.on("exit", r));
     const parsed = JSON.parse(readFileSync(out).toString());
     rmSync(out);
-    let ret = "";
-    let tags = [];
+    const entries = [];
+    const MAX_I = 3;
+    const store = new Map();
+    store.set("emby", { i: 1, r: /emby/ });
+    store.set("hkt", { i: 1, r: /hkt|香港电讯|香港電訊/ });
+    store.set("hk", { i: 1, r: /hong kong|hong\-kong|香港|🇭🇰/ });
+    store.set("tw", { i: 1, r: /tai wan|tai\-wan|台湾|🇹🇼/ });
+    store.set("sg", { i: 1, r: /singapore|新加坡|狮城|🇸🇬/ });
+    store.set("jp", { i: 1, r: /japan|日本|🇯🇵/ });
+    store.set("lu", { i: 1, r: /luxembourg|卢森堡|🇱🇺/ });
+    store.set("nl", { i: 1, r: /netherlands|荷兰|🇳🇱/ });
+    store.set("us", { i: 1, r: /united states|united\-states|美国|🇺🇸/ });
+    store.set("uk", { i: 1, r: /united kingdom|united\-kingdom|英国|🇬🇧/ });
     for (const e of parsed.outbounds.filter((e) => e.server)) {
-      // 切分边界
-      const bound =
-        /[\s\t\-\|_\u00FF-\u4E00\u9FFF-\uFFFF]|(?<![\d\.]|hy|ipv)(?=\d)|(?<=香港|美国|新加坡|荷兰|日本|印度)/g;
-      const parts = e.tag
-        .toLowerCase()
-        .replace("hong kong", "hk")
-        .replace("united states", "us")
-        .replace("united kingdom", "uk")
-        .replace("tai wan", "tw")
-        .split(bound);
-      const tag = parts.reduce((prev, cur) => {
-        if (!cur?.length) return prev;
-        if (/^(hk|hongkong|香港)$/.test(cur)) cur = "hk";
-        if (/^(tw|taiwan|台湾)$/.test(cur)) cur = "tw";
-        if (/^(jp|japan|日本)$/.test(cur)) cur = "jp";
-        if (/^(sg|singapore|新加坡|狮城)$/.test(cur)) cur = "sg";
-        if (/^(us|united-states|美国)$/.test(cur)) cur = "us";
-        if (/^(in|india|印度)$/.test(cur)) cur = "in";
-        if (/^(nl|holland|荷兰)$/.test(cur)) cur = "nl";
-        if (/^(de|germany|德国)$/.test(cur)) cur = "de";
-        if (/^(kr|south-korea|韩国)$/.test(cur)) cur = "kr";
-        if (/^(ru|russia|俄罗斯)$/.test(cur)) cur = "ru";
-        if (/^(uk|united-kingdom|英国)$/.test(cur)) cur = "uk";
-        if (/^(ca|canada|加拿大)$/.test(cur)) cur = "ca";
-        if (/^(ph|philippines|菲律宾)$/.test(cur)) cur = "ph";
-        if (/^(in|india|印度)$/.test(cur)) cur = "in";
-        if (/^(th|thailand|泰国)$/.test(cur)) cur = "th";
-        if (/^(au|australia|澳大利亚)$/.test(cur)) cur = "au";
-        if (/^(pk|pakistan|巴基斯坦)$/.test(cur)) cur = "pk";
-        if (/^(br|brazil|巴西)$/.test(cur)) cur = "br";
-        if (/^(se|sweden|瑞典)$/.test(cur)) cur = "se";
-        if (/^(cl|chile|智利)$/.test(cur)) cur = "cl";
-        if (/^(tr|turkey|土耳其)$/.test(cur)) cur = "tr";
-        if (/^(ar|argentina|阿根廷)$/.test(cur)) cur = "ar";
-        if (/^(圣何塞)$/.test(cur)) return prev + ".sj";
-        if (/^(凤凰城)$/.test(cur)) return prev + ".phx";
-        if (/^(芝加哥)$/.test(cur)) return prev + ".chi";
-        if (/^(洛杉矶)$/.test(cur)) return prev + ".la";
-        if (/^(海得拉巴)$/.test(cur)) return prev + ".hdb";
-        if (/^(阿姆斯特丹)$/.test(cur)) return prev + ".ams";
-        if (/^(亚马逊)$/.test(cur)) cur = "aws";
-        if (/^(香港电讯)$/.test(cur)) cur = "hkt";
-        if (/^(reliablesite)$/.test(cur)) cur = "rs";
-        if (/^(高速专线|专线|iplc)$/.test(cur)) cur = "i";
-        if (/^(高速)$/.test(cur)) cur = "f";
-        if (/^(流媒体)$/.test(cur)) cur = "m";
-        if (/^(家宽带|home)$/.test(cur)) cur = "h";
-        if (/^(下载专用|下载|bt支援)$/.test(cur)) cur = "dl";
-        if (/^(ipv6)$/.test(cur)) cur = "v6";
-        if (/^(\d+)$/.test(cur)) cur = cur.replace(/^0+/g, "");
-        if (/倍计费|\d倍|x\d|\dx/.test(cur))
-          cur = "x" + cur.match(/[\d\.]+/)[0];
-        const extra =
-          /^(龙涯门|油海七珍|橡胶和锡的王国|南半球纽约|婆罗多|尼日利亚|坎提普尔|南朝鲜|足球王国|麥克默多站|潘帕斯雄鹰|世界之都日耳曼尼亚|葡萄酒之国|千堡之国|袖珍王国|西非天府之国|第三罗马|奥斯曼苏丹国|大不列颠及北爱尔兰联合王国)$/g;
-        if (extra.test(cur)) return prev;
-        if (!prev.endsWith("-x")) prev += "-";
-        return prev + cur;
-      }, name);
+      // let tag = e.tag;
+      let tag = "";
+      e.tag = e.tag.toLowerCase();
+      for (const [k, v] of store.entries()) {
+        if (v.r.test(e.tag) && v.i <= MAX_I) {
+          tag = name + "-" + k + "-" + v.i++;
+          break;
+        }
+      }
+      if (tag === "") {
+        for (const [k, v] of store.entries()) {
+          if (e.tag.includes(k) && v.i <= MAX_I) {
+            tag = name + "-" + k + "-" + v.i++;
+            break;
+          }
+        }
+      }
+      if (tag === "") continue;
+      const factor = e.tag
+        .match(/[\d\.]+倍|x[\d\.]+|[\d\.]+x/)?.[0]
+        ?.match(/[\d\.]+/)?.[0];
+      if (factor) tag += "-x" + factor;
+      e.tag = tag;
+      entries.push(e);
+    }
+    entries.sort((a, b) => (a.tag < b.tag ? -1 : 1));
+    let ret =
+      "// " +
+      JSON.stringify(parsed.outbounds.map((e) => e.tag)) +
+      "\n// " +
+      JSON.stringify(entries.map((e) => e.tag)) +
+      "\n";
+    for (const e of entries) {
+      const tag = e.tag;
       delete e.tag;
       delete e.down_mbps; // always bbr
       delete e.up_mbps;
-      tags.push(tag);
       ret += `{"tag":"${tag}",` + JSON.stringify(e).slice(1) + ",\n";
     }
-    ret = "// " + JSON.stringify(tags) + "\n" + ret;
     console.timeEnd(name);
     return ret;
   })
