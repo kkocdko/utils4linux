@@ -4,6 +4,7 @@
 # - The code dir backup with history, others have no history.
 alias dusort="du -ad 1 2>/dev/null | sort -n"
 alias 7z="~/misc/apps/7z"
+alias rsync="~/misc/apps/rsync"
 if [ "$(id -u)" = "0" ]; then
 echo "Should be run as non-root."
 exit
@@ -28,12 +29,14 @@ fi
 
 if [ "$1" = "phone-to-pc" ]; then
 echo ">>> sync from phone to pc, please reconnect mtp before this to ensure the cache cleared"
-from_root="/run/user/1000/gvfs/mtp:host=LGE_LM-V409N_LMV409N1c42ce3d/Internal shared storage"
+from_root="rsync://192.168.43.100:9426/sdcard"
 to_root="/run/media/kkocdko/data/archive/phone"
-rsync_sync() { rsync --progress --recursive --times --links --delete "$from_root$1" "$to_root" ;}
-rsync_sync /Pictures/Screenshots
+rsync_sync() { rsync --checksum --progress --recursive --times --links --delete "$from_root$1" "$to_root" ;}
+rsync_sync /Pictures
 rsync_sync /DCIM
 rsync_sync /DataBackup
+# rsync_sync /Download
+# .thumbnails
 exit
 fi
 
@@ -55,3 +58,36 @@ rm -f rclone.zip
 cd ..
 exit
 fi
+
+exit
+
+# run on phone adb shell
+cd /sdcard/Download/_linux/rsync
+su
+cat <<EOF >rsync.sh
+#!/bin/sh
+workdir=/data/data/_linux/rsync
+if [ "\$1" = "up" ]; then
+killall rsync && sleep 0.5
+rm -rf \$workdir ; mkdir -p \$workdir ; cp ./* \$workdir/ ; cd \$workdir
+printf "uid = 0\ngid = 0\nuse chroot = no\nfake super = yes\nread only = false\n[sdcard]\npath = /sdcard\n" > rsyncd.conf
+chmod +x ./rsync
+ip address add 192.168.43.100/24 dev wlan0 # https://android.stackexchange.com/a/213626
+exec ./rsync --daemon --no-detach --port=9426 --config=rsyncd.conf --log-file=/dev/stdout
+exit 1
+fi
+if [ "\$1" = "down" ]; then
+killall rsync
+ip address del 192.168.43.100/24 dev wlan0
+rm -rf \$workdir
+exit
+fi
+EOF
+sh rsync.sh up & # press ctrl + '`' then '.' to detach shell
+sh rsync.sh down
+
+# try on pc
+rsync rsync://192.168.43.100:9426/sdcard/ # will print the list
+# https://linux.die.net/man/1/rsync
+# https://github.com/kkocdko/utils4linux/releases/tag/mksb.rsync_3.3.0_8846311740
+rsync -c --progress --recursive --times /run/media/kkocdko/data/archive/phone/Pictures/ rsync://192.168.43.100:9426/sdcard/Pictures/
