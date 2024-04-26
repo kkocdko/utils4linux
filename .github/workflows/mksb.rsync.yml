@@ -24,7 +24,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          body: "-"
+          body: "_"
           tag_name: "${{ 'mksb.rsync_3.3.0_' }}${{ github.run_id }}"
           files: linux-x64.zip
   linux-arm64:
@@ -58,6 +58,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          body: "-"
+          body: "_"
           tag_name: "${{ 'mksb.rsync_3.3.0_' }}${{ github.run_id }}"
           files: linux-arm64.zip

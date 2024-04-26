@@ -1,0 +1,33 @@
+name: mksb.gpac
+on:
+  workflow_dispatch:
+jobs:
+  linux-x64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Build
+        shell: sudo bash -e {0}
+        run: |
+          # https://wiki.gpac.io/Build/build/GPAC-Build-Guide-for-Linux/#mp4box-gpac-only-minimal-static-build
+          curl -L https://github.com/gpac/gpac/archive/refs/tags/v2.4.0.tar.gz | tar -zx
+          cd gpac-2.4.0
+          sed -i '1526s/$static_bin/yes/' configure # the line number is locked with version
+          ./configure --disable-qjs --disable-qjs-libc --use-zlib=no
+          # export CFLAGS='-O2 -static -flto'
+          # make CFLAGS="$CFLAGS" -j $(nproc)
+          make -j $(nproc)
+          mv bin/gcc/MP4Box bin/gcc/mp4box
+          strip bin/gcc/* || true
+          mv bin/gcc/* .
+          zip -9 linux-x64.zip gpac mp4box
+      - name: Verify
+        run: |
+          ldd ./gpac ./mp4box || true
+          ./mp4box -version
+          ./gpac -version
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: "_"
+          tag_name: "${{ 'mksb.gpac_2.4.0_' }}${{ github.run_id }}"
+          files: linux-x64.zip
