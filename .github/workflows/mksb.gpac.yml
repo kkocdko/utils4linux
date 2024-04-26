@@ -18,7 +18,8 @@ jobs:
           make -j $(nproc)
           mv bin/gcc/MP4Box bin/gcc/mp4box
           strip bin/gcc/* || true
-          mv bin/gcc/* .
+          mv bin/gcc/* ../
+          cd ..
           zip -9 linux-x64.zip gpac mp4box
       - name: Verify
         run: |
