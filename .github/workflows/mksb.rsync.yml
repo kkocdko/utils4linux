@@ -5,49 +5,59 @@ jobs:
   linux-x64:
     runs-on: ubuntu-22.04
     steps:
-      - name: build
+      - name: Build
         shell: sudo bash -e {0}
         run: |
-          apt update
-          apt install -y curl musl-tools make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake python3-cmarkgfm acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev liblz4-dev libssl-dev
-          curl -o rsync.tar.gz -L https://github.com/RsyncProject/rsync/archive/refs/tags/v3.3.0.tar.gz
-          tar -xf rsync.tar.gz --strip-components 1
+          printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\n' > /etc/apt/apt.conf.d/no-recommends-suggests ; rm -rf /etc/apt/sources.list /etc/apt/sources.list.d/* ; printf 'Types: deb\nURIs: http://azure.archive.ubuntu.com/ubuntu/\nSuites: jammy jammy-updates\nComponents: main\nTrusted: yes\n' > /etc/apt/sources.list.d/all.sources ; apt update
+          apt install -y curl ca-certificates make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev
+          curl -L https://github.com/RsyncProject/rsync/archive/refs/tags/v3.3.0.tar.gz | tar -zx --strip-components 1
           (printf '#include <float.h>\n#include <stdlib.h>\n' ; cat popt/popt.c) > popt/popt.c.tmp ; mv popt/popt.c.tmp popt/popt.c
-          export CFLAGS='-O2 -static'
-          ./configure --disable-openssl --disable-md2man --disable-debug
-          make CFLAGS="$CFLAGS"
+          export CFLAGS='-O2 -static -flto'
+          ./configure --disable-lz4 --disable-openssl --disable-md2man --disable-debug
+          make CFLAGS="$CFLAGS" -j$(nproc)
           strip rsync
-          mv rsync rsync_3.3.0_linux-x64
-      - name: Upload
-        uses: actions/upload-artifact@v4
+          zip -9 linux-x64.zip rsync
+      - name: Verify
+        run: |
+          ldd ./rsync || true
+          ./rsync -V
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          path: rsync_3.3.0_linux-x64
+          body: "-"
+          tag_name: "${{ 'mksb.rsync_3.3.0_' }}${{ github.run_id }}"
+          files: linux-x64.zip
   linux-arm64:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: uraimo/run-on-arch-action@v2
-        name: build
-        id: build
+      - name: Build
+        shell: sudo bash -e {0}
+        run: |
+          curl -o libzstd-dev_arm64.deb -L http://ftp.debian.org/debian/pool/main/libz/libzstd/libzstd-dev_1.5.4+dfsg2-5_arm64.deb ; dpkg -x ./libzstd-dev_arm64.deb / # https://packages.debian.org/stable/libzstd-dev
+          curl -o libxxhash-dev_arm64.deb -L http://ftp.debian.org/debian/pool/main/x/xxhash/libxxhash-dev_0.8.1-1_arm64.deb ; dpkg -x ./libxxhash-dev_arm64.deb /
+          printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\n' > /etc/apt/apt.conf.d/no-recommends-suggests ; rm -rf /etc/apt/sources.list /etc/apt/sources.list.d/* ; printf 'Types: deb\nURIs: http://azure.archive.ubuntu.com/ubuntu/\nSuites: jammy jammy-updates\nComponents: main\nTrusted: yes\n' > /etc/apt/sources.list.d/all.sources ; apt update
+          apt install -y g++-11-aarch64-linux-gnu
+          apt install -y curl ca-certificates make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev
+          curl -L https://github.com/RsyncProject/rsync/archive/refs/tags/v3.3.0.tar.gz | tar -zx --strip-components 1
+          curl -L https://github.com/rpm-software-management/popt/archive/1e7bc3883afe26c60c511bd4caf2f3c37803c06f.tar.gz | tar -zx --strip-components 1 -C popt ; mv popt/src/* popt/
+          export CFLAGS='-O2 -static -flto -D PACKAGE=\"rsync\" -D POPT_SYSCONFDIR=\"/tmp\" -D HAVE_STRERROR -D X_OK=1' # X_OK=1 in unistd.h
+          ./configure CC="aarch64-linux-gnu-gcc-11" --host aarch64 --disable-lz4 --disable-openssl --disable-md2man --disable-debug
+          sed -i Makefile -e 's|popt_OBJS=|popt_OBJS=popt/poptint.o |'
+          make CFLAGS="$CFLAGS" -j$(nproc) || true
+          aarch64-linux-gnu-strip rsync
+          zip -9 linux-arm64.zip rsync
+      - name: Verify
+        uses: uraimo/run-on-arch-action@v2
         with:
           arch: aarch64
           distro: bookworm
-          dockerRunArgs: |
-            --volume "${PWD}:/workdir"
-          shell: /bin/bash
+          dockerRunArgs: --volume "${PWD}:/workdir"
           run: |
-            cd /workdir
-            apt update
-            apt install -y curl musl-tools make zlib1g-dev libpopt-dev gcc g++ gawk autoconf automake python3-cmarkgfm acl libacl1-dev attr libattr1-dev libxxhash-dev libzstd-dev liblz4-dev libssl-dev
-            curl -o rsync.tar.gz -L https://github.com/RsyncProject/rsync/archive/refs/tags/v3.3.0.tar.gz
-            tar -xf rsync.tar.gz --strip-components 1
-            (printf '#include <float.h>\n#include <stdlib.h>\n' ; cat popt/popt.c) > popt/popt.c.tmp ; mv popt/popt.c.tmp popt/popt.c
-            export CFLAGS='-O2 -static'
-            ./configure --disable-openssl --disable-md2man --disable-debug
-            make CFLAGS="$CFLAGS"
-            strip rsync
-            mv rsync rsync_3.3.0_linux-arm64
-      - name: Upload
-        uses: actions/upload-artifact@v4
+            ldd /workdir/rsync || true
+            /workdir/rsync -V
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
-          path: rsync_3.3.0_linux-arm64
+          body: "-"
+          tag_name: "${{ 'mksb.rsync_3.3.0_' }}${{ github.run_id }}"
+          files: linux-arm64.zip
