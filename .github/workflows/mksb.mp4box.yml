@@ -1,0 +1,56 @@
+name: mksb.mp4box
+on:
+  workflow_dispatch:
+jobs:
+  linux-x64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Build
+        shell: sudo bash -e {0}
+        run: |
+          # https://wiki.gpac.io/Build/build/GPAC-Build-Guide-for-Linux/#mp4box-gpac-only-minimal-static-build
+          curl -L https://github.com/gpac/gpac/archive/refs/tags/v2.4.0.tar.gz | tar -zx --strip-components 1
+          ./configure --static-mp4box --disable-qjs --disable-qjs-libc --disable-x11 --use-zlib=no --use-opensvc=no --use-openhevc=no --use-platinum=no --use-freetype=no --use-ssl=no --use-jpeg=no --use-openjpeg=no --use-png=no --use-mad=no --use-a52=no --use-xvid=no --use-faad=no --use-ffmpeg=no --use-freenect=no --use-vorbis=no --use-theora=no --use-nghttp2=no --use-oss=no --use-dvb4linux=no --use-alsa=no --use-pulseaudio=no --use-jack=no --use-directfb=no --use-hid=no --use-lzma=no --use-tinygl=no --use-vtb=no --use-ogg=no --use-sdl=no --use-caption=no --use-mpeghdec=no --use-libcaca=no --disable-network --disable-3d --disable-crypto
+          make -j $(nproc)
+          mv bin/gcc/MP4Box mp4box
+          strip mp4box
+          zip -9 linux-x64.zip mp4box
+      - name: Verify
+        run: |
+          ldd ./mp4box || true
+          ./mp4box -version
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: "_"
+          tag_name: "${{ 'mksb.mp4box_2.4.0_' }}${{ github.run_id }}"
+          files: linux-x64.zip
+  win-x64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Build
+        shell: sudo bash -e {0}
+        run: |
+          printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\n' > /etc/apt/apt.conf.d/no-recommends-suggests ; rm -rf /etc/apt/sources.list /etc/apt/sources.list.d/* ; printf 'Types: deb\nURIs: http://azure.archive.ubuntu.com/ubuntu/\nSuites: jammy jammy-updates\nComponents: main\nTrusted: yes\n' > /etc/apt/sources.list.d/all.sources ; apt update
+          apt install -y mingw-w64
+          curl -L https://github.com/gpac/gpac/archive/refs/tags/v2.4.0.tar.gz | tar -zx --strip-components 1
+          ./configure --target-os=mingw32 --cross-prefix=x86_64-w64-mingw32-  --disable-qjs --disable-qjs-libc --disable-x11 --use-zlib=no --use-opensvc=no --use-openhevc=no --use-platinum=no --use-freetype=no --use-ssl=no --use-jpeg=no --use-openjpeg=no --use-png=no --use-mad=no --use-a52=no --use-xvid=no --use-faad=no --use-ffmpeg=no --use-freenect=no --use-vorbis=no --use-theora=no --use-nghttp2=no --use-oss=no --use-dvb4linux=no --use-alsa=no --use-pulseaudio=no --use-jack=no --use-directfb=no --use-hid=no --use-lzma=no --use-tinygl=no --use-vtb=no --use-ogg=no --use-sdl=no --use-caption=no --use-mpeghdec=no --use-libcaca=no --disable-network --disable-3d --disable-crypto
+          make -j $(nproc)
+          
+      - name: Verify
+        run: |
+          ldd ./rsync || true
+          ./rsync -V
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: "_"
+          tag_name: "${{ 'mksb.mp4box_2.4.0_' }}${{ github.run_id }}"
+          files: win-x64.zip
+# gcc-mingw-w64
+
+# mac-x64
+# mac-arm64
+# linux-x64
+# linux-arm64
+# win-x64
