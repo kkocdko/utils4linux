@@ -35,7 +35,7 @@ rsync_sync() { rsync --checksum --progress --recursive --times --links --delete 
 rsync_sync /Pictures
 rsync_sync /DCIM
 rsync_sync /DataBackup
-# rsync_sync /Download
+rsync_sync /Download
 # .thumbnails
 exit
 fi
@@ -70,9 +70,9 @@ workdir=/data/data/_linux/rsync
 if [ "\$1" = "up" ]; then
 killall rsync && sleep 0.5
 rm -rf \$workdir ; mkdir -p \$workdir ; cp ./* \$workdir/ ; cd \$workdir
-printf "uid = 0\ngid = 0\nuse chroot = no\nfake super = yes\nread only = false\n[sdcard]\npath = /sdcard\n" > rsyncd.conf
-chmod +x ./rsync
 ip address add 192.168.43.100/24 dev wlan0 # https://android.stackexchange.com/a/213626
+chmod +x ./rsync
+printf "uid = 0\ngid = 0\nuse chroot = no\nfake super = yes\nread only = false\n[sdcard]\npath = /sdcard\n" > rsyncd.conf
 exec ./rsync --daemon --no-detach --port=9426 --config=rsyncd.conf --log-file=/dev/stdout
 exit 1
 fi
