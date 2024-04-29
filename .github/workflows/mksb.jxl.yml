@@ -85,8 +85,8 @@ jobs:
           zip -9 linux-x64.zip jxl
       - name: Verify
         run: |
-          ldd ./rsync || true
-          ./rsync -V
+          ldd ./jxl || true
+          ./jxl cjxl -V
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
