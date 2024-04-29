@@ -41,6 +41,7 @@ jobs:
         run: |
           curl -o libzstd-dev_arm64.deb -L http://ftp.debian.org/debian/pool/main/libz/libzstd/libzstd-dev_1.5.4+dfsg2-5_arm64.deb ; dpkg -x ./libzstd-dev_arm64.deb ./ # https://packages.debian.org/stable/libzstd-dev
           curl -o libxxhash-dev_arm64.deb -L http://ftp.debian.org/debian/pool/main/x/xxhash/libxxhash-dev_0.8.1-1_arm64.deb ; dpkg -x ./libxxhash-dev_arm64.deb ./
+          chmod -R 777 ./
           printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\n' > /etc/apt/apt.conf.d/no-recommends-suggests
           apt update
           apt install -y binutils-aarch64-linux-gnu make gawk autoconf automake acl attr
