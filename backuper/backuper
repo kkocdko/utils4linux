@@ -91,3 +91,6 @@ rsync rsync://192.168.43.100:9426/sdcard/ # will print the list
 # https://linux.die.net/man/1/rsync
 # https://github.com/kkocdko/utils4linux/releases/tag/mksb.rsync_3.3.0_8846311740
 rsync -c --progress --recursive --times /run/media/kkocdko/data/archive/phone/Pictures/ rsync://192.168.43.100:9426/sdcard/Pictures/
+
+# btrfs send - https://btrfs.readthedocs.io/en/latest/btrfs-send.html - https://wiki.archlinux.org/title/btrfs#Send/receive
+btrfs send --proto 2 --compressed-data -f /run/media/kkocdko/data/archive/fedora_20240429-1419.btrfs /snapshots/20240429-1419/
