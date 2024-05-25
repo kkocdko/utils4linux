@@ -35,7 +35,7 @@ fi
 if [ "$1" = "" ]; then
 cd dist
 if [ "$(id -u)" != "0" ]; then
-echo "please run as root"
+echo "please run by sudo"
 exit
 fi
 ./sing-box version
@@ -49,3 +49,6 @@ fi
 # printf "[main]\ndns=none\nrc-manager=unmanaged\n" > /etc/NetworkManager/conf.d/70-no-dns.conf # 禁用 nm 自动修改 resolv.conf
 # systemctl restart NetworkManager
 # printf "# manually writen\nnameserver 172.19.0.53\n# nameserver 223.5.5.5\n" > /etc/resolv.conf # 地址最好在 tun device 对应的网段内，防止泄漏。不要设置成 127.0.0.1 否则请求无法被嗅探和拦截
+
+# echo "ProxyCommand nc --proxy-type socks5 --proxy 127.0.0.1:1080 %h %p" >> ~/.ssh/config
+
