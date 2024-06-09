@@ -44,6 +44,8 @@ fi
 exit
 fi
 
+# sudo watch 'ss --tcp | grep 2400 | sort'
+
 # clear ; sudo /home/kkocdko/misc/code/utils4linux/proxy/proxy
 
 # printf "[main]\ndns=none\nrc-manager=unmanaged\n" > /etc/NetworkManager/conf.d/70-no-dns.conf # 禁用 nm 自动修改 resolv.conf

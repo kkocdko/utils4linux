@@ -17,9 +17,7 @@
     "strategy": "prefer_ipv4",
     "independent_cache": true, // 不要让 fakeip 和其他 dns 缓存混淆
     "servers": [
-      // { "address": "dhcp://auto", "detour": "direct" },
-      // { "address": "https://101.226.4.6/dns-query", "detour": "direct" }, // 默认是第一个，约等于 final。resolve?name=www.feishu.cn&type=A
-      { "address": "https://223.5.5.5/dns-query", "detour": "direct" },
+      { "address": "https://223.5.5.5/dns-query", "detour": "direct" }, // 默认是第一个，约等于 final。https://101.226.4.6/dns-query 还可以 resolve?name=www.feishu.cn&type=A // { "address": "dhcp://auto", "detour": "direct" }
       { "tag": "remote", "address": "fakeip" }
     ],
     "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，server 的域名和 direct 会用默认的 dns
@@ -29,9 +27,7 @@
     // prettier-ignore
     "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs","download_detour":"proxy"}],
     "rules": [
-      // { "inbound": "dns-in", "outbound": "dns" },
-      { "protocol": "dns", "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved
-      // { "protocol": "quic", "outbound": "block" }, // quic 对代理不友好，直接禁止，强迫应用回落到其他协议
+      { "protocol": "dns", "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved。建议修改 dns 到 192.168.1.1
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 quic 依然会被上一条禁止
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" },
@@ -49,44 +45,36 @@
       { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       { "domain_suffix": "google.cn", "outbound": "proxy" }, // 同上
       { "domain_suffix": "googleapis.com", "outbound": "proxy" }, // 同上
-      { "domain_suffix": "bytevcloud.com", "outbound": "direct" }, // 字节 视频流 或 地区检测
-      { "domain_suffix": "volcvideos.com", "outbound": "direct" }, // 字节 火山引擎
-      { "domain_suffix": "openai-proxy.org", "outbound": "direct" }, // gpt api 国内代理商
-      { "domain_suffix": "gptapi.us", "outbound": "direct" }, // gpt api 国内代理商
-      { "ip_cidr": "x.x.x.x/32", "outbound": "direct" }, // 在国内的服务器
-      { "rule_set": ["ip-cn", "site-cn"], "outbound": "direct" }, // 在国内的 IP 和 在国内的域名。原先的 @cn 已合并到 cn
+      { "ip_cidr": "114.114.114.114/32", "outbound": "direct" }, // 在国内的服务器
+      { "rule_set": ["ip-cn", "site-cn"], "outbound": "direct" }, // 在国内的域名和 IP。原先的 @cn 已合并到 cn
       { "domain": "-", "invert": true, "outbound": "proxy" } // 约等于 final
     ]
   },
   "inbounds": [
+    { "type": "mixed", "listen_port": 1080 }, // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
     {
-      "type": "tun", // 有些应用并不理会 xxx_proxy 环境变量，所以让 tun 作为兜底措施
+      "type": "tun", // 有些应用并不理会代理环境变量，所以让 tun 作为兜底措施
       "inet4_address": "172.19.0.1/30",
       "inet6_address": "fdfe:dcba:9876::1/126", // tun device 的 ipv6 地址可能会让应用误以为可用，见 issue 932。即便 prefer_ipv4 也无效，因为微信等应用会使用内置 DoH
       "auto_route": true,
       "strict_route": true, // 确保 dns 被劫持，但在 android 上可能导致局域网分享无法连接，详见文档
       "sniff": true // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
       // "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 1080 } } // 在 android 上设置 http_proxy 会让知乎等一些垃圾应用挂掉
-    },
-    // { "tag": "dns-in", "type": "direct", "network": "udp", "listen_port": 53 }, // 本地监听 dns，记得改 /etc/resolv.conf
-    { "type": "mixed", "listen": "127.0.0.1", "listen_port": 1080 } // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
+    }
+    // { "tag": "dns-in", "type": "direct", "network": "udp", "listen_port": 53 }, // 本地监听 dns，记得改 /etc/resolv.conf // Android 上这样做会失败
   ],
   // prettier-ignore
   "outbounds": [
-    // 内置
-    { "tag": "direct", "type": "direct" },
-    { "tag": "block", "type": "block" },
-    { "tag": "dns", "type": "dns" },
     // 组
-    { "tag": "proxy", "type": "selector", "outbounds": ["sh-hello","foo-1-x0.1"] },
+    { "tag": "proxy", "type": "selector", "outbounds": ["sh-hk-stls","foo-1-x0.1"] },
     // self-hosted
-    {"tag":"sh-hello","detour":"sh-hello-outer","type":"shadowsocks","method":"2022-blake3-aes-128-gcm","password":"xxx"},{"type":"shadowtls","tag":"sh-hello-outer","server":"1.1.1.1","server_port":11111,"version":3,"password":"xxx","tls":{"enabled":true,"server_name":"registry.npmmirror.com"}},
+    {"tag":"sh-hk-stls","detour":"sh-hk-stls-outer","type":"shadowsocks","method":"2022-blake3-aes-128-gcm","password":"xxx"},{"type":"shadowtls","tag":"sh-hk-stls-outer","server":"1.1.1.1","server_port":11111,"version":3,"password":"xxx","tls":{"enabled":true,"server_name":"registry.npmmirror.com"}},
     // foo - paid - cheap - https://example.com
     {"tag":"foo-1-x0.1","server":"111.111.111.111","server_port":443},
     // bar - paid - https://example.com/api/v1/client/subscribe?token=xxx
     {"tag":"bar-1-sg-x10","password":"xxx","server":"xxx"},
-    // localhost
-    {"tag":"localhost-http","type":"http","server":"127.0.0.1","server_port":1080} // 小心别回环了
+    // 内置
+    { "tag": "direct", "type": "direct" }, { "tag": "block", "type": "block" }, { "tag": "dns", "type": "dns" }
   ]
 }
 // curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/proxy/config.jsonc

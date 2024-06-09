@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync, rmSync } from "node:fs";
-import { spawn } from "node:child_process";
+import fs from "node:fs";
+import child_process from "node:child_process";
 
-const cfg = readFileSync("config.jsonc").toString();
+const cfg = fs.readFileSync("config.jsonc").toString();
 const subs = cfg.match(/(?<=\/\/\s*)\w+?\s\-\s.+?https?:.+?(?=\n)/g);
 const results = await Promise.allSettled(
   subs.map(async (/** @type {string} */ sub) => {
@@ -10,13 +10,19 @@ const results = await Promise.allSettled(
     console.log(name + ": begin");
     console.time(name);
     const out = `./dist/sub-${name}.json`;
-    /** @type {ChildProcessWithoutNullStreams} */
-    const child = spawn("./dist/clash2singbox", ["-o", out, "-url", url]);
+    // curl -H "User-Agent: sing-box" -L "https://example.com"
+    /** @type {child_process.ChildProcessWithoutNullStreams} */
+    const child = child_process.spawn("./dist/clash2singbox", [
+      "-o",
+      out,
+      "-url",
+      url,
+    ]);
     await new Promise((r) => child.on("exit", r));
-    const parsed = JSON.parse(readFileSync(out).toString());
-    rmSync(out);
+    const parsed = JSON.parse(fs.readFileSync(out).toString());
+    fs.rmSync(out);
     const entries = [];
-    const MAX_I = 3;
+    const MAX_I = 9;
     const store = new Map();
     store.set("emby", { i: 1, r: /emby/ });
     store.set("hkt", { i: 1, r: /hkt|香港电讯|香港電訊/ });
@@ -72,7 +78,7 @@ const results = await Promise.allSettled(
     return ret;
   })
 );
-writeFileSync(
+fs.writeFileSync(
   "./dist/sub.jsonc",
   "// prettier-ignore\n[\n\n" +
     results
@@ -80,5 +86,3 @@ writeFileSync(
       .join("\n\n") +
     "\n\n]\n"
 );
-
-// node --experimental-detect-module tidy.js
