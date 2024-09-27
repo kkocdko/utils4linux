@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import child_process from "node:child_process";
 
-const cfg = fs.readFileSync("config.jsonc").toString();
+const cfg = fs.readFileSync("./dist/config-client.jsonc").toString();
 const subs = cfg.match(/(?<=\/\/\s*)\w+?\s\-\s.+?https?:.+?(?=\n)/g);
 const results = await Promise.allSettled(
   subs.map(async (/** @type {string} */ sub) => {
@@ -9,7 +9,7 @@ const results = await Promise.allSettled(
     const [name, url] = [parts[0], parts.at(-1)];
     console.log(name + ": begin");
     console.time(name);
-    const out = `./dist/sub-${name}.json`;
+    const out = `./dist/config-sub-${name}.json`;
     // curl -H "User-Agent: sing-box" -L "https://example.com"
     /** @type {child_process.ChildProcessWithoutNullStreams} */
     const child = child_process.spawn("./dist/clash2singbox", [
@@ -22,7 +22,7 @@ const results = await Promise.allSettled(
     const parsed = JSON.parse(fs.readFileSync(out).toString());
     fs.rmSync(out);
     const entries = [];
-    const MAX_I = 9;
+    const MAX_I = 4;
     const store = new Map();
     store.set("emby", { i: 1, r: /emby/ });
     store.set("hkt", { i: 1, r: /hkt|香港电讯|香港電訊/ });
@@ -79,7 +79,7 @@ const results = await Promise.allSettled(
   })
 );
 fs.writeFileSync(
-  "./dist/sub.jsonc",
+  "./dist/config-sub.jsonc",
   "// prettier-ignore\n[\n\n" +
     results
       .flatMap((p) => (p.status === "fulfilled" ? [p.value] : []))

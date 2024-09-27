@@ -5,7 +5,7 @@ if [ ! -e dist ]; then
 echo ">>> init"
 mkdir dist
 cd dist
-curl -L https://github.com/SagerNet/sing-box/releases/download/v1.8.6/sing-box-1.8.6-linux-amd64.tar.gz | tar -xz --strip-component 1
+curl -L https://github.com/SagerNet/sing-box/releases/download/v1.10.0-beta.11/sing-box-1.10.0-beta.11-linux-amd64.tar.gz | tar -xz --strip-component 1
 curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.1.4/clash2singbox-linux-amd64 -o clash2singbox
 chmod +x clash2singbox
 # rm -f registerSW.js sw.js *.ico *.png manifest.webmanifest Twemoji_* assets/Twemoji_* assets/roboto-* assets/inter-*
@@ -13,7 +13,7 @@ exit
 fi
 
 if [ "$1" = "fetch" ]; then
-node --experimental-detect-module fetch.js
+node --experimental-detect-module config-sub-fetch.js
 exit
 fi
 
