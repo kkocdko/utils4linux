@@ -1,3 +1,0 @@
-#!/bin/sh
-export ELECTRON_RUN_AS_NODE=1
-exec /home/kkocdko/misc/apps/electron/electron $@

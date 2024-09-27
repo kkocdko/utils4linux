@@ -22,7 +22,7 @@ gsettings set org.gnome.desktop.interface text-scaling-factor 1.12
 nohup sh -c 'sleep 3 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
 fi
 export GTK_IM_MODULE=ibus
-exec \$(dirname \$0)/chrome --disable-smooth-scrolling --disable-nacl --disable-quic --disable-breakpad --disable-crash-reporter --disable-renderer-accessibility --disable-ax-menu-list --disable-top-sites --disable-features=WebGPU,TabHoverCardImages,ChromeRefresh2023,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading --enable-features=WebUIDarkMode,OverlayScrollbar,VaapiVideoEncoder,VaapiVideoDecoder,Vulkan,WebRTCPipeWireCapturer,UseOzonePlatform --ozone-platform=wayland --force-device-scale-factor=1 --gtk-version=4 --force-dark-mode --force-local-ntp --extension-mime-request-handling=always-prompt-for-install --webrtc-ip-handling-policy=default_public_and_private_interfaces "\$@"
+exec \$(dirname \$0)/chrome --disable-breakpad --disable-logging --disable-sync --disable-speech-api --disable-voice-input --disable-domain-reliability --disable-smooth-scrolling --disable-nacl --disable-quic --disable-breakpad --disable-crash-reporter --disable-renderer-accessibility --disable-ax-menu-list --disable-top-sites --disable-features=WebGPU,TabHoverCardImages,ChromeRefresh2023,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading --enable-features=WebUIDarkMode,OverlayScrollbar,VaapiVideoEncoder,VaapiVideoDecoder,Vulkan,WebRTCPipeWireCapturer,UseOzonePlatform --ozone-platform=wayland --force-device-scale-factor=1 --gtk-version=4 --force-dark-mode --force-local-ntp --extension-mime-request-handling=always-prompt-for-install --webrtc-ip-handling-policy=default_public_and_private_interfaces "\$@"
 # --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" # "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Edg/120.0.0.0"
 EOF
 chmod +x launch
@@ -38,11 +38,23 @@ MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xht
 EOF
 sudo mv chromium.desktop /usr/share/applications/chromium.desktop
 
-# export GTK_IM_MODULE=ibus
-# export GDK_DPI_SCALE=1
-# export GDK_SCALE=1
-# export GDK_SCALE_FACTOR=1
-# export GDK_SCREEN_SCALE_FACTORS=1
-# export GDK_DPI_SCALE=0.5
-# export GDK_SCALE=2
-# --high-dpi-support=1 --force-device-scale-factor=1.2
+exit
+
+ln_to_tmp(){ from="$HOME/$2" ; to="/tmp/chromium_cache/$3" ; rm -rf "$from" ; if [ $1 = d ]; then mkdir -p "$(dirname "$from")" "$to" ; else touch "$to" ; fi ; ln -s "$to" "$from" ;}
+ln_to_tmp d ".cache/chromium" main_cache
+ln_to_tmp d ".config/chromium/GraphiteDawnCache" graphite_dawn_cache
+ln_to_tmp d ".config/chromium/GrShaderCache" gr_shader_cache
+ln_to_tmp d ".config/chromium/ShaderCache" shader_cache
+ln_to_tmp d ".config/chromium/Default/GPUCache" gpu_cache
+ln_to_tmp d ".config/chromium/Default/DawnWebGPUCache" dawn_webgpu_cache
+ln_to_tmp d ".config/chromium/Default/DawnGraphiteCache" dawn_graphite_cache
+ln_to_tmp d ".config/chromium/Default/Service Worker/CacheStorage" sw_cache_storage
+ln_to_tmp d ".config/chromium/Default/Service Worker/ScriptCache" sw_script_cache
+ln_to_tmp d ".config/chromium/Default/optimization_guide_hint_cache_store" opti_guide_cache
+ln_to_tmp d ".config/chromium/segmentation_platform" segmentation_platform
+ln_to_tmp f ".config/chromium/Default/DIPS" dips
+ln_to_tmp f ".config/chromium/Default/DIPS-journal" dips_journal
+ln_to_tmp f ".config/chromium/Default/History-journal" history_journal
+ln_to_tmp f ".config/chromium/Default/Shortcuts-journal" shortcuts_journal
+ln_to_tmp f ".config/chromium/Default/Network Action Predictor-journal" net_predictor_journal
+

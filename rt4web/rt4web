@@ -1,7 +1,8 @@
 #!/bin/sh
 cd $(dirname $0)
-[ ! -e electron.zip ] && curl -o electron.zip -L https://registry.npmmirror.com/-/binary/electron/v31.0.0-alpha.2/electron-v31.0.0-alpha.2-linux-x64.zip # https://registry.npmmirror.com/binary.html?path=electron/
+[ ! -e electron.zip ] && curl -o electron.zip -L https://registry.npmmirror.com/-/binary/electron/v33.0.0-alpha.3/electron-v33.0.0-alpha.3-linux-x64.zip # https://registry.npmmirror.com/binary.html?path=electron/
 unzip -q electron.zip -d dist
 # dist/electron
 # tar -xf vscode.tar.gz -C dist --strip-components 1
 # exit
+# ./electron --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --wayland-text-input-version=3 --force-device-scale-factor=1 --gtk-version=4 https://kkocdko.site/toy/realpha
