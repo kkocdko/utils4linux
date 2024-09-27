@@ -1,37 +1,230 @@
 #!/bin/sh
+# set -e
+set -x
+if [ "$(id -u)" != "0" ]; then
+  echo "Should be run as root. Try sudo."
+  exit
+fi
+if [ "$(pwd)" != "$(dirname $(realpath $0))" ]; then
+  echo "Should be run in current directory."
+  exit
+fi
+mkdir -p dist
+cd dist
+dist_dir=$(pwd)
+[ ! -e debian.tar.xz ] && curl -o debian.tar.xz -L https://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20240717-1811/debian-12-generic-amd64-20240717-1811.tar.xz # https://cdimage.debian.org/cdimage/cloud/...
+[ ! -e linux-image.deb ] && curl -o linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.10.6-xanmod1/6.10.6-x64v3-xanmod1/linux-image-6.10.6-x64v3-xanmod1_6.10.6-x64v3-xanmod1-0~20240819.g0b22f40_amd64.deb?use_mirror=autoselect # https://sourceforge.net/projects/xanmod/files/releases/main/
+[ ! -e linux-headers.deb ] && curl -o linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.10.6-xanmod1/6.10.6-x64v3-xanmod1/linux-headers-6.10.6-x64v3-xanmod1_6.10.6-x64v3-xanmod1-0~20240819.g0b22f40_amd64.deb?use_mirror=autoselect
+[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.3/adw-gtk3v5.3.tar.xz
+work_dir=/tmp/mkdebian
+rm -rf $work_dir
+mkdir $work_dir
+tar -xf debian.tar.xz -C $work_dir
+cd $work_dir
+loop_device=$(losetup --partscan --find --show disk.raw)
+mkdir root
+until stat -t $loop_device"p1"; do sleep 0.1; done
+mount $loop_device"p1" root
+ls root
+mount --bind $dist_dir root/mnt
+mount -t devtmpfs -o mode=0755,nosuid /dev root/dev # https://askubuntu.com/a/1514823
+mount -t devpts -o mode=0620,gid=5,nosuid,noexec /dev/pts root/dev/pts
+echo "Acquire::http::Pipeline-Depth \"0\";" > root/etc/apt/apt.conf.d/99nopipelining
+printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > root/etc/apt/sources.list.d/debian.sources
+# https://www.reddit.com/r/archlinux/comments/r4otqi/dracut_worth_it/
+cat <<EOF | chroot root /bin/bash # inner chroot
+set -x
+export LANG=C # https://unix.stackexchange.com/a/269164
+export DEBIAN_FRONTEND=noninteractive # https://github.com/moby/moby/issues/27988
+rm -rf /etc/resolv.conf /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
+echo "nameserver 223.5.5.5" > /etc/resolv.conf
+apt remove -y --purge --allow-remove-essential systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core grub-common grub-efi-amd64-signed
+apt update
+apt install -y --no-install-recommends vim-tiny busybox-static systemd-boot-efi parted binutils dracut dracut-live dracut-config-generic
+echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vim.tiny's vi compatibility mode
+mv /etc/kernel/postinst.d/dracut /tmp/kernel-postinst-dracut
+apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
+apt autoremove -y
+apt clean all -y
+mv /tmp/kernel-postinst-dracut /etc/kernel/postinst.d/dracut
+[ \$(ls /usr/lib/modules | wc -l) != 1 ] && exit 1 # ensure only one kernel
+dracut --kver \$(ls /usr/lib/modules) --add dmsquash-live --add dmsquash-live-autooverlay --no-early-microcode --no-compress --force --uefi /mnt/linux.efi
+EOF
+# chroot root /bin/bash
+umount --recursive root/mnt root/dev
+mksquashfs root $dist_dir/squashfs.img -b 1M -noappend -no-recovery -comp zstd -Xcompression-level 3
+umount --recursive root
+losetup --detach $loop_device
 
-mkdir -p /tmp/mkdebian
-cd /tmp/mkdebian
+exit # ==============================
 
-# https://mirrors.ustc.edu.cn/debian-cd/12.2.0/amd64/iso-dvd/debian-12.2.0-amd64-DVD-1.iso
-# https://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20231013-1532/debian-12-nocloud-amd64-20231013-1532.tar.xz
+# qemu uefi test environment
 
-# if [ "$(whoami)" != "root" ]; then
-#     echo "Should be run as root."
-#     exit
-# fi
-# if [ "$(pwd)" != "$(dirname $(realpath $0))" ]; then
-#     echo "Should be run in current directory."
-#     exit
-# fi
+# https://wiki.archlinux.org/title/FAT
+# https://en.wikipedia.org/wiki/File_Allocation_Table Final FAT16 ; 2,147,483,647 bytes (2 GB − 1)
 
-# if [ "$1" = "" ]; then
-#     name=mkdebian0
-#     # docker kill $name
-#     # docker rm $name
-#     # docker exec -it $name bash
-#     docker run --privileged -d --network host --name $name debian:testing-20230904 tail -f /dev/null
-#     docker cp $0 $name:/
-#     docker exec -it $name /$(basename $0) inner-docker
-#     exit
-# fi
+# https://www.reddit.com/r/archlinux/comments/17nncad/
+# https://github.com/systemd/systemd/raw/v256.5/src/ukify/ukify.py
+# https://linux.die.net/HOWTO/BootPrompt-HOWTO-3.html
 
-# [ "$1" != "inner-docker" ] && exit 1
+sudo cp dist/linux.efi dist/squashfs.img /run/media/kkocdko/E93D-9F6B/
 
-# # http://127.0.0.1:9304/mirror/debian/
-# # sed -i.bak 's|deb.debian.org|mirrors.ustc.edu.cn|g' /etc/apt/sources.list.d/debian.sources
-# sed -i.bak 's|deb.debian.org|127.0.0.1:9304/mirror|g' /etc/apt/sources.list.d/debian.sources
-# echo "'Acquire::http::Pipeline-Depth \"0\";" >/etc/apt/apt.conf.d/99nopipelining
-# apt update
-# apt install live-build
-# lb config -d bookworm --debian-installer live --debian-installer-distribution bookworm --archive-areas "main non-free-firmware" --debootstrap-options "--variant=minbase"
+sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 --label kk2 --loader /vmlinuz-6.10.6-x64v4-xanmod1 --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
+sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 --label kk2 --loader /vmlinuz --unicode 'root=\ init=\bin\sh'
+
+efibootmgr --create --disk /dev/sda --part 1 --label livecd --loader /linux.efi --unicode 'root=live:/dev/sda1 rd.live.dir=/ rd.live.overlay.overlayfs=1 rd.live.image rd.shell rd.debug panic=10 mitigations=off selinux=0'
+
+
+exit
+
+#!/bin/sh
+
+mkdir -p /tmp/mkfedora
+cd /tmp/mkfedora
+
+in_iso="/run/media/kkocdko/data/in.iso" # the input iso, currently it's Fedora-Workstation-Live-x86_64-39-1.5.iso
+if [ -e $in_iso.img ]; then # avoid running unsquashfs every time, faster develop-debug loop
+  cp $in_iso.img cur.img # copy to current dir
+else
+  mkdir in-iso
+  mount -r $in_iso in-iso
+  unsquashfs in-iso/LiveOS/squashfs.img
+  mv squashfs-root/LiveOS/rootfs.img cur.img
+  cp cur.img $in_iso.img
+  umount in-iso
+  rm -rf in-iso squashfs-root
+fi
+mkdir cur
+mount -o loop,rw cur.img cur # mount as read-write
+
+cat <<EOF >cur/usr/share/glib-2.0/schemas/01_mkfedora.gschema.override # modify default config
+[org.gnome.settings-daemon.plugins.power]
+idle-brightness=100
+[org.gnome.mutter]
+check-alive-timeout=7200000
+[org.gnome.desktop.peripherals.touchpad]
+tap-to-click=true
+[org.gnome.desktop.background]
+primary-color="#000000"
+[org.gnome.desktop.interface]
+enable-animations=false
+cursor-blink=false
+gtk-theme="adw-gtk3"
+font-name="Noto Sans 11"
+document-font-name="Noto Sans 11"
+monospace-font-name="Noto Sans Mono 10"
+[org.gnome.desktop.wm.preferences]
+titlebar-font="Noto Sans Bold 11"
+[org.gnome.TextEditor]
+spellcheck=false
+EOF
+cat <<EOF | chroot cur /bin/bash # inner chroot
+glib-compile-schemas /usr/share/glib-2.0/schemas # compile config
+dnf mark install tmux # keep these packages
+dnf group remove -y firefox printing libreoffice guest-desktop-agents container-management multimedia # remove groups first
+dnf remove -y \
+  libreoffice-* qemu-* podman abrt plymouth kernel-modules-extra xorg-x11-server-Xorg gnome-shell-extension-* qt5-* qt6-* PackageKit-* git nano cpp sos orca tcpdump traceroute binutils uresourced whois words dnsmasq avahi firewalld gamemode python-systemd-doc fros pcsc-lite-* libsane-* evince-* geolite2-* langpacks-* glibc-all-langpacks hunspell-en-GB bash-color-prompt  \
+  gnome-software gnome-remote-desktop gnome-connections gnome-browser-connector gnome-calendar gnome-clocks gnome-contacts gnome-weather gnome-tour gnome-user-docs gnome-characters gnome-maps gnome-logs gnome-font-viewer gnome-calculator totem baobab loupe cheese evince rhythmbox simple-scan \
+  ibus-anthy ibus-hangul ibus-libzhuyin ibus-m17n ibus-typing-booster \
+  desktop-backgrounds-gnome gnome-backgrounds fedora-workstation-backgrounds fedora-third-party fedora-logos-httpd fedora-chromium-* \
+  default-fonts-core-math default-fonts-core-emoji default-fonts-other-* aajohan-comfortaa-fonts abattis-cantarell-fonts adobe-source-code-pro-fonts
+printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
+echo "%_install_langs POSIX" >>/etc/rpm/macros # avoid extra locale files, see https://github.com/coreos/fedora-coreos-config/issues/194
+rm -rf /usr/share/locale/* # remove useless locale files
+rm -rf /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
+rm -rf /usr/share/ibus/dicts/emoji-* /usr/lib64/libpinyin/data/bigram.db # emoji and bigram in ibus
+sed -i /etc/selinux/config -e 's|SELINUX=enforcing|SELINUX=disabled|' # it sucks, cause systemd-xxx failed even after removing a normal package like qemu
+mkdir -p /etc/systemd/logind.conf.d
+printf "[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n" >/etc/systemd/logind.conf.d/90-ignore-lid.conf
+mkdir -p /etc/systemd/journald.conf.d
+printf "[Journal]\nSystemMaxUse=128M\nCompress=1M\n" >/etc/systemd/journald.conf.d/90-less-log.conf
+# dnf remove anaconda-core anaconda-install-env-deps yelp livesys-scripts systemd-resolved chrony flatpak-libs NetworkManager-config-connectivity-fedora # you can remove these after install to disk
+# dnf install git-core gcc-c++ google-noto-emoji-fonts docker pipewire-utils java-17-openjdk wireshark --setopt=install_weak_deps=False # recommand packages
+# systemctl disable dnf-makecache.service
+# systemctl disable dnf-makecache.timer
+# grub2-mkconfig -o /boot/grub2/grub.cfg # apply "/etc/default/grub", GRUB_CMDLINE_LINUX="amd_pstate=passive mitigations=off selinux=0"
+EOF
+
+# curl https://mirrors.ustc.edu.cn/docker-ce/linux/fedora/docker-ce.repo | sed 's|download.docker.com|mirrors.ustc.edu.cn/docker-ce|' > /etc/yum.repos.d/docker-ce.repo # https://download.docker.com/linux/fedora/docker-ce.repo
+# dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# dockerd-rootless-setuptool.sh install # https://docs.docker.com/engine/security/rootless/
+
+[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.3/adw-gtk3v5.3.tar.xz
+tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
+# https://extensions.gnome.org/extension/3843/just-perfection/ | https://extensions.gnome.org/extension-data/just-perfection-desktopjust-perfection.v27.shell-extension.zip
+# run as non-root user please
+# gnome-extensions install ./just-[TAB]
+# reboot
+# gnome-extensions prefs just-[TAB]
+
+# > rootfs: ext4 over squashfs
+# dd if=/dev/zero of=rootfs.img bs=1 count=0 seek=8192M
+# mkfs.ext4 rootfs.img -L Anaconda -b 4096 -m 0
+# mkdir rootfs
+# mount -t ext4 rootfs.img rootfs
+# rsync -axHAXv cur/ rootfs/ >/dev/null # cp -a out/* out-rootfs-img
+# umount rootfs cur
+# rm -rf rootfs cur cur.img
+# mkdir -p squashfs/LiveOS
+# mv rootfs.img squashfs/LiveOS/rootfs.img
+# mksquashfs squashfs squashfs.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4
+# rm -rf squashfs
+
+# > rootfs: direct squashfs
+# mksquashfs cur squashfs.img -b 1M -no-recovery -no-duplicates -no-sparse -not-reproducible -comp lz4 # fast, for debug
+mksquashfs cur squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 22 # slow, but smaller
+umount cur
+rm -rf cur cur.img
+
+rm -rf out.iso
+xorriso -dev $in_iso -outdev out.iso -boot_image any replay -map squashfs.img /LiveOS/squashfs.img
+rm -rf squashfs.img
+
+
+#===== recompile plymouth
+
+
+
+
+  429  apt install  -y build-essential debhelper-compat docbook-xsl libdrm-dev libcairo2-dev libevdev-dev libfreetype-dev libgtk-3-dev  libpango1.0-dev libpng-dev meson pkg-config xsltproc gettext xsltproc ninja-build
+  432  apt install -y -t bookworm-backports libudev-dev
+  462  apt install -y efibootmgr
+  467  apt update
+  468  apt install -y plymouth
+  469  apt install -y plymouth-themes
+  493  apt install rmdev
+  494  apt provide
+  495  apt provides
+  496  apt find
+  497  apt search
+  498  apt search rmdev
+  519  apt install meson
+  521  apt install gcc
+  527  apt install gcc-multilib
+  528  apt update
+  529  apt install gcc-multilib
+  531  apt install -y pkg-config cmake
+  533  apt install -y libpng-dev
+  535  apt install pango libudev
+  536  apt install libudev-dev
+  537  apt install -t bookworm-backports libudev-dev
+  539  apt install pango
+  540  apt install pango-de
+  541  apt install pango-dev
+  542  apt install gir1.2-coglpango-1.0
+  544  apt search pango
+  545  apt install libpango3.0-dev
+  546  apt install libpango1.0-dev
+  548  apt install -y gtk+-3.0
+  549  apt install -y libgtk3-dev
+  551  apt install libgtk-3-0-dev
+  552  apt install libgtk-3-dev
+  554  apt install -y libdrm-dev
+  556  apt install libevdev-dev
+  558  apt install msgfmt
+  559  apt search msgfmt
+  560  apt install liblocale-msgfmt-perl
+  562  apt install -y gettext
+  564  apt install xsltproc ninja-build
+  567  apt install -y ninja-build
+  574  history | grep apt

@@ -2,16 +2,11 @@
 /booker/chunks/
 /booker/pdfjs/
 /booker/pdfjs-dist.zip
+/mkdebian/debian.tar.xz
 /mkdebian/dist/
-/mkfedora/result
-/mkfedora/root
-/mkfedora/root.*
-/mkfedora/fedora-kickstarts
 /mkvscode/dist/
 /mkvscode/*.gz
 /katago/venv/
 /*/dist/
 /*/target/
-/proxy/config.jsonc
-/proxy/config-server.jsonc
 /rt4web/*.zip

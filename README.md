@@ -6,9 +6,9 @@ Many tools for Linux.
 
 Used for sensors reading. A lightweight alternative to [lm-sensors](https://github.com/lm-sensors/lm-sensors).
 
-## [mkfedora](mkfedora)
+## [mkdebian](mkdebian)
 
-Build your custom Fedora 39 Workstation ISO.
+Build your custom Debian ISO.
 
 ## [shcodespace](shcodespace)
 
