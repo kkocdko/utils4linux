@@ -18,17 +18,11 @@ exit
 fi
 
 if [ "$1" = "bench" ]; then
-# ~/misc/apps/hyperfine -w 1 -r 5 curl xxx
-# https://www.google.com/robots.txt
-# https://www.facebook.com/robots.txt
-# https://www.deepl.com/robots.txt
-# https://en.wikipedia.org/robots.txt
-# https://www.microsoft.com/robots.txt
-# https://www.bing.com/robots.txt
-# https://openai.com/robots.txt
-# https://twitter.com/robots.txt
-# https://github.com/robots.txt
-# https://gitlab.com/robots.txt
+for url in "https://www.google.com/robots.txt" "https://www.facebook.com/robots.txt" "https://www.deepl.com/robots.txt" "https://en.wikipedia.org/robots.txt" "https://www.microsoft.com/robots.txt" "https://www.bing.com/robots.txt" "https://openai.com/robots.txt" "https://twitter.com/robots.txt" "https://github.com/robots.txt"; do
+  duration="$(\time -p curl --silent -o /dev/null $url 2>&1 | head -n 1 | cut -d " " -f 2)"
+  printf "$duration | "
+done
+printf "\n"
 exit
 fi
 
@@ -39,18 +33,17 @@ echo "please run by sudo"
 exit
 fi
 ./sing-box version
-./sing-box run -c ../config.jsonc -D .
+./sing-box run -c config.jsonc -D .
 # ./sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
 exit
 fi
 
 # sudo watch 'ss --tcp | grep 2400 | sort'
 
-# clear ; sudo /home/kkocdko/misc/code/utils4linux/proxy/proxy
+# clear ; sudo ~/misc/code/utils4linux/proxy/proxy
 
 # printf "[main]\ndns=none\nrc-manager=unmanaged\n" > /etc/NetworkManager/conf.d/70-no-dns.conf # 禁用 nm 自动修改 resolv.conf
 # systemctl restart NetworkManager
 # printf "# manually writen\nnameserver 172.19.0.53\n# nameserver 223.5.5.5\n" > /etc/resolv.conf # 地址最好在 tun device 对应的网段内，防止泄漏。不要设置成 127.0.0.1 否则请求无法被嗅探和拦截
 
 # echo "ProxyCommand nc --proxy-type socks5 --proxy 127.0.0.1:1080 %h %p" >> ~/.ssh/config
-
