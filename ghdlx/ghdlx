@@ -1,0 +1,23 @@
+#!/bin/sh
+user="$1"
+repo="$2"
+commit="$3"
+exclude="$4"
+curl -L https://github.com/$user/$repo/archive/$commit.tar.gz | tar -zx --strip-components 1
+for sub_path in $(curl -L https://raw.githubusercontent.com/$user/$repo/$commit/.gitmodules | grep 'path = ' | cut -d\  -f3); do
+  sub_url=$(curl -L https://api.github.com/repos/$user/$repo/contents/$sub_path/?ref=$commit | grep '"html_url"' | cut -d\" -f4 | rev | sed 's|/eert/|/evihcra/|' | rev).tar.gz
+  echo $sub_path
+  echo $sub_url
+  curl -L $sub_url | tar -zx --strip-components 1 -C $sub_path
+done
+
+# 我想写一个东西，不知道有没有人已经写过了，来问一下群友，如果不存在那我就写。
+
+# 目标就是以最快的方式获取github上的有submodule的仓库的内容。
+
+# 比如有时候要clone一个很多submodule的仓库，最普通的方法是git clone --recursive https://github.com/fhanau/Effic
+
+# 如果我不需要任何git历史信息，--depth 1 也觉得不够快，还可以用 https://github.com/libjxl/libjxl/archive/commit-hash.tar.gz  这样直接拿打包好的tar.gz
+
+# 但是这个targz是没有submodule的，所以我想要写一个脚本能自动读取submodule，下载所有submodule的targz包。
+# https://github.com/PyGithub/PyGithub/issues/2054
