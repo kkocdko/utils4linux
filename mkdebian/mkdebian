@@ -1,16 +1,9 @@
 #!/bin/sh
 set -xe
-if [ "$(id -u)" != "0" ]; then
-  echo "Should be run as root."
-  exit
-fi
-if [ "$(pwd)" != "$(dirname $(realpath $0))" ]; then
-  echo "Should be run in current directory."
-  exit
-fi
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
-rm -rf $temp_dir
+if [ "$(id -u)" != "0" ]; then echo "Should be run as root."; exit; fi
+if [ -e $temp_dir ]; then echo "Need to clean the temp dir manually."; exit; fi
 mkdir -p $temp_dir $dist_dir
 cd $temp_dir
 curl \
@@ -31,34 +24,63 @@ mount -t devtmpfs -o mode=0755,nosuid /dev root/dev # https://askubuntu.com/a/15
 mount -t devpts -o mode=0620,gid=5,nosuid,noexec /dev/pts root/dev/pts
 echo "Acquire::http::Pipeline-Depth \"0\";" > root/etc/apt/apt.conf.d/99nopipelining
 printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > root/etc/apt/sources.list.d/debian.sources
-cat <<EOF | chroot root /bin/bash # inner chroot
+cat <<'EOF' | chroot root /bin/bash # inner chroot
 set -xe
-export LANG=C # https://unix.stackexchange.com/a/269164
-export DEBIAN_FRONTEND=noninteractive # https://github.com/moby/moby/issues/27988
+export LANG=C DEBIAN_FRONTEND=noninteractive
 rm -rf /etc/resolv.conf /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
-echo "nameserver 223.5.5.5" > /etc/resolv.conf
-apt remove -y --purge --allow-remove-essential systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core grub-common grub-efi-amd64-signed
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
 apt update
-apt install -y --no-install-recommends vim-tiny busybox-static systemd-boot-efi parted binutils dracut dracut-live dracut-config-generic
+apt install -y --no-install-recommends tmux vim-tiny busybox-static systemd-boot-efi parted binutils dracut-live dracut-config-generic
 echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
-cp /etc/kernel/postinst.d/dracut /tmp/kernel-postinst-dracut
-printf "#!/bin/sh\necho noop\n" > /etc/kernel/postinst.d/dracut
+echo "" > /etc/fstab
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
+dracut --kver $(ls /usr/lib/modules) --kernel-cmdline "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0" --add dmsquash-live --omit "crypt nvdimm" --omit-drivers "xfs ocfs2 bcachefs f2fs ceph qed cxgb4 cnic lpfc qla2xxx bfa" --no-early-microcode --compress "zstd -3 -q" --uefi /mnt/linux.efi
+# apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
 apt autoremove -y
 apt clean all -y
-mv /tmp/kernel-postinst-dracut /etc/kernel/postinst.d/dracut
-dracut --kver \$(ls /usr/lib/modules) --add dmsquash-live --add dmsquash-live-autooverlay --no-early-microcode --no-compress --force --uefi /mnt/linux.efi
+printf "root\nroot\n" | passwd
+echo "# nameserver 8.8.8.8" > /etc/resolv.conf
 EOF
-# 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
 # chroot root /bin/bash
 umount --recursive root/mnt root/dev
-mksquashfs root $dist_dir/squashfs.img -b 1M -noappend -no-recovery -comp zstd -Xcompression-level 1
+mksquashfs root $dist_dir/squashfs.img -b 1M -noappend -no-recovery -comp zstd -Xcompression-level 3
 umount --recursive root
 losetup --detach $loop_dev
+rm -rf $temp_dir
 
 exit # ==============================
 
+# chroot root /bin/bash
+# plan: 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
+# plan: 把所有包装成 manual？
+sudo rm -rf dist/linux.efi dist/squashfs.img ; sudo ./mkdebian 
+
+busybox xxd cmdline
+printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 rd.shell panic=10 mitigations=off selinux=0\0" > cmdline
+objcopy --update-section .cmdline=cmdline BOOTX64.EFI
+objdump -h linux.efi
+xorriso -outdev out.iso -boot_image any efi_path=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
+
+qemu-system-x86_64 \
+  -machine q35,accel=kvm -cpu host -rtc base=localtime \
+  -bios /usr/share/OVMF/OVMF_CODE.fd \
+  -smp 2 -m 2G \
+  -nic hostfwd=tcp:127.0.0.1:9121-:5000 \
+  -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
+  -cdrom out.iso
+
+sudo cp dist/linux.efi /run/media/kkocdko/KKOCDKO/EFI/BOOT/BOOTX64.EFI ; cp dist/squashfs.img /run/media/kkocdko/KKOCDKO/LiveOS/squashfs.img
+
+# https://wiki.debian.org/Gnome#Options
+
+useradd tom
+id tom
+passwd tom
+
 # qemu uefi test environment
+
+# https://github.com/dracut-ng/dracut-ng/blob/main/man/dracut.8.adoc
 
 # https://wiki.archlinux.org/title/FAT
 # https://en.wikipedia.org/wiki/File_Allocation_Table Final FAT16 ; 2,147,483,647 bytes (2 GB − 1)
@@ -73,7 +95,7 @@ sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 --label kk2 --loader /vmli
 sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 --label kk2 --loader /vmlinuz --unicode 'root=\ init=\bin\sh'
 
 efibootmgr --create --disk /dev/sda --part 1 --label livecd --loader /linux.efi --unicode 'root=live:/dev/sda1 rd.live.dir=/ rd.live.overlay.overlayfs=1 rd.live.image rd.shell rd.debug panic=10 mitigations=off selinux=0'
-
+# fedora livecd = linuxefi /images/pxeboot/vmlinuz root=live:CDLABEL=Fedora-WS-Live-39-1-5  rd.live.image quiet rhgb
 
 exit
 
@@ -179,52 +201,3 @@ rm -rf cur cur.img
 rm -rf out.iso
 xorriso -dev $in_iso -outdev out.iso -boot_image any replay -map squashfs.img /LiveOS/squashfs.img
 rm -rf squashfs.img
-
-
-#===== recompile plymouth
-
-
-
-
-  429  apt install  -y build-essential debhelper-compat docbook-xsl libdrm-dev libcairo2-dev libevdev-dev libfreetype-dev libgtk-3-dev  libpango1.0-dev libpng-dev meson pkg-config xsltproc gettext xsltproc ninja-build
-  432  apt install -y -t bookworm-backports libudev-dev
-  462  apt install -y efibootmgr
-  467  apt update
-  468  apt install -y plymouth
-  469  apt install -y plymouth-themes
-  493  apt install rmdev
-  494  apt provide
-  495  apt provides
-  496  apt find
-  497  apt search
-  498  apt search rmdev
-  519  apt install meson
-  521  apt install gcc
-  527  apt install gcc-multilib
-  528  apt update
-  529  apt install gcc-multilib
-  531  apt install -y pkg-config cmake
-  533  apt install -y libpng-dev
-  535  apt install pango libudev
-  536  apt install libudev-dev
-  537  apt install -t bookworm-backports libudev-dev
-  539  apt install pango
-  540  apt install pango-de
-  541  apt install pango-dev
-  542  apt install gir1.2-coglpango-1.0
-  544  apt search pango
-  545  apt install libpango3.0-dev
-  546  apt install libpango1.0-dev
-  548  apt install -y gtk+-3.0
-  549  apt install -y libgtk3-dev
-  551  apt install libgtk-3-0-dev
-  552  apt install libgtk-3-dev
-  554  apt install -y libdrm-dev
-  556  apt install libevdev-dev
-  558  apt install msgfmt
-  559  apt search msgfmt
-  560  apt install liblocale-msgfmt-perl
-  562  apt install -y gettext
-  564  apt install xsltproc ninja-build
-  567  apt install -y ninja-build
-  574  history | grep apt
