@@ -5,16 +5,15 @@ dist_dir=$(pwd)/dist
 if [ "$(id -u)" != "0" ]; then echo "Should be run as root."; exit; fi
 if [ -e $temp_dir ]; then echo "Need to clean the temp dir manually."; exit; fi
 if [ "$1" = "test" ]; then
-  rm -rf /tmp/qemu_hda
   mkdir -p /tmp/qemu_hda/EFI/BOOT /tmp/qemu_hda/LiveOS
   cp $dist_dir/linux.efi /tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
-  printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 rd.shell panic=10 mitigations=off selinux=0\0" > /tmp/qemu_hda/EFI/BOOT/cmdline
+  printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0\0" > /tmp/qemu_hda/EFI/BOOT/cmdline
   objcopy --update-section .cmdline=/tmp/qemu_hda/EFI/BOOT/cmdline /tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
   qemu-system-x86_64 \
     -machine q35,accel=kvm -cpu host \
     -bios /usr/share/OVMF/OVMF_CODE.fd \
-    -smp 2 -m 2G \
+    -smp 3 -m 9G \
     -nic hostfwd=tcp:127.0.0.1:9121-:5000 \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=fat:rw:/tmp/qemu_hda
@@ -25,8 +24,8 @@ mkdir -p $temp_dir $dist_dir
 cd $temp_dir
 curl \
   -o $dist_dir/debian.tar.xz -L http://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20241004-1890/debian-12-generic-amd64-20241004-1890.tar.xz \
-  -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.3-xanmod2/6.11.3-x64v3-xanmod2/linux-image-6.11.3-x64v3-xanmod2_6.11.3-x64v3-xanmod2-0~20241012.g9751005_amd64.deb?use_mirror=autoselect \
-  -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.3-xanmod2/6.11.3-x64v3-xanmod2/linux-headers-6.11.3-x64v3-xanmod2_6.11.3-x64v3-xanmod2-0~20241012.g9751005_amd64.deb?use_mirror=autoselect \
+  -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-image-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
+  -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-headers-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
   --parallel --skip-existing # needs curl v8.11
 tar -xf $dist_dir/debian.tar.xz
 loop_dev=$(losetup --partscan --find --show disk.raw)
@@ -38,23 +37,22 @@ ls root
 mount --bind $dist_dir root/mnt
 mount -t devtmpfs -o mode=0755,nosuid /dev root/dev # https://askubuntu.com/a/1514823
 mount -t devpts -o mode=0620,gid=5,nosuid,noexec /dev/pts root/dev/pts
-echo "Acquire::http::Pipeline-Depth \"0\";" > root/etc/apt/apt.conf.d/99nopipelining
-printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > root/etc/apt/sources.list.d/debian.sources
 cat <<'EOF' | chroot root /bin/bash # inner chroot
 set -xe
 export LANG=C DEBIAN_FRONTEND=noninteractive
 rm -rf /etc/resolv.conf /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
+echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
+echo "" > /etc/fstab
+printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > /etc/apt/sources.list.d/debian.sources
 apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
 apt update
-apt install -y --no-install-recommends tmux vim-tiny busybox-static systemd-boot-efi parted binutils dracut-live dracut-config-generic
-echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
-echo "" > /etc/fstab
+apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
 apt autoremove -y
 apt clean all -y
-dracut --kver $(ls /lib/modules) --kernel-cmdline "root=live:/dev/disk/by-label/KKOCDKO rd.live.overlay.overlayfs=1 mitigations=off selinux=0" --add "qemu virtfs virtiofs dmsquash-live-autooverlay" --no-early-microcode --compress "zstd -3" --uefi /mnt/linux.efi
-# apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
+dracut --kver $(ls /lib/modules) --kernel-cmdline "root=live:/dev/disk/by-label/KKOCDKO rd.live.overlay.overlayfs=1 mitigations=off selinux=0" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -3" --uefi /mnt/linux.efi
 printf "root\nroot\n" | passwd
 echo "# nameserver 8.8.8.8" > /etc/resolv.conf
 EOF
@@ -69,28 +67,20 @@ exit # ==============================
 # chroot root /bin/bash
 # plan: 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
 # plan: 把所有包装成 manual？
-sudo rm -rf dist/linux.efi dist/squashfs.img ; sudo ./mkdebian
+# instead of partprobe, try: blockdev --rereadpt /dev/sdX
+# apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
 
-busybox xxd cmdline
-printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 rd.shell panic=10 mitigations=off selinux=0\0" > cmdline
-objcopy --update-section .cmdline=cmdline BOOTX64.EFI
-objdump -h linux.efi
+sudo bash -c 'rm -rf dist/linux.efi dist/squashfs.img; ./mkdebian'
+sudo bash -c 'media_mnt=/run/media/kkocdko/KKOCDKO; cp dist/linux.efi $media_mnt/EFI/BOOT/BOOTX64.EFI; cp dist/squashfs.img $media_mnt/LiveOS/squashfs.img'
 xorriso -outdev out.iso -boot_image any efi_path=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
 
-sudo cp dist/linux.efi /run/media/kkocdko/KKOCDKO/EFI/BOOT/BOOTX64.EFI ; cp dist/squashfs.img /run/media/kkocdko/KKOCDKO/LiveOS/squashfs.img
-
 # https://wiki.debian.org/Gnome#Options
-
 # http://mirrors.ustc.edu.cn/debian-cdimage/firmware/bookworm/20240831/
 # https://packages.debian.org/bookworm/firmware-linux
 
-useradd tom
-id tom
-passwd tom
+useradd tom; id tom; passwd tom
 
 efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
-
-exit
 
 #!/bin/sh
 
