@@ -4,7 +4,8 @@
 # - The code dir backup with history, others have no history.
 alias dusort="du -ad 1 2>/dev/null | sort -n"
 alias 7z="~/misc/apps/7z"
-alias rsync="~/misc/apps/rsync"
+alias rclone="~/misc/apps/rclone"
+# alias rsync="~/misc/apps/rsync"
 if [ "$(id -u)" = "0" ]; then
 echo "Should be run as non-root."
 exit
@@ -29,23 +30,28 @@ fi
 
 if [ "$1" = "phone-to-pc" ]; then
 echo ">>> sync from phone to pc, please reconnect mtp before this to ensure the cache cleared"
-from_root="rsync://192.168.43.100:9426/sdcard"
+from_root="rsync://192.168.200.112:9426/sdcard"
 to_root="/run/media/kkocdko/data/archive/phone"
 rsync_sync() { rsync --checksum --progress --recursive --times --links --delete "$from_root$1" "$to_root" ;}
 rsync_sync /Pictures
 rsync_sync /DCIM
-rsync_sync /DataBackup
 rsync_sync /Download
-# .thumbnails
+# rsync_sync /DataBackup # direct to pc using webdav, don't sync here
+# todo: exclude .thumbnails and others?
 exit
 fi
 
 if [ "$1" = "pc-to-cloud" ]; then
-rclone_sync() { ./dist/rclone --config rclone.conf sync --progress $1 onedrive_kkocdko:$2 ;}
+# curl -o rclone.zip -L https://github.com/rclone/rclone/releases/download/v1.67.0/rclone-v1.67.0-linux-amd64.zip
+# unzip rclone.zip rclone-v1.67.0-linux-amd64/rclone
+# mv rclone-v1.67.0-linux-amd64/rclone rclone
+# rm -rf rclone.zip rclone-v1.67.0-linux-amd64
+rclone_sync() { rclone --config rclone.conf sync --progress $1 onedrive_kkocdko:$2 ;}
 rclone_sync /run/media/kkocdko/data/archive /rclone/archive
-rclone_sync /run/media/kkocdko/data/media /rclone/media
 rclone_sync /run/media/kkocdko/data/pkgs /rclone/pkgs
 rclone_sync /run/media/kkocdko/data/software /rclone/software
+rclone_sync /run/media/kkocdko/data/docs /rclone/docs
+rclone_sync /run/media/kkocdko/data/media /rclone/media
 exit
 fi
 
