@@ -45,6 +45,7 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
 echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
 echo "" > /etc/fstab
+printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > /etc/sysctl.d/77-bbr.conf
 printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > /etc/apt/sources.list.d/debian.sources
 apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
 apt update
