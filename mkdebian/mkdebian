@@ -62,17 +62,15 @@ rm -rf $temp_dir
 
 exit # ==============================
 
-# chroot root /bin/bash
-# plan: 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
-# plan: 把所有包装成 manual？
-# instead of partprobe, try: blockdev --rereadpt /dev/sdX
-# apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
+chroot root /bin/bash
+blockdev --rereadpt /dev/sdX # instead of partprobe
+apt-mark hold apparmor initramfs-tools-core
+apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
+useradd tom; id tom; passwd tom
+xorriso -outdev out.iso -boot_image any efi_path=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
+efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
+sudo bash -c 'rm -rf dist/linux.efi dist/squashfs.img; ./mkdebian'
+sudo bash -c 'media_mnt=/run/media/kkocdko/KKOCDKO; cp dist/linux.efi $media_mnt/EFI/BOOT/BOOTX64.EFI; cp dist/squashfs.img $media_mnt/LiveOS/squashfs.img'
 # https://wiki.debian.org/Gnome#Options
 # http://mirrors.ustc.edu.cn/debian-cdimage/firmware/bookworm/20240831/
 # https://packages.debian.org/bookworm/firmware-linux
-
-sudo bash -c 'rm -rf dist/linux.efi dist/squashfs.img; ./mkdebian'
-sudo bash -c 'media_mnt=/run/media/kkocdko/KKOCDKO; cp dist/linux.efi $media_mnt/EFI/BOOT/BOOTX64.EFI; cp dist/squashfs.img $media_mnt/LiveOS/squashfs.img'
-xorriso -outdev out.iso -boot_image any efi_path=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
-efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
-useradd tom; id tom; passwd tom
