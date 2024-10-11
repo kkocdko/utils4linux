@@ -16,4 +16,4 @@ Self-hosted codespace, like [GitHub Codespaces](https://github.com/features/code
 
 ## [proxy](proxy)
 
-Personal preferences about proxy stack.
+Personal preferences about proxy.
