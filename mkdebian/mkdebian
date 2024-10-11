@@ -9,13 +9,16 @@ if [ "$1" = "test" ]; then
   mkdir -p /tmp/qemu_hda/EFI/BOOT /tmp/qemu_hda/LiveOS
   cp $dist_dir/linux.efi /tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
+  printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 rd.shell panic=10 mitigations=off selinux=0\0" > /tmp/qemu_hda/EFI/BOOT/cmdline
+  objcopy --update-section .cmdline=/tmp/qemu_hda/EFI/BOOT/cmdline /tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
   qemu-system-x86_64 \
-    -machine q35,accel=kvm -cpu host -rtc base=localtime \
+    -machine q35,accel=kvm -cpu host \
     -bios /usr/share/OVMF/OVMF_CODE.fd \
     -smp 2 -m 2G \
     -nic hostfwd=tcp:127.0.0.1:9121-:5000 \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
-    -drive format=raw,media=disk,file=fat:rw:/tmp/qemu_hda
+    -drive format=raw,file=fat:rw:/tmp/qemu_hda
+  rm -rf /tmp/qemu_hda
   exit
 fi
 mkdir -p $temp_dir $dist_dir
@@ -27,7 +30,7 @@ curl \
   --parallel --skip-existing # needs curl v8.11
 tar -xf $dist_dir/debian.tar.xz
 loop_dev=$(losetup --partscan --find --show disk.raw)
-until [ $(lsblk $loop_dev -rno path | wc -l) = 4 ]; do sleep 0.1; done
+until [ $(lsblk $loop_dev -rno path | wc -l) = 4 ]; do sleep 0.1; done # wait, expect 3 partitions + 1 itself = 4 lines
 rootfs_dev=$(lsblk $loop_dev -rno path | awk "1+1==NR{print}") # partition 1
 mkdir root
 mount $rootfs_dev root
@@ -63,13 +66,10 @@ rm -rf $temp_dir
 
 exit # ==============================
 
-
-exit
-
 # chroot root /bin/bash
 # plan: 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
 # plan: 把所有包装成 manual？
-sudo rm -rf dist/linux.efi dist/squashfs.img ; sudo ./mkdebian 
+sudo rm -rf dist/linux.efi dist/squashfs.img ; sudo ./mkdebian
 
 busybox xxd cmdline
 printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 rd.shell panic=10 mitigations=off selinux=0\0" > cmdline
@@ -77,10 +77,12 @@ objcopy --update-section .cmdline=cmdline BOOTX64.EFI
 objdump -h linux.efi
 xorriso -outdev out.iso -boot_image any efi_path=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
 
-
 sudo cp dist/linux.efi /run/media/kkocdko/KKOCDKO/EFI/BOOT/BOOTX64.EFI ; cp dist/squashfs.img /run/media/kkocdko/KKOCDKO/LiveOS/squashfs.img
 
 # https://wiki.debian.org/Gnome#Options
+
+# http://mirrors.ustc.edu.cn/debian-cdimage/firmware/bookworm/20240831/
+# https://packages.debian.org/bookworm/firmware-linux
 
 useradd tom
 id tom
