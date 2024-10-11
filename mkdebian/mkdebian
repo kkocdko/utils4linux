@@ -49,7 +49,7 @@ printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > 
 printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > /etc/apt/sources.list.d/debian.sources
 apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
 apt update
-apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network
+apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils systemd-boot-efi parted dracut-live dracut-config-generic # avoid dracut-network
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
 apt autoremove -y
 apt clean all -y
