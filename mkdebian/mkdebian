@@ -5,31 +5,18 @@ dist_dir=$(pwd)/dist
 if [ "$(id -u)" != "0" ]; then echo "Should be run as root."; exit; fi
 if [ -e $temp_dir ]; then echo "Need to clean the temp dir manually."; exit; fi
 if [ "$1" = "test" ]; then
-  hda_img=/tmp/hda.img
-  rm -rf $hda_img
-  truncate -s 512M $hda_img
-  loop_dev=$(losetup --partscan --find --show $hda_img)
-  printf "g\nn\n\n\n\nw" | fdisk "$loop_dev"
-  until [ $(lsblk $loop_dev -rno path | wc -l) = 2 ]; do sleep 0.1; done
-  esp_dev=$(lsblk $loop_dev -rno path | awk "1+1==NR{print}") # partition 1
-  mkfs.fat -F 32 $esp_dev
-  esp_mnt=/tmp/mount_$(echo $esp_dev | tr / _)
-  mkdir $esp_mnt
-  mount $esp_dev $esp_mnt
-  mkdir -p $esp_mnt/EFI/BOOT $esp_mnt/LiveOS
-  cp $dist_dir/linux.efi $esp_mnt/EFI/BOOT/BOOTX64.EFI
-  cp $dist_dir/squashfs.img $esp_mnt/LiveOS/squashfs.img
-  umount $esp_mnt
-  rm -rf $esp_mnt
-  losetup --detach $loop_dev
+  rm -rf /tmp/qemu_hda
+  mkdir -p /tmp/qemu_hda/EFI/BOOT /tmp/qemu_hda/LiveOS
+  cp $dist_dir/linux.efi /tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
+  cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
   qemu-system-x86_64 \
     -machine q35,accel=kvm -cpu host -rtc base=localtime \
     -bios /usr/share/OVMF/OVMF_CODE.fd \
     -smp 2 -m 2G \
     -nic hostfwd=tcp:127.0.0.1:9121-:5000 \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
-    -drive $hda_img
-exit
+    -drive format=raw,media=disk,file=fat:rw:/tmp/qemu_hda
+  exit
 fi
 mkdir -p $temp_dir $dist_dir
 cd $temp_dir
