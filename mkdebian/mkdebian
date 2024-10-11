@@ -4,13 +4,39 @@ temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 if [ "$(id -u)" != "0" ]; then echo "Should be run as root."; exit; fi
 if [ -e $temp_dir ]; then echo "Need to clean the temp dir manually."; exit; fi
+if [ "$1" = "test" ]; then
+  hda_img=/tmp/hda.img
+  rm -rf $hda_img
+  truncate -s 512M $hda_img
+  loop_dev=$(losetup --partscan --find --show $hda_img)
+  printf "g\nn\n\n\n\nw" | fdisk "$loop_dev"
+  until [ $(lsblk $loop_dev -rno path | wc -l) = 2 ]; do sleep 0.1; done
+  esp_dev=$(lsblk $loop_dev -rno path | awk "1+1==NR{print}") # partition 1
+  mkfs.fat -F 32 $esp_dev
+  esp_mnt=/tmp/mount_$(echo $esp_dev | tr / _)
+  mkdir $esp_mnt
+  mount $esp_dev $esp_mnt
+  mkdir -p $esp_mnt/EFI/BOOT $esp_mnt/LiveOS
+  cp $dist_dir/linux.efi $esp_mnt/EFI/BOOT/BOOTX64.EFI
+  cp $dist_dir/squashfs.img $esp_mnt/LiveOS/squashfs.img
+  umount $esp_mnt
+  rm -rf $esp_mnt
+  losetup --detach $loop_dev
+  qemu-system-x86_64 \
+    -machine q35,accel=kvm -cpu host -rtc base=localtime \
+    -bios /usr/share/OVMF/OVMF_CODE.fd \
+    -smp 2 -m 2G \
+    -nic hostfwd=tcp:127.0.0.1:9121-:5000 \
+    -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
+    -drive $hda_img
+exit
+fi
 mkdir -p $temp_dir $dist_dir
 cd $temp_dir
 curl \
   -o $dist_dir/debian.tar.xz -L http://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20241004-1890/debian-12-generic-amd64-20241004-1890.tar.xz \
   -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.3-xanmod2/6.11.3-x64v3-xanmod2/linux-image-6.11.3-x64v3-xanmod2_6.11.3-x64v3-xanmod2-0~20241012.g9751005_amd64.deb?use_mirror=autoselect \
   -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.3-xanmod2/6.11.3-x64v3-xanmod2/linux-headers-6.11.3-x64v3-xanmod2_6.11.3-x64v3-xanmod2-0~20241012.g9751005_amd64.deb?use_mirror=autoselect \
-  -o $dist_dir/adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.5/adw-gtk3v5.5.tar.xz \
   --parallel --skip-existing # needs curl v8.11
 tar -xf $dist_dir/debian.tar.xz
 loop_dev=$(losetup --partscan --find --show disk.raw)
@@ -35,14 +61,13 @@ apt install -y --no-install-recommends tmux vim-tiny busybox-static systemd-boot
 echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
 echo "" > /etc/fstab
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
-dracut --kver $(ls /usr/lib/modules) --kernel-cmdline "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0" --add dmsquash-live --omit "crypt nvdimm" --omit-drivers "xfs ocfs2 bcachefs f2fs ceph qed cxgb4 cnic lpfc qla2xxx bfa" --no-early-microcode --compress "zstd -3 -q" --uefi /mnt/linux.efi
-# apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
 apt autoremove -y
 apt clean all -y
+dracut --kver $(ls /lib/modules) --kernel-cmdline "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0" --no-early-microcode --compress "zstd -3" --uefi /mnt/linux.efi
+# apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
 printf "root\nroot\n" | passwd
 echo "# nameserver 8.8.8.8" > /etc/resolv.conf
 EOF
-# chroot root /bin/bash
 umount --recursive root/mnt root/dev
 mksquashfs root $dist_dir/squashfs.img -b 1M -noappend -no-recovery -comp zstd -Xcompression-level 3
 umount --recursive root
@@ -50,6 +75,9 @@ losetup --detach $loop_dev
 rm -rf $temp_dir
 
 exit # ==============================
+
+
+exit
 
 # chroot root /bin/bash
 # plan: 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
@@ -62,13 +90,6 @@ objcopy --update-section .cmdline=cmdline BOOTX64.EFI
 objdump -h linux.efi
 xorriso -outdev out.iso -boot_image any efi_path=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
 
-qemu-system-x86_64 \
-  -machine q35,accel=kvm -cpu host -rtc base=localtime \
-  -bios /usr/share/OVMF/OVMF_CODE.fd \
-  -smp 2 -m 2G \
-  -nic hostfwd=tcp:127.0.0.1:9121-:5000 \
-  -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
-  -cdrom out.iso
 
 sudo cp dist/linux.efi /run/media/kkocdko/KKOCDKO/EFI/BOOT/BOOTX64.EFI ; cp dist/squashfs.img /run/media/kkocdko/KKOCDKO/LiveOS/squashfs.img
 
@@ -78,24 +99,7 @@ useradd tom
 id tom
 passwd tom
 
-# qemu uefi test environment
-
-# https://github.com/dracut-ng/dracut-ng/blob/main/man/dracut.8.adoc
-
-# https://wiki.archlinux.org/title/FAT
-# https://en.wikipedia.org/wiki/File_Allocation_Table Final FAT16 ; 2,147,483,647 bytes (2 GB − 1)
-
-# https://www.reddit.com/r/archlinux/comments/17nncad/
-# https://github.com/systemd/systemd/raw/v256.5/src/ukify/ukify.py
-# https://linux.die.net/HOWTO/BootPrompt-HOWTO-3.html
-
-sudo cp dist/linux.efi dist/squashfs.img /run/media/kkocdko/E93D-9F6B/
-
-sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 --label kk2 --loader /vmlinuz-6.10.6-x64v4-xanmod1 --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
-sudo efibootmgr --create --disk /dev/nvme0n1 --part 1 --label kk2 --loader /vmlinuz --unicode 'root=\ init=\bin\sh'
-
-efibootmgr --create --disk /dev/sda --part 1 --label livecd --loader /linux.efi --unicode 'root=live:/dev/sda1 rd.live.dir=/ rd.live.overlay.overlayfs=1 rd.live.image rd.shell rd.debug panic=10 mitigations=off selinux=0'
-# fedora livecd = linuxefi /images/pxeboot/vmlinuz root=live:CDLABEL=Fedora-WS-Live-39-1-5  rd.live.image quiet rhgb
+efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
 
 exit
 
@@ -178,25 +182,6 @@ tar -xf adw-gtk3.tar.xz -C cur/usr/share/themes/
 # gnome-extensions install ./just-[TAB]
 # reboot
 # gnome-extensions prefs just-[TAB]
-
-# > rootfs: ext4 over squashfs
-# dd if=/dev/zero of=rootfs.img bs=1 count=0 seek=8192M
-# mkfs.ext4 rootfs.img -L Anaconda -b 4096 -m 0
-# mkdir rootfs
-# mount -t ext4 rootfs.img rootfs
-# rsync -axHAXv cur/ rootfs/ >/dev/null # cp -a out/* out-rootfs-img
-# umount rootfs cur
-# rm -rf rootfs cur cur.img
-# mkdir -p squashfs/LiveOS
-# mv rootfs.img squashfs/LiveOS/rootfs.img
-# mksquashfs squashfs squashfs.img -no-duplicates -no-sparse -not-reproducible -no-recovery -comp lz4
-# rm -rf squashfs
-
-# > rootfs: direct squashfs
-# mksquashfs cur squashfs.img -b 1M -no-recovery -no-duplicates -no-sparse -not-reproducible -comp lz4 # fast, for debug
-mksquashfs cur squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 22 # slow, but smaller
-umount cur
-rm -rf cur cur.img
 
 rm -rf out.iso
 xorriso -dev $in_iso -outdev out.iso -boot_image any replay -map squashfs.img /LiveOS/squashfs.img
