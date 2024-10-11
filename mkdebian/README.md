@@ -6,7 +6,7 @@ Custom debian livecd.
 
 - debian 12
 - xanmod kernel
-- btrfs default, zstd compression
+- ext4
 - uki
 - merge some mods from mkfedora
 - change ps1 var
@@ -14,6 +14,8 @@ Custom debian livecd.
 
 <details>
 <summary>Notes</summary>
+
+- https://github.com/microsoft/vscode/blob/1.94.0/src/vs/workbench/contrib/terminal/common/terminalColorRegistry.ts#L102
 
 - https://old.reddit.com/r/Fedora/comments/6gnwr5/reducing_idle_bandwidth_consumption_in_fedora/
 - https://utcc.utoronto.ca/~cks/space/blog/linux/FedoraDnfMakecacheOff
@@ -38,7 +40,11 @@ Custom debian livecd.
 
 <!--
 
+
+cd mkfedora ; chmod +x mkfedora ; script -c './mkfedora' /dev/null
+
 ```sh
+
 ln -s `realpath ./powerctl` ~/misc/apps/powerctl
 ```
 

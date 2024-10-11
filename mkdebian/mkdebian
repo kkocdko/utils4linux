@@ -1,39 +1,38 @@
 #!/bin/sh
-# set -e
-set -x
+set -xe
 if [ "$(id -u)" != "0" ]; then
-  echo "Should be run as root. Try sudo."
+  echo "Should be run as root."
   exit
 fi
 if [ "$(pwd)" != "$(dirname $(realpath $0))" ]; then
   echo "Should be run in current directory."
   exit
 fi
-mkdir -p dist
-cd dist
-dist_dir=$(pwd)
-[ ! -e debian.tar.xz ] && curl -o debian.tar.xz -L https://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20240717-1811/debian-12-generic-amd64-20240717-1811.tar.xz # https://cdimage.debian.org/cdimage/cloud/...
-[ ! -e linux-image.deb ] && curl -o linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.10.6-xanmod1/6.10.6-x64v3-xanmod1/linux-image-6.10.6-x64v3-xanmod1_6.10.6-x64v3-xanmod1-0~20240819.g0b22f40_amd64.deb?use_mirror=autoselect # https://sourceforge.net/projects/xanmod/files/releases/main/
-[ ! -e linux-headers.deb ] && curl -o linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.10.6-xanmod1/6.10.6-x64v3-xanmod1/linux-headers-6.10.6-x64v3-xanmod1_6.10.6-x64v3-xanmod1-0~20240819.g0b22f40_amd64.deb?use_mirror=autoselect
-[ ! -e adw-gtk3.tar.xz ] && curl -o adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.3/adw-gtk3v5.3.tar.xz
-work_dir=/tmp/mkdebian
-rm -rf $work_dir
-mkdir $work_dir
-tar -xf debian.tar.xz -C $work_dir
-cd $work_dir
-loop_device=$(losetup --partscan --find --show disk.raw)
+temp_dir=/tmp/mkdebian
+dist_dir=$(pwd)/dist
+rm -rf $temp_dir
+mkdir -p $temp_dir $dist_dir
+cd $temp_dir
+curl \
+  -o $dist_dir/debian.tar.xz -L http://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20241004-1890/debian-12-generic-amd64-20241004-1890.tar.xz \
+  -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.3-xanmod2/6.11.3-x64v3-xanmod2/linux-image-6.11.3-x64v3-xanmod2_6.11.3-x64v3-xanmod2-0~20241012.g9751005_amd64.deb?use_mirror=autoselect \
+  -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.3-xanmod2/6.11.3-x64v3-xanmod2/linux-headers-6.11.3-x64v3-xanmod2_6.11.3-x64v3-xanmod2-0~20241012.g9751005_amd64.deb?use_mirror=autoselect \
+  -o $dist_dir/adw-gtk3.tar.xz -L https://github.com/lassekongo83/adw-gtk3/releases/download/v5.5/adw-gtk3v5.5.tar.xz \
+  --parallel --skip-existing # needs curl v8.11
+tar -xf $dist_dir/debian.tar.xz
+loop_dev=$(losetup --partscan --find --show disk.raw)
+until [ $(lsblk $loop_dev -rno path | wc -l) = 4 ]; do sleep 0.1; done
+rootfs_dev=$(lsblk $loop_dev -rno path | awk "1+1==NR{print}") # partition 1
 mkdir root
-until stat -t $loop_device"p1"; do sleep 0.1; done
-mount $loop_device"p1" root
+mount $rootfs_dev root
 ls root
 mount --bind $dist_dir root/mnt
 mount -t devtmpfs -o mode=0755,nosuid /dev root/dev # https://askubuntu.com/a/1514823
 mount -t devpts -o mode=0620,gid=5,nosuid,noexec /dev/pts root/dev/pts
 echo "Acquire::http::Pipeline-Depth \"0\";" > root/etc/apt/apt.conf.d/99nopipelining
 printf "# > https://help.mirrorz.org/debian/\n# URIs: mirror+file:///etc/apt/mirrors/debian.list\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.ustc.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n" > root/etc/apt/sources.list.d/debian.sources
-# https://www.reddit.com/r/archlinux/comments/r4otqi/dracut_worth_it/
 cat <<EOF | chroot root /bin/bash # inner chroot
-set -x
+set -xe
 export LANG=C # https://unix.stackexchange.com/a/269164
 export DEBIAN_FRONTEND=noninteractive # https://github.com/moby/moby/issues/27988
 rm -rf /etc/resolv.conf /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
@@ -41,20 +40,21 @@ echo "nameserver 223.5.5.5" > /etc/resolv.conf
 apt remove -y --purge --allow-remove-essential systemd-resolved systemd-timesyncd vim-runtime apparmor initramfs-tools-core grub-common grub-efi-amd64-signed
 apt update
 apt install -y --no-install-recommends vim-tiny busybox-static systemd-boot-efi parted binutils dracut dracut-live dracut-config-generic
-echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vim.tiny's vi compatibility mode
-mv /etc/kernel/postinst.d/dracut /tmp/kernel-postinst-dracut
+echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
+cp /etc/kernel/postinst.d/dracut /tmp/kernel-postinst-dracut
+printf "#!/bin/sh\necho noop\n" > /etc/kernel/postinst.d/dracut
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
 apt autoremove -y
 apt clean all -y
 mv /tmp/kernel-postinst-dracut /etc/kernel/postinst.d/dracut
-[ \$(ls /usr/lib/modules | wc -l) != 1 ] && exit 1 # ensure only one kernel
 dracut --kver \$(ls /usr/lib/modules) --add dmsquash-live --add dmsquash-live-autooverlay --no-early-microcode --no-compress --force --uefi /mnt/linux.efi
 EOF
+# 不使用包管理器构建 initramfs，始终不变。内核参数 objcopy 改。不安装内核包。 https://stackoverflow.com/a/42979727/11338291
 # chroot root /bin/bash
 umount --recursive root/mnt root/dev
-mksquashfs root $dist_dir/squashfs.img -b 1M -noappend -no-recovery -comp zstd -Xcompression-level 3
+mksquashfs root $dist_dir/squashfs.img -b 1M -noappend -no-recovery -comp zstd -Xcompression-level 1
 umount --recursive root
-losetup --detach $loop_device
+losetup --detach $loop_dev
 
 exit # ==============================
 
