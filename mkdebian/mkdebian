@@ -10,6 +10,7 @@ if [ "$1" = hcp ]; then
   echo '
     daemon off;
     pid ./pid;
+    '"$([ $(id -u) = 0 ] && echo "user root;")"' # avoid permission error when run as root
     events { worker_connections 64; }
     http {
       access_log off;
@@ -40,6 +41,8 @@ if [ "$1" = hcp ]; then
   ' > nginx.conf
   exec nginx -e ./error_log -c nginx.conf -p . # http://nginx.org/packages/debian/pool/nginx/n/nginx/nginx_1.26.2-1~bookworm_amd64.deb
   exit
+  # sing-box rules += {"type":"logical","mode":"and","rules":[{"domain":"deb.debian.org"},{"process_name":"nginx","invert":true}],"outbound":"lan-9630"}
+  # sing-box outbounds += {"tag":"lan-9630","type":"direct","override_address":"127.0.0.1","override_port":9630}
 fi
 
 if [ "$1" = test ]; then
@@ -49,8 +52,8 @@ if [ "$1" = test ]; then
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
   printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh
   printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 \0' > $efi_file.cmdline # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
-  objcopy --update-section .cmdline=$efi_file.cmdline $efi_file # change uki cmdline without regeration, see https://kkocdko.site/post/202410210441
-  sudo qemu-system-x86_64 \
+  objcopy --update-section .cmdline=$efi_file.cmdline $efi_file # change uki cmdline without rebuild, see https://kkocdko.site/post/202410210441
+  qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=fat:rw:/tmp/qemu_hda
@@ -61,6 +64,7 @@ fi
 if [ "$1" = build ]; then
   if [ $(id -u) != 0 ]; then echo "Should be run as root."; exit; fi
   if [ -e $temp_dir/root ]; then echo "Need to clean the temp dir manually."; exit; fi
+  rm -rf $dist_dir/linux.efi $dist_dir/squashfs.img
   cd $temp_dir
   # http://mirrors.ustc.edu.cn/debian-cdimage/firmware/trixie/20241021/firmware.tar.gz
   curl \
@@ -119,7 +123,6 @@ apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
 useradd tom; id tom; passwd tom
 xorriso -outdev out.iso -boot_image any efi_file=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
 efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
-sudo bash -c 'rm -rf dist/linux.efi dist/squashfs.img; ./mkdebian'
 sudo bash -c 'media_mnt=/run/media/kkocdko/KKOCDKO; cp dist/linux.efi $media_mnt/EFI/BOOT/BOOTX64.EFI; cp dist/squashfs.img $media_mnt/LiveOS/squashfs.img'
 # https://wiki.debian.org/Gnome#Options
 # http://mirrors.ustc.edu.cn/debian-cdimage/firmware/bookworm/20240831/
