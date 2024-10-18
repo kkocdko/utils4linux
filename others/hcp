@@ -5,19 +5,18 @@ cd dist
 cat <<'EOF' > nginx.conf
 daemon off;
 pid ./pid;
-user nobody;
 worker_processes 1;
 events { worker_connections 64; }
+error_log ./error_log;
 http {
   access_log off;
-  error_log ./error_log;
   fastcgi_temp_path ./temp;
   uwsgi_temp_path ./temp;
   scgi_temp_path ./temp;
   client_body_buffer_size 64k;
   client_body_temp_path ./temp;
   proxy_temp_path ./temp;
-  proxy_cache_path ./proxy_cache_path use_temp_path=off keys_zone=my_cache:10m;
+  proxy_cache_path ./proxy_cache_path inactive=999d keys_zone=my_cache:10m loader_threshold=900 loader_files=900;
   upstream mirror_0 { server mirrors.ustc.edu.cn; keepalive 8; }
   server {
     listen 9630;
@@ -25,12 +24,13 @@ http {
       proxy_pass http://mirror_0;
       proxy_http_version 1.1;
       proxy_set_header Host mirrors.ustc.edu.cn;
+      proxy_set_header Referer "";
       proxy_set_header Connection "";
       proxy_set_header Accept-Encoding "";
       proxy_ignore_client_abort on;
       proxy_cache my_cache;
       proxy_cache_key $scheme://$uri$is_args$query_string;
-      proxy_cache_valid 200 10m;
+      proxy_cache_valid 999d;
       proxy_cache_bypass $arg_should_bypass_cache;
     }
   }
