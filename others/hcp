@@ -37,4 +37,4 @@ http {
 }
 EOF
 ~/misc/apps/nginx -c nginx.conf -p .
-# http://mirrors.ustc.edu.cn/debian/pool/main/n/nginx/nginx_1.26.0-3_amd64.deb
+# http://nginx.org/packages/debian/pool/nginx/n/nginx/nginx_1.26.2-1~bookworm_amd64.deb
