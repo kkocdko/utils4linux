@@ -1,0 +1,40 @@
+#!/bin/sh
+set -e
+trap exit SIGINT
+cd dist
+cat <<'EOF' > nginx.conf
+daemon off;
+pid ./pid;
+user nobody;
+worker_processes 1;
+events { worker_connections 64; }
+http {
+  access_log off;
+  error_log ./error_log;
+  fastcgi_temp_path ./temp;
+  uwsgi_temp_path ./temp;
+  scgi_temp_path ./temp;
+  client_body_buffer_size 64k;
+  client_body_temp_path ./temp;
+  proxy_temp_path ./temp;
+  proxy_cache_path ./proxy_cache_path use_temp_path=off keys_zone=my_cache:10m;
+  upstream mirror_0 { server mirrors.ustc.edu.cn; keepalive 8; }
+  server {
+    listen 9630;
+    location / {
+      proxy_pass http://mirror_0;
+      proxy_http_version 1.1;
+      proxy_set_header Host mirrors.ustc.edu.cn;
+      proxy_set_header Connection "";
+      proxy_set_header Accept-Encoding "";
+      proxy_ignore_client_abort on;
+      proxy_cache my_cache;
+      proxy_cache_key $scheme://$uri$is_args$query_string;
+      proxy_cache_valid 200 10m;
+      proxy_cache_bypass $arg_should_bypass_cache;
+    }
+  }
+}
+EOF
+~/misc/apps/nginx -c nginx.conf -p .
+# http://mirrors.ustc.edu.cn/debian/pool/main/n/nginx/nginx_1.26.0-3_amd64.deb
