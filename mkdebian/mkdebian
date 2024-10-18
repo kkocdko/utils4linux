@@ -3,10 +3,10 @@ set -ex
 trap exit SIGINT
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
-if [ $(id -u) != 0 ]; then echo "Should be run as root."; exit; fi
-if [ -e $temp_dir ]; then echo "Need to clean the temp dir manually."; exit; fi
+mkdir -p $temp_dir $dist_dir
 
 if [ "$1" = hcp ]; then
+  cd $dist_dir
   echo '
     daemon off;
     pid ./pid;
@@ -38,8 +38,7 @@ if [ "$1" = hcp ]; then
       }
     }
   ' > nginx.conf
-  exec ~/misc/apps/nginx -e ./error_log -c nginx.conf -p .
-  # http://nginx.org/packages/debian/pool/nginx/n/nginx/nginx_1.26.2-1~bookworm_amd64.deb
+  exec nginx -e ./error_log -c nginx.conf -p . # http://nginx.org/packages/debian/pool/nginx/n/nginx/nginx_1.26.2-1~bookworm_amd64.deb
   exit
 fi
 
@@ -51,7 +50,7 @@ if [ "$1" = test ]; then
   printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh
   printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 \0' > $efi_file.cmdline # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
   objcopy --update-section .cmdline=$efi_file.cmdline $efi_file # change uki cmdline without regeration, see https://kkocdko.site/post/202410210441
-  qemu-system-x86_64 \
+  sudo qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=fat:rw:/tmp/qemu_hda
@@ -60,7 +59,8 @@ if [ "$1" = test ]; then
 fi
 
 if [ "$1" = build ]; then
-  mkdir -p $temp_dir $dist_dir
+  if [ $(id -u) != 0 ]; then echo "Should be run as root."; exit; fi
+  if [ -e $temp_dir/root ]; then echo "Need to clean the temp dir manually."; exit; fi
   cd $temp_dir
   # http://mirrors.ustc.edu.cn/debian-cdimage/firmware/trixie/20241021/firmware.tar.gz
   curl \
@@ -95,12 +95,13 @@ if [ "$1" = build ]; then
     apt autoremove -y
     apt clean all -y
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -19" --uefi /mnt/linux.efi
-    printf " \0" > /mnt/linux.efi.cmdline
-    objcopy --update-section .cmdline=/mnt/linux.efi.cmdline /mnt/linux.efi
-    rm -f /mnt/linux.efi.cmdline
     printf "root\nroot\n" | passwd
     echo "# nameserver 8.8.8.8" > /etc/resolv.conf
   ' | chroot root /bin/bash
+  printf " \0" > $dist_dir/linux.efi.cmdline
+  objcopy --update-section .cmdline=$dist_dir/linux.efi.cmdline $dist_dir/linux.efi
+  rm -f $dist_dir/linux.efi.cmdline
+  chmod 744 $dist_dir/linux.efi
   umount --recursive root/mnt root/dev
   mksquashfs root $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 19
   umount --recursive root
