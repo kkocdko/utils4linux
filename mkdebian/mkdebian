@@ -52,7 +52,7 @@ apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils sys
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
 apt autoremove -y
 apt clean all -y
-dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -1" --uefi /mnt/linux.efi
+dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -19" --uefi /mnt/linux.efi
 printf " \0" > /mnt/linux.efi.cmdline
 objcopy --update-section .cmdline=/mnt/linux.efi.cmdline /mnt/linux.efi
 rm -f /mnt/linux.efi.cmdline
@@ -60,7 +60,7 @@ printf "root\nroot\n" | passwd
 echo "# nameserver 8.8.8.8" > /etc/resolv.conf
 EOF
 umount --recursive root/mnt root/dev
-mksquashfs root $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1
+mksquashfs root $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 19
 umount --recursive root
 losetup --detach $loop_dev
 rm -rf $temp_dir
