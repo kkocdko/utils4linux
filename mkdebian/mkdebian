@@ -10,24 +10,14 @@ if [ "$1" = test ]; then
   cp $dist_dir/linux.efi $efi_file
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
   printf "#!/bin/sh\necho kk hello\nbash\n" > /tmp/qemu_hda/kk.sh
-  chmod 777 /tmp/qemu_hda/kk.sh
   # https://github.com/dracut-ng/dracut-ng/blob/105/modules.d/99base/init.sh#L332
   # https://github.com/torvalds/linux/blob/v6.11/Documentation/admin-guide/kernel-parameters.rst
-  printf "root=live:/dev/sda1 rd.live.overlay.overlayfs=1 init=/bin/bash  \0" > $efi_file.cmdline
-  # objcopy --preserve-dates --remove-section .cmdline $efi_file
-  align=$(objdump -p $efi_file | awk '$1=="SectionAlignment"{print "0x"$2}')
-  offs=$(($(objdump -h $efi_file | tail -2 | awk 'NR==1{print "0x"$3" + 0x"$4}')))
-  offs=$((offs + "$align" - offs % "$align"))
-  echo $offs
-  objcopy \
-    --add-section .cmdline=$efi_file.cmdline \
-    --change-section-vma .cmdline=$offs \
-    $efi_file
-  objdump -h $efi_file
+  printf 'root=live:/dev/sda1 rd.live.overlay.overlayfs=1 console=ttyS0 mitigations=off selinux=0 init=/bin/bash -- -c "live_mnt=/run/initramfs/live; until stat $live_mnt > /dev/null 2>&1; do sleep 0.1; done; bash $live_mnt/kk.sh" \0' > $efi_file.cmdline
+  objcopy --update-section .cmdline=$efi_file.cmdline  $efi_file
   # use awk to run command `objdump -h dist/linux.efi`, output the penultimate line
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
-    -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
+    -nographic -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=fat:rw:/tmp/qemu_hda
   rm -rf /tmp/qemu_hda
   exit
@@ -65,7 +55,10 @@ apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils sys
 apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
 apt autoremove -y
 apt clean all -y
-dracut --kver $(ls /lib/modules) --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -1" --uefi /mnt/linux.efi
+dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -1" --uefi /mnt/linux.efi
+printf " \0" > /mnt/linux.efi.cmdline
+objcopy --update-section .cmdline=/mnt/linux.efi.cmdline /mnt/linux.efi
+rm -f /mnt/linux.efi.cmdline
 printf "root\nroot\n" | passwd
 echo "# nameserver 8.8.8.8" > /etc/resolv.conf
 EOF
