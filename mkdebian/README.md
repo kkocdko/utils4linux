@@ -6,17 +6,17 @@ Custom debian livecd.
 
 - debian 12
 - xanmod kernel
+- x86_64
 - ext4
-- uki
+- uefi uki
+- fast install by simple cp
 - merge some mods from mkfedora
-- change ps1 var
-- dd to fast install
+- zstd compressed initramfs and vmlinuz
 
 <details>
 <summary>Notes</summary>
 
 - https://github.com/microsoft/vscode/blob/1.94.0/src/vs/workbench/contrib/terminal/common/terminalColorRegistry.ts#L102
-
 - https://old.reddit.com/r/Fedora/comments/6gnwr5/reducing_idle_bandwidth_consumption_in_fedora/
 - https://utcc.utoronto.ca/~cks/space/blog/linux/FedoraDnfMakecacheOff
 - https://bugzilla.redhat.com/show_bug.cgi?id=1187111
@@ -40,6 +40,7 @@ Custom debian livecd.
 
 <!--
 
+# qemu{-nographic},kernel{console=ttyS0}
 
 cd mkfedora ; chmod +x mkfedora ; script -c './mkfedora' /dev/null
 
