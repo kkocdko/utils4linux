@@ -9,15 +9,12 @@ if [ "$1" = test ]; then
   efi_file=/tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
   cp $dist_dir/linux.efi $efi_file
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
-  printf "#!/bin/sh\necho kk hello\nbash\n" > /tmp/qemu_hda/kk.sh
-  # https://github.com/dracut-ng/dracut-ng/blob/105/modules.d/99base/init.sh#L332
-  # https://github.com/torvalds/linux/blob/v6.11/Documentation/admin-guide/kernel-parameters.rst
-  printf 'root=live:/dev/sda1 rd.live.overlay.overlayfs=1 console=ttyS0 mitigations=off selinux=0 init=/bin/bash -- -c "live_mnt=/run/initramfs/live; until stat $live_mnt > /dev/null 2>&1; do sleep 0.1; done; bash $live_mnt/kk.sh" \0' > $efi_file.cmdline
-  objcopy --update-section .cmdline=$efi_file.cmdline  $efi_file
-  # use awk to run command `objdump -h dist/linux.efi`, output the penultimate line
+  printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh
+  printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh" \0' > $efi_file.cmdline
+  objcopy --update-section .cmdline=$efi_file.cmdline $efi_file # change uki cmdline without regeration, see https://kkocdko.site/post/202410210441
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
-    -nographic -device qemu-xhci -device usb-tablet \
+    -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=fat:rw:/tmp/qemu_hda
   rm -rf /tmp/qemu_hda
   exit
@@ -62,7 +59,6 @@ rm -f /mnt/linux.efi.cmdline
 printf "root\nroot\n" | passwd
 echo "# nameserver 8.8.8.8" > /etc/resolv.conf
 EOF
-# chroot root /bin/bash
 umount --recursive root/mnt root/dev
 mksquashfs root $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1
 umount --recursive root
