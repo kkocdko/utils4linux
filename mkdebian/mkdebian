@@ -10,7 +10,7 @@ if [ "$1" = test ]; then
   cp $dist_dir/linux.efi $efi_file
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
   printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh
-  printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh" \0' > $efi_file.cmdline
+  printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 \0' > $efi_file.cmdline # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
   objcopy --update-section .cmdline=$efi_file.cmdline $efi_file # change uki cmdline without regeration, see https://kkocdko.site/post/202410210441
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
