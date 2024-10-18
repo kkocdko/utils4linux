@@ -39,7 +39,7 @@ mount -t devpts -o mode=0620,gid=5,nosuid,noexec /dev/pts root/dev/pts
 cat <<'EOF' | chroot root /bin/bash # inner chroot
 set -ex
 export LANG=C DEBIAN_FRONTEND=noninteractive
-rm -rf /etc/resolv.conf /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
+rm -rf /etc/resolv.conf /etc/apt/mirrors /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
 echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
