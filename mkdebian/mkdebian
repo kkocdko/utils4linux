@@ -16,7 +16,7 @@ if [ "$1" = test ]; then
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
-    -drive format=raw,file=fat:rw:/tmp/qemu_hda -nic guestfwd=tcp:10.0.2.127:9630-tcp:127.0.0.1:9630
+    -drive format=raw,file=fat:rw:/tmp/qemu_hda
   rm -rf /tmp/qemu_hda
   exit
 fi
@@ -48,7 +48,6 @@ echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
 echo "" > /etc/fstab
 printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > /etc/sysctl.d/77-bbr.conf
 printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
-sed -i 's|deb.debian.org|127.0.0.1:9630|g' /etc/apt/sources.list.d/debian.sources
 apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime screen reportbug whiptail wget apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
 apt update
 apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network
