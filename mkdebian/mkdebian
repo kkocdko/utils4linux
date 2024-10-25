@@ -4,7 +4,6 @@ trap exit SIGINT
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
-alias 7zz=/home/kkocdko/misc/apps/7zz
 
 if [ "$1" = hcp ]; then
   cd $dist_dir
@@ -78,26 +77,26 @@ if [ "$1" = build ]; then
   mkdir root
   mount $rootfs_dev root
   mount --bind $dist_dir root/mnt
+  cp --dereference --remove-destination /etc/resolv.conf root/etc/resolv.conf
   echo '
     set -ex
     export LANG=C DEBIAN_FRONTEND=noninteractive
     mount -t devtmpfs dev /dev
-    rm -rf /etc/resolv.conf /etc/apt/mirrors /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
-    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    rm -rf /etc/apt/mirrors /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
     echo "" > /etc/fstab
     printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > /etc/sysctl.d/77-bbr.conf
     printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
-    apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime screen reportbug whiptail wget apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
+    apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime screen reportbug whiptail wget bind9-libs apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
     apt update
     apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network
     apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
     apt autoremove -y
     apt clean all -y
-    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -19" --uefi /mnt/linux.efi
-    printf "root\nroot\n" | passwd
     echo "# nameserver 8.8.8.8" > /etc/resolv.conf
+    printf "root\nroot\n" | passwd
+    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -19" --uefi /mnt/linux.efi
   ' | unshare -m -u -p -f --root root --setgroups allow /bin/bash
   printf " \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi # change uki cmdline without rebuild, see https://kkocdko.site/post/202410210441
   chmod 744 $dist_dir/linux.efi
@@ -110,14 +109,10 @@ fi
 
 exit # ==============================
 
-chroot root /bin/bash
 blockdev --rereadpt /dev/sdX # instead of partprobe
 apt-mark hold apparmor initramfs-tools-core
 apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
-useradd tom; id tom; passwd tom
 xorriso -outdev out.iso -boot_image any efi_file=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
-efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
-sudo bash -c 'media_mnt=/run/media/kkocdko/KKOCDKO; cp dist/linux.efi $media_mnt/EFI/BOOT/BOOTX64.EFI; cp dist/squashfs.img $media_mnt/LiveOS/squashfs.img'
-# https://wiki.debian.org/Gnome#Options
-# http://mirrors.ustc.edu.cn/debian-cdimage/firmware/bookworm/20240831/
-# https://packages.debian.org/bookworm/firmware-linux
+efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=xxx amd_pstate=passive mitigations=off selinux=0'
+cp -r /tmp/qemu_hda/* /run/media/kkocdko/KKOCDKO/
+sudo umount --recursive /tmp/mkdebian/root ; sudo losetup --detach /dev/loop0 ; sudo rm -rf /tmp/mkdebian/
