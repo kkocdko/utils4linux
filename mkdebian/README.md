@@ -1,5 +1,7 @@
 # mkdebian
 
+**This project is paused until debain 13 released.**
+
 Custom debian livecd.
 
 ## Goals
