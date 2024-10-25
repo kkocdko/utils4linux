@@ -51,7 +51,7 @@ if [ "$1" = test ]; then
   cp $dist_dir/linux.efi $efi_file
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
   # printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
-  printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 \0' | objcopy --update-section .cmdline=/dev/stdin $efi_file
+  printf 'rd.live.overlay.overlayfs=1 root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rw mitigations=off selinux=0 \0' | objcopy --update-section .cmdline=/dev/stdin $efi_file
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
@@ -67,8 +67,8 @@ if [ "$1" = build ]; then
   cd $temp_dir
   curl \
     -o $dist_dir/debian.tar.xz -L http://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20241004-1890/debian-12-generic-amd64-20241004-1890.tar.xz \
-    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-image-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
-    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-headers-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.5-xanmod1/6.11.5-x64v3-xanmod1/linux-image-6.11.5-x64v3-xanmod1_6.11.5-x64v3-xanmod1-0~20241022.g01af8d9_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.5-xanmod1/6.11.5-x64v3-xanmod1/linux-headers-6.11.5-x64v3-xanmod1_6.11.5-x64v3-xanmod1-0~20241022.g01af8d9_amd64.deb?use_mirror=autoselect \
     --parallel --skip-existing # needs curl v8.11
   XZ_OPT="-T0" tar -xf $dist_dir/debian.tar.xz
   loop_dev=$(losetup --partscan --find --show disk.raw)
