@@ -66,7 +66,6 @@ if [ "$1" = build ]; then
   if [ -e $temp_dir/root ]; then echo "Need to clean the temp dir manually."; exit; fi
   rm -rf $dist_dir/linux.efi $dist_dir/squashfs.img
   cd $temp_dir
-  # http://mirrors.ustc.edu.cn/debian-cdimage/firmware/trixie/20241021/firmware.tar.gz
   curl \
     -o $dist_dir/debian.tar.xz -L http://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20241004-1890/debian-12-generic-amd64-20241004-1890.tar.xz \
     -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-image-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
@@ -89,7 +88,7 @@ if [ "$1" = build ]; then
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
     echo "" > /etc/fstab
     printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > /etc/sysctl.d/77-bbr.conf
-    printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
+    printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime screen reportbug whiptail wget apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
     apt update
     apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network

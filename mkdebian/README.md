@@ -42,6 +42,18 @@ Custom debian livecd.
 
 # qemu{-nographic},kernel{console=ttyS0}
 
+dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:liveuser string:liveuser int32:1
+
+apt install -y gnome-core
+apt remove -y --purge firefox-esr baobab eog evince yelp orca totem rygel gnome-initial-setup gnome-remote-desktop low-memory-monitor gnome-sushi gnome-calculator gnome-characters gnome-contacts gnome-font-viewer gnome-logs gnome-maps gnome-software gnome-weather
+apt autoremove -y
+
+-o $dist_dir/firmware.tar.gz -L http://mirrors.ustc.edu.cn/debian-cdimage/firmware/trixie/20241021/firmware.tar.gz \
+curl -L http://mirrors.ustc.edu.cn/debian-cdimage/weekly-live-builds/amd64/iso-hybrid/debian-live-testing-amd64-standard.iso.packages | grep -o "[^[:space:]]*firmware[^[:space:]]*"
+truncate -s 8G disk.raw
+printf "d\n\nd\n\ne\n\nw\n" | fdisk disk.raw
+resize2fs -f $rootfs_dev
+
 cd mkfedora ; chmod +x mkfedora ; script -c './mkfedora' /dev/null
 
 ```sh
