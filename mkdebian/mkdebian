@@ -4,6 +4,7 @@ trap exit SIGINT
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
+alias 7zz=/home/kkocdko/misc/apps/7zz
 
 if [ "$1" = hcp ]; then
   cd $dist_dir
@@ -50,9 +51,8 @@ if [ "$1" = test ]; then
   efi_file=/tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
   cp $dist_dir/linux.efi $efi_file
   cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
-  printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh
-  printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 \0' > $efi_file.cmdline # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
-  objcopy --update-section .cmdline=$efi_file.cmdline $efi_file # change uki cmdline without rebuild, see https://kkocdko.site/post/202410210441
+  # printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
+  printf 'root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rd.live.overlay.overlayfs=1 mitigations=off selinux=0 \0' | objcopy --update-section .cmdline=/dev/stdin $efi_file
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
@@ -72,19 +72,31 @@ if [ "$1" = build ]; then
     -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-image-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
     -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.4-xanmod1/6.11.4-x64v3-xanmod1/linux-headers-6.11.4-x64v3-xanmod1_6.11.4-x64v3-xanmod1-0~20241017.g304e2da_amd64.deb?use_mirror=autoselect \
     --parallel --skip-existing # needs curl v8.11
+
   tar -xf $dist_dir/debian.tar.xz
   loop_dev=$(losetup --partscan --find --show disk.raw)
   until [ $(lsblk $loop_dev -rno path | wc -l) = 4 ]; do sleep 0.1; done # wait, expect 3 partitions + 1 itself = 4 lines
   rootfs_dev=$(lsblk $loop_dev -rno path | awk "1+1==NR{print}") # partition 1
   mkdir root
   mount $rootfs_dev root
-  ls root
+  mkdir rootfs
+  cp -a root rootfs
+  exit
   mount --bind $dist_dir root/mnt
   mount -t devtmpfs -o mode=0755,nosuid /dev root/dev # https://askubuntu.com/a/1514823
   mount -t devpts -o mode=0620,gid=5,nosuid,noexec /dev/pts root/dev/pts
+
+  # 7zz e -so $dist_dir/debian.tar.xz | tar -x
+  # 7zz e disk.raw 0.img
+  # rm -rf disk.raw
+  # 7zz x -snld -oroot 0.img
+  # rm -rf 0.img root/[SYS] root/lost+found
+  # mount --bind $dist_dir root/mnt
+
   echo '
     set -ex
     export LANG=C DEBIAN_FRONTEND=noninteractive
+    mount -t devtmpfs dev /dev
     rm -rf /etc/resolv.conf /etc/apt/mirrors /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
     echo "nameserver 8.8.8.8" > /etc/resolv.conf
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
@@ -101,15 +113,13 @@ if [ "$1" = build ]; then
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -19" --uefi /mnt/linux.efi
     printf "root\nroot\n" | passwd
     echo "# nameserver 8.8.8.8" > /etc/resolv.conf
-  ' | chroot root /bin/bash
-  printf " \0" > $dist_dir/linux.efi.cmdline
-  objcopy --update-section .cmdline=$dist_dir/linux.efi.cmdline $dist_dir/linux.efi
-  rm -f $dist_dir/linux.efi.cmdline
+  ' | unshare -m -u -p -f --root root --setgroups allow /bin/bash
+  printf " \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi # change uki cmdline without rebuild, see https://kkocdko.site/post/202410210441
   chmod 744 $dist_dir/linux.efi
-  umount --recursive root/mnt root/dev
+  umount root/mnt
   mksquashfs root $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 19
-  umount --recursive root
-  losetup --detach $loop_dev
+  # umount --recursive root
+  # losetup --detach $loop_dev
   rm -rf $temp_dir
   exit
 fi
