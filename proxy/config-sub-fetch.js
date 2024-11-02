@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import child_process from "node:child_process";
 
-const cfg = fs.readFileSync("./dist/config-client.jsonc").toString();
+const cfg = fs.readFileSync("./dist/config.jsonc").toString();
 const subs = cfg.match(/(?<=\/\/\s*)\w+?\s\-\s.+?https?:.+?(?=\n)/g);
 const results = await Promise.allSettled(
   subs.map(async (/** @type {string} */ sub) => {
