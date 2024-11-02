@@ -74,7 +74,7 @@ if [ "$1" = build ]; then
   XZ_OPT="-T0" tar -xf $dist_dir/debian.tar.xz
   loop_dev=$(losetup --partscan --find --show disk.raw)
   until [ $(lsblk $loop_dev -rno path | wc -l) = 4 ]; do sleep 0.1; done # wait, expect 3 partitions + 1 itself = 4 lines
-  rootfs_dev=$(lsblk $loop_dev -rno path | awk "1+1==NR{print}") # partition 1
+  rootfs_dev=$(lsblk $loop_dev -rno path | awk 1==NR-1{print}) # partition 1
   mkdir root
   mount $rootfs_dev root
   mount --bind $dist_dir root/mnt
@@ -88,7 +88,7 @@ if [ "$1" = build ]; then
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
     echo "" > /etc/fstab
     printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > /etc/sysctl.d/77-bbr.conf
-    printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
+    printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime screen reportbug whiptail wget bind9-libs apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
     apt update
     apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network

@@ -46,6 +46,10 @@ Custom debian livecd.
 
 dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:liveuser string:liveuser int32:1
 
+dbus-send --system --print-reply --dest=org.freedesktop.UDisks2 /org/freedesktop/UDisks2/Manager org.freedesktop.UDisks2.Manager.GetBlockDevices
+
+--method org.freedesktop.UDisks2.Filesystem.Mount
+
 apt install -y gnome-core
 apt remove -y --purge firefox-esr baobab eog evince yelp orca totem rygel gnome-initial-setup gnome-remote-desktop low-memory-monitor gnome-sushi gnome-calculator gnome-characters gnome-contacts gnome-font-viewer gnome-logs gnome-maps gnome-software gnome-weather
 apt autoremove -y
