@@ -78,6 +78,7 @@ killall rsync && sleep 0.5
 rm -rf \$workdir ; mkdir -p \$workdir ; cp ./* \$workdir/ ; cd \$workdir
 ip address add 192.168.43.100/24 dev wlan0 # https://android.stackexchange.com/a/213626
 chmod +x ./rsync
+# why uid = 0 ? what i think about at that time?
 printf "uid = 0\ngid = 0\nuse chroot = no\nfake super = yes\nread only = false\n[sdcard]\npath = /sdcard\n" > rsyncd.conf
 exec ./rsync --daemon --no-detach --port=9426 --config=rsyncd.conf --log-file=/dev/stdout
 exit 1

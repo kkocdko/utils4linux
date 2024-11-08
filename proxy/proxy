@@ -25,7 +25,7 @@ fi
 
 if [ "$1" = run ]; then
   cd dist
-  if [ $(id -u) != 0 ]; then echo "Should be run as root."; exit; fi
+  if [ $EUID != 0 ]; then echo "Should be run as root."; exit; fi
   ./sing-box version
   ./sing-box run -c config.jsonc -D .
   exit

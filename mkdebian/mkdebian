@@ -62,7 +62,7 @@ if [ "$1" = test ]; then
 fi
 
 if [ "$1" = build ]; then
-  if [ $(id -u) != 0 ]; then echo "Should be run as root."; exit; fi
+  if [ $EUID != 0 ]; then echo "Should be run as root."; exit; fi
   if [ -e $temp_dir/root ]; then echo "Need to clean the temp dir manually."; exit; fi
   rm -rf $dist_dir/linux.efi $dist_dir/squashfs.img
   cd $temp_dir
