@@ -7,14 +7,14 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
   "experimental": {
     "clash_api": {
       "external_controller": "127.0.0.1:9090",
-      "external_ui": "ui", // 打开 http://127.0.0.1:9090/ui 即可，默认会自动下载 yacd-meta
+      "external_ui": "ui", // 打开 http://127.0.0.1:9090/ui 即可，默认会自动下载 yacd-meta。建议把延迟测试地址改成有一点点体积，更能反映实际情况的 https://www.google.com/robots.txt
       "external_ui_download_detour": "proxy" // 需要从 github 下载，走代理会稳一些，请确保第一个代理能连上
     },
     "cache_file": { "enabled": true } // store_fakeip 在极端情况下会让错误无法恢复，建议不要使用
   },
   "dns": {
     "fakeip": {
-      "enabled": true, // fakeip 是好东西，虽然有着代理停止后短期内解析异常的问题，但我建议让代理始终运行，大多数时候使用规则分流，必要时切换到 Direct 模式而不是关闭代理
+      "enabled": true, // fakeip 是好东西，虽然有着代理停止后短期内解析异常的问题，但我建议让代理始终运行，大多数时候使用规则分流，必要时切换到 direct 模式而不是关闭代理
       "inet4_range": "198.18.0.0/15",
       "inet6_range": "fc00::/18"
     },
@@ -27,11 +27,12 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
     "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，server 的域名和 direct 会用默认的 dns
   },
   "route": {
-    "auto_detect_interface": true, // 防止 tun device 环路
+    "auto_detect_interface": true, // 防止 tun 环路
     // prettier-ignore
     "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs","download_detour":"proxy"}],
     "rules": [
-      { "protocol": "dns", "outbound": "dns" }, // 劫持 dns，省去手动设置 dns。在 linux 下可能需要卸载 systemd-resolved。建议修改 dns 到 172.19.0.2，在 tun 的 ip 段之下。不能是 loopback 否则无法劫持
+      { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
+      { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。建议卸载 systemd-resolved 并修改 dns 为 tun ip 段下的 172.19.0.2。不能是 loopback 否则无法劫持
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
@@ -41,7 +42,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
       { "package_name": "com.tencent.mm", "outbound": "direct" },
       { "package_name": "com.tencent.mobileqq", "outbound": "direct" },
       { "package_name": "com.netease.party", "outbound": "direct" },
-      { "domain": "lan189.example.com", "outbound": "lan-189" }, // 可以用来实现 /etc/hosts 类似功能
+      { "domain": "lan189.example.com","action": "route-options","override_address":"192.168.1.189"}, // 可以用来替代 /etc/hosts
       // { "domain_suffix": ["youtube.com", "ytimg.com", "googlevideo.com"], "outbound": "proxy" }, // 大流量走个低倍率的节点
       { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       { "domain_suffix": "google.cn", "outbound": "proxy" }, // 同上
@@ -56,13 +57,12 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
   "inbounds": [
     {
       "type": "tun", // 有些应用并不理会代理环境变量，所以让 tun 作为兜底措施 // 在 android 上设置 platform.http_proxy 会让知乎等一些垃圾应用挂掉
-      "address": ["172.18.0.1/30", "fdfe:dcba:9876::1/126"], // 即便原本无 ipv6 接入，tun 的地址也会让应用误以为可用，见 issue 932。使用 prefer_ipv4 也无法避免问题，因为微信等应用会使用内置 DoH
-      "route_exclude_address": ["114.114.114.114"],
+      "address": ["172.18.0.1/30", "fdfe:dcba:9876::1/126"], // 即便原本无 ipv6 接入，tun 的地址也会让应用误以为可用，见 issue 932。使用 prefer_ipv4 也无法避免问题，因为微信等应用会使用内置 doh
+      "route_exclude_address": ["fc00::/8", "192.0.0.0/8"], // 完全不经过 tun，适用于内网的、大流量的、需要 nat 打洞的。注意不要包括上面的 tun 自身与 fakeip
       "auto_route": true,
-      "strict_route": true, // 确保 dns 被劫持，但在 android 上可能导致局域网分享无法连接，详见文档
-      "sniff": true // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
+      "strict_route": true // 确保 dns 被劫持，但在 android 上可能导致局域网分享无法连接，详见文档
     },
-    { "type": "mixed", "listen_port": 1080, "sniff": true } // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
+    { "type": "mixed", "listen_port": 1080 } // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
   ],
   // prettier-ignore
   "outbounds": [
@@ -78,7 +78,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
     {"tag":"lan-189","type":"direct","override_address":"192.168.1.189"},
     {"tag":"lan-socks","type":"socks","server":"192.168.1.128","server_port":1090},
     // 内置
-    {"tag":"direct","type":"direct"},{"tag":"block","type":"block"},{"tag":"dns","type":"dns"}
+    {"tag":"direct","type":"direct"}
   ]
 }
 
