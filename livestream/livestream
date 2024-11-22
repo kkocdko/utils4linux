@@ -1,6 +1,6 @@
 #!/bin/sh
 cd $(dirname $0)
-trap exit SIGINT
+trap exit INT
 
 if [ ! -e dist ]; then
 echo ">>> init"

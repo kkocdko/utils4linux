@@ -25,10 +25,10 @@ if [ "$1" = hcp ]; then
       proxy_cache_key $request_uri;
       proxy_cache_valid 99y;
       proxy_cache_path ./proxy_cache_path inactive=99y keys_zone=c0:10m loader_threshold=900 loader_files=900;
-      upstream u0 { server mirrors.ustc.edu.cn; keepalive 4; }
+      upstream u0 { server mirrors.ustc.edu.cn; keepalive 4; } # to get best mirror server, run: curl -I http://mirrors.cernet.edu.cn/debian/dists/bookworm/InRelease
       server {
         listen 9630;
-        location / { # location /deb.debian.org { proxy_redirect / /deb.debian.org/; ...
+        location / { # to serve in subpath, write: location /deb.debian.org { proxy_redirect / /deb.debian.org/; ...
           proxy_pass http://u0/;
           proxy_set_header Host mirrors.ustc.edu.cn;
           proxy_set_header Referer "";

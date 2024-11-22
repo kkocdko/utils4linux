@@ -3,6 +3,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
 */
 
 // >>> client
+// prettier-ignore
 {
   "experimental": {
     "clash_api": {
@@ -28,7 +29,6 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
   },
   "route": {
     "auto_detect_interface": true, // 防止 tun 环路
-    // prettier-ignore
     "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs","download_detour":"proxy"}],
     "rules": [
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
@@ -42,7 +42,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
       { "package_name": "com.tencent.mm", "outbound": "direct" },
       { "package_name": "com.tencent.mobileqq", "outbound": "direct" },
       { "package_name": "com.netease.party", "outbound": "direct" },
-      { "domain": "lan189.example.com","action": "route-options","override_address":"192.168.1.189"}, // 可以用来替代 /etc/hosts
+      { "domain": "lan189.example.com", "action": "route-options", "override_address": "192.168.1.189" }, // 可以用来替代 /etc/hosts
       // { "domain_suffix": ["youtube.com", "ytimg.com", "googlevideo.com"], "outbound": "proxy" }, // 大流量走个低倍率的节点
       { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       { "domain_suffix": "google.cn", "outbound": "proxy" }, // 同上
@@ -51,7 +51,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
       { "domain_suffix": "basi.monster", "outbound": "direct" }, // gpt api 国内代理商
       { "ip_cidr": "114.114.114.114/32", "outbound": "direct" }, // 在国内的服务器
       { "rule_set": ["ip-cn", "site-cn"], "outbound": "direct" }, // 在国内的域名和 ip。原先的 @cn 已合并到 cn
-      { "domain": "-", "invert": true, "outbound": "proxy" } // 约等于 final
+      { "outbound": "proxy" } // 约等于 final
     ]
   },
   "inbounds": [
@@ -64,9 +64,8 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
     },
     { "type": "mixed", "listen_port": 1080 } // 尽量用 socks，性能损失较小。消耗流量较多的浏览器、git 等主流应用一般都支持 socks。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
   ],
-  // prettier-ignore
   "outbounds": [
-    // 组
+    // groups
     {"tag":"proxy","type":"selector","outbounds":["sh-hk-stls","sh-hk-hy2","lan-socks"]},
     // self-hosted
     {"tag":"sh-hk-stls","detour":"sh-hk-stls-outer","type":"shadowsocks","method":"2022-blake3-aes-128-gcm","password":"xxxx","multiplex":{"enabled":true,"max_connections":2}},{"type":"shadowtls","tag":"sh-hk-stls-outer","server":"114.114.114.114","server_port":19549,"version":3,"password":"xxxx","tls":{"enabled":true,"server_name":"registry.npmmirror.com"}},
@@ -77,7 +76,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
     // lan
     {"tag":"lan-189","type":"direct","override_address":"192.168.1.189"},
     {"tag":"lan-socks","type":"socks","server":"192.168.1.128","server_port":1090},
-    // 内置
+    // built-in
     {"tag":"direct","type":"direct"}
   ]
 }
@@ -92,7 +91,6 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
       "listen": "::",
       "listen_port": 53,
       "users": [{ "password": "xxxx" }],
-      // prettier-ignore
       "tls": { "enabled": true, "server_name": "registry.npmmirror.com", "certificate": ["-----BEGIN CERTIFICATE-----","xxxx","-----END CERTIFICATE-----"], "key": ["-----BEGIN PRIVATE KEY-----","xxxx","-----END PRIVATE KEY-----"] }
     },
     {

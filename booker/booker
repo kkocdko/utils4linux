@@ -97,4 +97,4 @@ fi
 # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
 # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
 
-# trap exit SIGINT
+# trap exit INT
