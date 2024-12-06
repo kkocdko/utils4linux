@@ -17,6 +17,8 @@ import pathlib
 import telegram
 import xml.etree.ElementTree
 import PIL.Image
+import PIL.ImageOps
+
 
 config_file_path = "wx2tg.json"
 config_file = None
@@ -74,6 +76,10 @@ signal.signal(signal.SIGINT, signal_handler)
 # for v in wcf_contacts:
 #     print([v["wxid"], v["remark"], v["name"]])
 # print(wcf.get_msg_types()) # {0: '朋友圈消息', 1: '文字', 3: '图片', 34: '语音', 37: '好友确认', 40: 'POSSIBLEFRIEND_MSG', 42: '名片', 43: '视频', 47: '石头剪刀布 | 表情图片', 48: '位置', 49: '共享实时位置、文件、转账、链接', 50: 'VOIPMSG', 51: '微信初始化', 52: 'VOIPNOTIFY', 53: 'VOIPINVITE', 62: '小视频', 66: '微信红包', 9999: 'SYSNOTICE', 10000: '红包、系统消息', 10002: '撤回消息', 1048625: '搜狗表情', 16777265: '链接', 436207665: '微信红包', 536936497: '红包封面', 754974769: '视频号视频', 771751985: '视频号名片', 822083633: '引用消息', 922746929: '拍一拍', 973078577: '视频号直播', 974127153: '商品链接', 975175729: '视频号直播', 1040187441: '音乐链接', 1090519089: '文件'}
+
+# [Smile][Grimace][Drool][Scowl][CoolGuy][Sob][Shy][Silent][Sleep][Cry][Awkward][Angry][Tongue][Grin][Surprise][Frown][Blush][Scream][Puke][Chuckle][Joyful][Slight][Smug][Drowsy][Panic][Laugh][Commando][Scold][Shocked][Shhh][Dizzy][Toasted][Skull][Hammer][Wave][Speechless][NosePick][Clap][Trick][Bah！R][Pooh-pooh][Shrunken][TearingUp][Sly][Kiss][Whimper][Happy][Sick][Flushed][Lol][Terror][LetDown][Duh][Hey][Facepalm][Smirk][Smart][Concerned][Yeah!][Onlooker][GoForIt][Sweats][OMG][Emm][Respect][Doge][NoProb][MyBad][Wow][Boring][Awesome][LetMeSee][Sigh][Hurt][Broken][Lips][Heart][BrokenHeart][Hug][ThumbsUp][ThumbsDown][Shake][Peace][Fight][Beckon][Fist][OK][Worship][Beer][Coffee][Cake][Rose][Wilt][Cleaver][Bomb][Poop][Moon][Sun][Party][Gift][Packet][Rich][Blessing][Fireworks][爆竹][Pig][Waddle][Tremble][Twirl]
+wx_emotion_map = "CoolGuy=😎,"
+# "".replace("[CoolGuy]","😎").replace("[CoolGuy]","😎")
 
 
 # loop pull msg from queue by  wcf.get_msg()
@@ -166,55 +172,59 @@ async def from_wx():
                     xml.etree.ElementTree.fromstring(msg.content)
                 )
                 element = tree.findall("./emoji")[0]
-                stiker_type = element.get("type")
-                stiker_md5 = element.get("md5")
-                stiker_thumburl = element.get("thumburl")
-                stiker_cdnurl = element.get("cdnurl")
-                if stiker_cdnurl == None or stiker_cdnurl == "":
-                    stiker_cdnurl = "http://none.example.com"
-                stiker_url = stiker_thumburl
-                if stiker_url == None or stiker_url == "":
-                    stiker_url = stiker_cdnurl
-                if stiker_type == "1" or stiker_type == "2":
+                sticker_type = element.get("type")
+                sticker_md5 = element.get("md5")
+                sticker_thumburl = element.get("thumburl")
+                sticker_cdnurl = element.get("cdnurl")
+                if sticker_cdnurl == None or sticker_cdnurl == "":
+                    sticker_cdnurl = "http://none.example.com"
+                sticker_url = sticker_thumburl
+                if sticker_url == None or sticker_url == "":
+                    sticker_url = sticker_cdnurl
+                if sticker_type == "1" or sticker_type == "2":
                     # 是 收藏的表情 或者 商城的表情。商城表情虽然响应的 mime 能用，但是 tg 的链接预览不稳定，所以这里还是使用下载后上传的方案
-                    stiker_file_path = pathlib.Path(download_dir, stiker_md5)
-                    photo = stiker_file_path
-                    if os.path.exists(stiker_file_path):
-                        with open(stiker_file_path, "r") as f:
-                            file_id = f.read()
-                            photo = telegram.PhotoSize(file_id, file_id, 120, 120)
-                    else:
-                        r = requests.get(stiker_url)
-                        with open(stiker_file_path, "wb") as f:
-                            f.write(r.content)
-                        if stiker_url != stiker_thumburl:
-                            thumb_path = str(stiker_file_path) + "_thumb"
-                            img = PIL.Image.open(stiker_file_path)
-                            img = img.convert("RGB")
-                            max_side = 120
-                            if img.size[0] > max_side or img.size[1] > max_side:
-                                img.thumbnail((max_side, max_side))
-                                img.save(thumb_path, "JPEG", quality=75)
-                                img.close()
-                                os.remove(stiker_file_path)
-                                os.renames(thumb_path, stiker_file_path)
-                            else:
-                                img.close()
-                    sent = await bot.send_photo(
+                    # sticker_width = 160
+                    # sticker_height = 90
+                    # sticker_file_path = pathlib.Path(download_dir, sticker_md5)
+                    # photo = sticker_file_path
+                    # if os.path.exists(sticker_file_path):
+                    #     with open(sticker_file_path, "r") as f:
+                    #         file_id = f.read()
+                    #         photo = telegram.PhotoSize(
+                    #             file_id, file_id, sticker_width, sticker_height
+                    #         )
+                    # else:
+                    #     r = requests.get(sticker_url)
+                    #     with open(sticker_file_path, "wb") as f:
+                    #         f.write(r.content)
+                    #     # 因为 tg android 显示图片会按照比例显示得很大，所以这里直接规范化处理成矮胖的
+                    #     img_file = PIL.Image.open(sticker_file_path)
+                    #     img = img_file.convert("RGB")
+                    #     img_file.close()
+                    #     os.remove(sticker_file_path)
+                    #     thumb = PIL.ImageOps.pad(
+                    #         img, (sticker_width, sticker_height), color=(63, 63, 63)
+                    #     )
+                    #     img.close()
+                    #     thumb.save(sticker_file_path, "PNG")
+                    #     thumb.close()
+                    # preview_url = "http://47.100.126.230/a.html"
+                    await bot.send_message(
                         chat_id=config["tg_group"],
                         message_thread_id=thread_id,
-                        caption=(
+                        text=(
                             text_prefix  # 微信的昵称不允许 "<>/" 字符，这里可以偷懒不管
-                            + f'[stiker <a href="{stiker_url}">url</a>]'
+                            + f'[sticker <a href="{sticker_thumburl}">thumb</a> <a href="{sticker_cdnurl}">full</a>]'
                         ),
                         parse_mode=telegram.constants.ParseMode.HTML,
-                        photo=photo,
+                        link_preview_options=telegram.LinkPreviewOptions(
+                            is_disabled=True,
+                            # url=preview_url,
+                            # prefer_small_media=True,
+                        ),
                     )
-                    if photo == stiker_file_path:
-                        with open(stiker_file_path, "wb") as f:
-                            f.write(bytes(sent.photo[0].file_id, "utf-8"))
                 else:
-                    print("unknown stiker type: " + stiker_type)
+                    print("unknown sticker type: " + sticker_type)
             if msg.type == 49:
                 tree = xml.etree.ElementTree.ElementTree(
                     xml.etree.ElementTree.fromstring(msg.content)
@@ -239,7 +249,7 @@ async def from_wx():
                     elif refer_type == "49":
                         text += "[xml]"  # 我们这里就不递归解析了
                     elif refer_type == "47":
-                        text += "[stiker]"
+                        text += "[sticker]"
                     else:
                         text += "[unknown_refer_type=" + refer_type + "]"
                     await bot.send_message(
