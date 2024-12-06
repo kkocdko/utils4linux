@@ -1,6 +1,6 @@
 # python -m venv venv
 # venv\scripts\activate
-# pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple --upgrade wcferry python-telegram-bot pillow
+# pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple --upgrade wcferry python-telegram-bot[socks] pillow
 # https://mp.weixin.qq.com/s/g9AjM3A04sAylP-Q-17fAg
 # https://docs.python-telegram-bot.org/en/stable/examples.rawapibot.html
 
@@ -17,9 +17,6 @@ import pathlib
 import telegram
 import xml.etree.ElementTree
 import PIL.Image
-
-# remark
-
 
 config_file_path = "wx2tg.json"
 config_file = None
@@ -54,7 +51,17 @@ wcf = wcferry.client.Wcf(port=9225, debug=True, block=True)
 wcf.enable_receiving_msg()
 wcf_contacts = wcf.get_contacts()
 wcf_lock = threading.Lock()
-bot = telegram.Bot(config["tg_bot_token"])
+httpx_request = telegram.request.HTTPXRequest(
+    proxy="socks5://127.0.0.1:1080",
+    connection_pool_size=3,
+    pool_timeout=5,
+    # http_version="2", # httpx's h2 is unstable, don't use it!
+)
+bot = telegram.Bot(
+    config["tg_bot_token"],
+    request=httpx_request,
+    get_updates_request=httpx_request,
+)
 
 
 def signal_handler(sig, frame):
@@ -64,7 +71,8 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-# print(wcf.get_contacts())
+# for v in wcf_contacts:
+#     print([v["wxid"], v["remark"], v["name"]])
 # print(wcf.get_msg_types()) # {0: '朋友圈消息', 1: '文字', 3: '图片', 34: '语音', 37: '好友确认', 40: 'POSSIBLEFRIEND_MSG', 42: '名片', 43: '视频', 47: '石头剪刀布 | 表情图片', 48: '位置', 49: '共享实时位置、文件、转账、链接', 50: 'VOIPMSG', 51: '微信初始化', 52: 'VOIPNOTIFY', 53: 'VOIPINVITE', 62: '小视频', 66: '微信红包', 9999: 'SYSNOTICE', 10000: '红包、系统消息', 10002: '撤回消息', 1048625: '搜狗表情', 16777265: '链接', 436207665: '微信红包', 536936497: '红包封面', 754974769: '视频号视频', 771751985: '视频号名片', 822083633: '引用消息', 922746929: '拍一拍', 973078577: '视频号直播', 974127153: '商品链接', 975175729: '视频号直播', 1040187441: '音乐链接', 1090519089: '文件'}
 
 
@@ -74,6 +82,13 @@ async def from_wx():
         try:
             msg = wcf.get_msg()
             # https://wechatferry.readthedocs.io/zh/latest/autoapi/wcferry/wxmsg/index.html
+            # print("------------------------------")
+            # print(msg.type)
+            # print("----------")
+            # print(msg.content)
+            # print("----------")
+            # print(msg.xml)
+            # print("------------------------------")
             wx_tg_map = {v: k for k, v in config["tg_wx_map"].items()}
             match_wxid = msg.sender
             if msg.from_group():
@@ -110,7 +125,6 @@ async def from_wx():
                 await bot.send_photo(
                     chat_id=config["tg_group"],
                     message_thread_id=thread_id,
-                    caption=text_prefix + "[image]",
                     photo=pathlib.Path(image_path),
                 )
             if msg.type == 43:
@@ -223,16 +237,36 @@ async def from_wx():
                     elif refer_type == "43":
                         text += "[video]"
                     elif refer_type == "49":
-                        text += "[xml]"
+                        text += "[xml]"  # 我们这里就不递归解析了
                     elif refer_type == "47":
                         text += "[stiker]"
                     else:
                         text += "[unknown_refer_type=" + refer_type + "]"
-                    print([text, refer_type, refer_chatusr, refer_content])
                     await bot.send_message(
                         chat_id=config["tg_group"],
                         message_thread_id=thread_id,
                         text=text_prefix + text,
+                    )
+                if appmsg_type == "19":
+                    # 合并转发
+                    await bot.send_message(
+                        chat_id=config["tg_group"],
+                        message_thread_id=thread_id,
+                        text=text_prefix + "[bundled_forward] todo",
+                    )
+                if appmsg_type == "6":
+                    # 文件
+                    await bot.send_message(
+                        chat_id=config["tg_group"],
+                        message_thread_id=thread_id,
+                        text=text_prefix + "[file] todo",
+                    )
+                if appmsg_type == "17":
+                    # 开始实时位置分享
+                    await bot.send_message(
+                        chat_id=config["tg_group"],
+                        message_thread_id=thread_id,
+                        text=text_prefix + "[location_realtime] todo",
                     )
             if msg.type == 34:
                 audio_path = wcf.get_audio_msg(msg.id, download_dir)
@@ -243,11 +277,45 @@ async def from_wx():
                     chat_id=config["tg_group"],
                     message_thread_id=thread_id,
                     voice=pathlib.Path(audio_path),
-                    caption=text_prefix + "[audio]",
+                )
+            if msg.type == 48:
+                tree = xml.etree.ElementTree.ElementTree(
+                    xml.etree.ElementTree.fromstring(msg.content)
+                )
+                element = tree.findall("./location")[0]
+                await bot.send_message(
+                    chat_id=config["tg_group"],
+                    message_thread_id=thread_id,
+                    text=(
+                        text_prefix
+                        + "[location"
+                        + (" x=" + str(element.get("x")))
+                        + (" y=" + str(element.get("y")))
+                        + (" scale=" + str(element.get("scale")))
+                        + (" label=" + str(element.get("label")))
+                        + (" pointname=" + str(element.get("pointname")))
+                        + "]"
+                    ),
+                )
+            if msg.type == 10000:
+                # 包括拍一拍等等系统通知
+                await bot.send_message(
+                    chat_id=config["tg_group"],
+                    message_thread_id=thread_id,
+                    text=text_prefix + "[system] " + str(msg.content)[:60],
+                )
+            if msg.type == 10002:
+                # 撤回消息目前收到不到， https://github.com/lich0821/WeChatFerry/issues/162
+                await bot.send_message(
+                    chat_id=config["tg_group"],
+                    message_thread_id=thread_id,
+                    text=text_prefix + "[revoke]",
                 )
             # todo: 合并转发，小程序卡片，红包和转帐，音频视频通话，文件。部分难以实现的要增加提示信息返回
         except queue.Empty:
             pass
+        except SystemExit:
+            exit(0)
         except Exception as error:
             print(error)
         # allow other threads to acquire wcf_lock
@@ -265,7 +333,11 @@ async def from_tg():
             for update in updates:
                 config["tg_offset"] = update.update_id + 1
                 sync_config()
-                if update.message is None or update.message.message_thread_id is None:
+                if update.message is None:
+                    continue
+                if update.message.chat_id != config["tg_group"]:
+                    continue
+                if update.message.message_thread_id is None:
                     continue
                 thread_id = str(update.message.message_thread_id)
                 if thread_id not in config["tg_wx_map"]:
@@ -299,6 +371,8 @@ async def from_tg():
                     wcf_lock.acquire()
                     wcf.send_image(receiver=wxid, path=path)
                     wcf_lock.release()
+        except SystemExit:
+            exit(0)
         except Exception as error:
             print(error)
 
@@ -309,23 +383,3 @@ t1.start()
 t2.start()
 t1.join()
 t2.join()
-
-# todo:
-# [video] wx->tg
-# [file] wx->tg + tg->wx
-# [call notify] wx->tg
-
-# balance = 0
-# lock = threading.Lock()
-# def run_thread(n):
-#     for i in range(100000):
-#         # 先要获取锁:
-#         lock.acquire()
-#         try:
-#             # 放心地改吧:
-#             change_it(n)
-#         finally:
-#             # 改完了一定要释放锁:
-#             lock.release()
-
-# vim delete all = :%d
