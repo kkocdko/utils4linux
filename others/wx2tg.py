@@ -98,18 +98,16 @@ async def from_wx():
             text_prefix = ""
 
             def get_user_label(wxid):
-                sender_name = ""
+                if wxid is None or wcf_self_info["wxid"] == wxid:
+                    return "_"
                 for contact in wcf_contacts:
-                    if contact["wxid"] == wxid and contact["remark"] != "":
-                        sender_name = contact["remark"]
-                        break
-                if sender_name == "" and wcf_self_info["wxid"] == wxid:
-                    sender_name = wcf_self_info["name"]
-                if sender_name == "" and msg.from_group():
-                    sender_name = wcf.get_alias_in_chatroom(wxid, msg.roomid)
-                if sender_name == "":
-                    sender_name = wxid  # sender_name = wcf.get_info_by_wxid(wxid).name
-                return sender_name
+                    if contact["wxid"] == wxid and contact["remark"]:
+                        return contact["remark"]
+                if msg.from_group():
+                    alias_in_chatroom = wcf.get_alias_in_chatroom(wxid, msg.roomid)
+                    if alias_in_chatroom:
+                        return alias_in_chatroom
+                return wxid  # sender_name = wcf.get_info_by_wxid(wxid).name
 
             if msg.from_group():
                 text_prefix = "[" + get_user_label(msg.sender) + "] "
