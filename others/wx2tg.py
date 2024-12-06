@@ -7,7 +7,6 @@
 import wcferry.client
 import signal
 import os
-import sys
 import requests
 import queue
 import json
@@ -115,13 +114,39 @@ async def from_wx():
                     photo=pathlib.Path(image_path),
                 )
             if msg.type == 43:
-                video_path = wcf.download_image(msg.id, msg.extra, download_dir, 20)
-                await bot.send_video(
+                while not os.path.exists(msg.thumb):
+                    await asyncio.sleep(0.2)
+                await bot.send_photo(
                     chat_id=config["tg_group"],
                     message_thread_id=thread_id,
-                    caption=text_prefix + "[video]",
-                    video=pathlib.Path(video_path),
+                    caption=text_prefix + "[video_thumb]",
+                    photo=pathlib.Path(msg.thumb),
                 )
+                continue
+
+                # extra = str(pathlib.Path(download_dir, "video_raw_" + str(msg.id)))
+                # if wcf.download_attach(msg.id, msg.thumb, extra) != 0:
+                #     print("wcf.download_attach() failed")
+                #     continue
+                # print(extra)
+                # video_path = ""
+                # for _ in range(1, 15):
+                #     video_path = wcf.decrypt_image(extra, download_dir)
+                #     if video_path != "":
+                #         break
+                #     time.sleep(1)
+                # if video_path == "":
+                #     print("wcf.decrypt_video() failed, video_path is empty")
+                #     continue
+
+                # video_path = wcf.download_image(msg.id, msg.extra, download_dir, 20)
+                # print(video_path)
+                # await bot.send_video(
+                #     chat_id=config["tg_group"],
+                #     message_thread_id=thread_id,
+                #     caption=text_prefix + "[video]",
+                #     video=pathlib.Path(video_path),
+                # )
             if msg.type == 47:
                 tree = xml.etree.ElementTree.ElementTree(
                     xml.etree.ElementTree.fromstring(msg.content)
@@ -220,6 +245,7 @@ async def from_wx():
                     voice=pathlib.Path(audio_path),
                     caption=text_prefix + "[audio]",
                 )
+            # todo: 合并转发，小程序卡片，红包和转帐，音频视频通话，文件。部分难以实现的要增加提示信息返回
         except queue.Empty:
             pass
         except Exception as error:
