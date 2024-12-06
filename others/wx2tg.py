@@ -1,28 +1,31 @@
-# python -m venv venv
-# venv\scripts\activate
-# pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple --upgrade wcferry python-telegram-bot[socks] pillow
-# https://mp.weixin.qq.com/s/g9AjM3A04sAylP-Q-17fAg
-# https://docs.python-telegram-bot.org/en/stable/examples.rawapibot.html
+# python -m venv venv # venv\scripts\activate # pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple --upgrade wcferry python-telegram-bot[socks]
+# https://mp.weixin.qq.com/s/g9AjM3A04sAylP-Q-17fAg # https://docs.python-telegram-bot.org/en/stable/examples.rawapibot.html
 
 import wcferry.client
-import signal
+import telegram
 import os
-import requests
+import signal
 import queue
 import json
 import time
 import threading
 import asyncio
 import pathlib
-import telegram
 import xml.etree.ElementTree
-import PIL.Image
-import PIL.ImageOps
 
-
+config = {
+    "tg_offset": 0,
+    "tg_group": -1001234567,
+    "tg_bot_token": "123123:ABCDEF--ABC123-ABC123",
+    "tg_sticker_preview": "https://workers.cloudflare.com",  # https://api.moeworld.top/messageSync/member.php?origin=QQ&avatar=2533307356&bigTitle=空梦『永不落幕的次元之界』&subTitle=软.
+    "tg_wx_map": {
+        "4010": "gh_3dfda90e39d6",  # 微信支付
+        "284": "filehandler",  # 文件传输助手
+        "41458": "123123123@chatroom",  # 桥测试群1
+    },
+}
 config_file_path = "wx2tg.json"
 config_file = None
-config = {}
 
 
 def sync_config():
@@ -32,12 +35,6 @@ def sync_config():
 
 
 if not os.path.exists(config_file_path):
-    config = {
-        "tg_offset": 0,
-        "tg_wx_map": {
-            "4010": "gh_3dfda90e39d6",  # 微信支付
-        },
-    }
     config_file = open(config_file_path, "w+")
     sync_config()
     config_file.close()
@@ -51,6 +48,7 @@ if not os.path.exists(download_dir):
 
 wcf = wcferry.client.Wcf(port=9225, debug=True, block=True)
 wcf.enable_receiving_msg()
+wcf_self_info = wcf.get_user_info()
 wcf_contacts = wcf.get_contacts()
 wcf_lock = threading.Lock()
 httpx_request = telegram.request.HTTPXRequest(
@@ -88,13 +86,7 @@ async def from_wx():
         try:
             msg = wcf.get_msg()
             # https://wechatferry.readthedocs.io/zh/latest/autoapi/wcferry/wxmsg/index.html
-            # print("------------------------------")
-            # print(msg.type)
-            # print("----------")
-            # print(msg.content)
-            # print("----------")
-            # print(msg.xml)
-            # print("------------------------------")
+            # print(f"{'-'*60}\n.type = [{msg.type}]\n.content = [{msg.content}]\n")
             wx_tg_map = {v: k for k, v in config["tg_wx_map"].items()}
             match_wxid = msg.sender
             if msg.from_group():
@@ -111,11 +103,12 @@ async def from_wx():
                     if contact["wxid"] == wxid and contact["remark"] != "":
                         sender_name = contact["remark"]
                         break
+                if sender_name == "" and wcf_self_info["wxid"] == wxid:
+                    sender_name = wcf_self_info["name"]
                 if sender_name == "" and msg.from_group():
                     sender_name = wcf.get_alias_in_chatroom(wxid, msg.roomid)
                 if sender_name == "":
-                    sender_name = wxid
-                    # sender_name = wcf.get_info_by_wxid(wxid).name
+                    sender_name = wxid  # sender_name = wcf.get_info_by_wxid(wxid).name
                 return sender_name
 
             if msg.from_group():
@@ -143,92 +136,34 @@ async def from_wx():
                     photo=pathlib.Path(msg.thumb),
                 )
                 continue
-
-                # extra = str(pathlib.Path(download_dir, "video_raw_" + str(msg.id)))
-                # if wcf.download_attach(msg.id, msg.thumb, extra) != 0:
-                #     print("wcf.download_attach() failed")
-                #     continue
-                # print(extra)
-                # video_path = ""
-                # for _ in range(1, 15):
-                #     video_path = wcf.decrypt_image(extra, download_dir)
-                #     if video_path != "":
-                #         break
-                #     time.sleep(1)
-                # if video_path == "":
-                #     print("wcf.decrypt_video() failed, video_path is empty")
-                #     continue
-
-                # video_path = wcf.download_image(msg.id, msg.extra, download_dir, 20)
-                # print(video_path)
-                # await bot.send_video(
-                #     chat_id=config["tg_group"],
-                #     message_thread_id=thread_id,
-                #     caption=text_prefix + "[video]",
-                #     video=pathlib.Path(video_path),
-                # )
             if msg.type == 47:
-                tree = xml.etree.ElementTree.ElementTree(
-                    xml.etree.ElementTree.fromstring(msg.content)
-                )
+                tree = xml.etree.ElementTree.fromstring(msg.content)
                 element = tree.findall("./emoji")[0]
-                sticker_type = element.get("type")
                 sticker_md5 = element.get("md5")
                 sticker_thumburl = element.get("thumburl")
                 sticker_cdnurl = element.get("cdnurl")
-                if sticker_cdnurl == None or sticker_cdnurl == "":
-                    sticker_cdnurl = "http://none.example.com"
-                sticker_url = sticker_thumburl
-                if sticker_url == None or sticker_url == "":
-                    sticker_url = sticker_cdnurl
-                if sticker_type == "1" or sticker_type == "2":
-                    # 是 收藏的表情 或者 商城的表情。商城表情虽然响应的 mime 能用，但是 tg 的链接预览不稳定，所以这里还是使用下载后上传的方案
-                    # sticker_width = 160
-                    # sticker_height = 90
-                    # sticker_file_path = pathlib.Path(download_dir, sticker_md5)
-                    # photo = sticker_file_path
-                    # if os.path.exists(sticker_file_path):
-                    #     with open(sticker_file_path, "r") as f:
-                    #         file_id = f.read()
-                    #         photo = telegram.PhotoSize(
-                    #             file_id, file_id, sticker_width, sticker_height
-                    #         )
-                    # else:
-                    #     r = requests.get(sticker_url)
-                    #     with open(sticker_file_path, "wb") as f:
-                    #         f.write(r.content)
-                    #     # 因为 tg android 显示图片会按照比例显示得很大，所以这里直接规范化处理成矮胖的
-                    #     img_file = PIL.Image.open(sticker_file_path)
-                    #     img = img_file.convert("RGB")
-                    #     img_file.close()
-                    #     os.remove(sticker_file_path)
-                    #     thumb = PIL.ImageOps.pad(
-                    #         img, (sticker_width, sticker_height), color=(63, 63, 63)
-                    #     )
-                    #     img.close()
-                    #     thumb.save(sticker_file_path, "PNG")
-                    #     thumb.close()
-                    # preview_url = "http://47.100.126.230/a.html"
-                    await bot.send_message(
-                        chat_id=config["tg_group"],
-                        message_thread_id=thread_id,
-                        text=(
-                            text_prefix  # 微信的昵称不允许 "<>/" 字符，这里可以偷懒不管
-                            + f'[sticker <a href="{sticker_thumburl}">thumb</a> <a href="{sticker_cdnurl}">full</a>]'
-                        ),
-                        parse_mode=telegram.constants.ParseMode.HTML,
-                        link_preview_options=telegram.LinkPreviewOptions(
-                            is_disabled=True,
-                            # url=preview_url,
-                            # prefer_small_media=True,
-                        ),
-                    )
-                else:
-                    print("unknown sticker type: " + sticker_type)
-            if msg.type == 49:
-                tree = xml.etree.ElementTree.ElementTree(
-                    xml.etree.ElementTree.fromstring(msg.content)
+                # sticker_url = sticker_thumburl
+                # sticker_previewurl = (
+                #     config["tg_sticker_preview"]
+                #     + f"?md5={sticker_md5}&url={sticker_thumburl}"
+                # )
+                # 是 收藏的表情 或者 商城的表情。商城表情虽然响应的 mime 能用，但是 tg 的链接预览不稳定，所以这里需要 cloudflare worker
+                await bot.send_message(
+                    chat_id=config["tg_group"],
+                    message_thread_id=thread_id,
+                    text=(
+                        text_prefix
+                        + f'[sticker <a href="{sticker_thumburl}">thumb</a> <a href="{sticker_cdnurl}">full</a>]'
+                    ),
+                    parse_mode=telegram.constants.ParseMode.HTML,  # 微信的昵称不允许 "<>/" 字符，这里可以偷懒不管
+                    link_preview_options=telegram.LinkPreviewOptions(
+                        is_disabled=True,
+                        # url=sticker_previewurl,  # 以后这里用
+                        # prefer_small_media=True,
+                    ),
                 )
+            if msg.type == 49:
+                tree = xml.etree.ElementTree.fromstring(msg.content)
                 t = lambda p: [e.text for e in tree.findall(p)][0]
                 appmsg_type = t("./appmsg/type")
                 if appmsg_type == "57":
@@ -289,9 +224,7 @@ async def from_wx():
                     voice=pathlib.Path(audio_path),
                 )
             if msg.type == 48:
-                tree = xml.etree.ElementTree.ElementTree(
-                    xml.etree.ElementTree.fromstring(msg.content)
-                )
+                tree = xml.etree.ElementTree.fromstring(msg.content)
                 element = tree.findall("./location")[0]
                 await bot.send_message(
                     chat_id=config["tg_group"],
@@ -324,8 +257,6 @@ async def from_wx():
             # todo: 合并转发，小程序卡片，红包和转帐，音频视频通话，文件。部分难以实现的要增加提示信息返回
         except queue.Empty:
             pass
-        except SystemExit:
-            exit(0)
         except Exception as error:
             print(error)
         # allow other threads to acquire wcf_lock
@@ -381,15 +312,12 @@ async def from_tg():
                     wcf_lock.acquire()
                     wcf.send_image(receiver=wxid, path=path)
                     wcf_lock.release()
-        except SystemExit:
-            exit(0)
         except Exception as error:
             print(error)
 
 
-t1 = threading.Thread(target=lambda: asyncio.run(from_wx()))
-t2 = threading.Thread(target=lambda: asyncio.run(from_tg()))
-t1.start()
-t2.start()
-t1.join()
-t2.join()
+threading.Thread(target=lambda: asyncio.run(from_wx()), daemon=True).start()
+threading.Thread(target=lambda: asyncio.run(from_tg()), daemon=True).start()
+
+while True:
+    time.sleep(10)
