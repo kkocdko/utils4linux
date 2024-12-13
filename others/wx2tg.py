@@ -12,6 +12,7 @@ import threading
 import asyncio
 import pathlib
 import xml.etree.ElementTree
+import urllib.parse
 
 config = {
     "tg_offset": 0,
@@ -140,24 +141,24 @@ async def from_wx():
                 sticker_md5 = element.get("md5")
                 sticker_thumburl = element.get("thumburl")
                 sticker_cdnurl = element.get("cdnurl")
-                # sticker_url = sticker_thumburl
-                # sticker_previewurl = (
-                #     config["tg_sticker_preview"]
-                #     + f"?md5={sticker_md5}&url={sticker_thumburl}"
-                # )
+                sticker_previewurl = sticker_thumburl
+                if not sticker_previewurl:
+                    sticker_previewurl = sticker_cdnurl
+                sticker_previewurl = urllib.parse.quote(sticker_previewurl)
+                sticker_previewurl = config["tg_sticker_preview"] + sticker_previewurl
                 # 是 收藏的表情 或者 商城的表情。商城表情虽然响应的 mime 能用，但是 tg 的链接预览不稳定，所以这里需要 cloudflare worker
                 await bot.send_message(
                     chat_id=config["tg_group"],
                     message_thread_id=thread_id,
                     text=(
                         text_prefix
-                        + f'[sticker <a href="{sticker_thumburl}">thumb</a> <a href="{sticker_cdnurl}">full</a>]'
+                        + f'[sticker <a href="{sticker_previewurl}">preview</a> <a href="{sticker_cdnurl}">full</a>]'
                     ),
                     parse_mode=telegram.constants.ParseMode.HTML,  # 微信的昵称不允许 "<>/" 字符，这里可以偷懒不管
                     link_preview_options=telegram.LinkPreviewOptions(
-                        is_disabled=True,
-                        # url=sticker_previewurl,  # 以后这里用
-                        # prefer_small_media=True,
+                        is_disabled=False,
+                        url=sticker_previewurl,
+                        prefer_small_media=True,
                     ),
                 )
             if msg.type == 49:
@@ -319,3 +320,64 @@ threading.Thread(target=lambda: asyncio.run(from_tg()), daemon=True).start()
 
 while True:
     time.sleep(10)
+
+"""
+import { PhotonImage, SamplingFilter, Rgba } from "@cf-wasm/photon";
+import { resize, padding_right, padding_bottom } from "@cf-wasm/photon";
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const token = url.searchParams.get("token");
+    if (token !== "000000") {
+      return new Response("token invalid");
+    }
+    if (url.pathname === "/imgthumb") {
+      const imgRes = await fetch(url.searchParams.get("url"));
+      const imgBytes = new Uint8Array(await imgRes.arrayBuffer());
+      const originImg = PhotonImage.new_from_byteslice(imgBytes); // https://unpkg.com/@cf-wasm/photon@0.1.28/dist/dts/lib/photon_rs.d.ts
+      const outputWidth = 160;
+      const outputHeight = 90;
+      let width = originImg.get_width();
+      let height = originImg.get_height();
+      let widthScale = outputWidth / width;
+      let heightScale = outputHeight / height;
+      let minScale = Math.min(widthScale, heightScale);
+      width = Math.round(width * minScale);
+      height = Math.round(height * minScale);
+      const sampling = SamplingFilter.Triangle;
+      const resizedImg = resize(originImg, width, height, sampling);
+      const bgColor = new Rgba(63, 63, 63, 255);
+      const paddedImg =
+        widthScale < heightScale
+          ? padding_bottom(resizedImg, outputHeight - height, bgColor)
+          : padding_right(resizedImg, outputWidth - width, bgColor);
+      const outputBytes = paddedImg.get_bytes_jpeg(68);
+      originImg.free();
+      resizedImg.free();
+      paddedImg.free();
+      return new Response(outputBytes, {
+        headers: { "Content-Type": "image/jpeg" },
+      });
+    }
+    return new Response("hi");
+  },
+};
+// package.json
+{
+  "name": "imgthumb",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "@cf-wasm/photon": "^0.1.28"
+  }
+}
+// wrangler.json
+{
+  "name": "imgthumb",
+  "main": "index.js",
+  "compatibility_date": "2023-05-18"
+}
+// npm install -g wrangler
+// wrangler deploy
+"""
