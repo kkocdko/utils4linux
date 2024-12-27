@@ -6,14 +6,15 @@ Custom debian livecd.
 
 ## Goals
 
-- debian 12
+- debian 13
 - xanmod kernel
 - x86_64
-- ext4
+- ext4 only
 - uefi uki
 - fast install by simple cp
 - merge some mods from mkfedora
-- zstd compressed initramfs and vmlinuz
+- todo: 启动后选择，可选启动 gnome
+- todo: 包含大部分 firmware，移除某些无聊的 firmware
 
 <details>
 <summary>Notes</summary>

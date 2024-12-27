@@ -5,46 +5,6 @@ temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
-if [ "$1" = hcp ]; then
-  cd $dist_dir
-  echo '
-    daemon off;
-    pid ./pid;
-    '"$([ $(id -u) = 0 ] && echo "user root;")"' # avoid permission error when run as root
-    events { worker_connections 64; }
-    http {
-      access_log off;
-      fastcgi_temp_path ./temp;
-      uwsgi_temp_path ./temp;
-      scgi_temp_path ./temp;
-      client_body_temp_path ./temp;
-      proxy_temp_path ./temp;
-      proxy_http_version 1.1;
-      proxy_ignore_client_abort on;
-      proxy_cache c0;
-      proxy_cache_key $request_uri;
-      proxy_cache_valid 99y;
-      proxy_cache_path ./proxy_cache_path inactive=99y keys_zone=c0:10m loader_threshold=900 loader_files=900;
-      upstream u0 { server mirrors.ustc.edu.cn; keepalive 4; } # to get best mirror server, run: curl -I http://mirrors.cernet.edu.cn/debian/dists/bookworm/InRelease
-      server {
-        listen 9630;
-        location / { # to serve in subpath, write: location /deb.debian.org { proxy_redirect / /deb.debian.org/; ...
-          proxy_pass http://u0/;
-          proxy_set_header Host mirrors.ustc.edu.cn;
-          proxy_set_header Referer "";
-          proxy_set_header Connection "";
-          proxy_set_header Accept-Encoding "";
-          location ~ /InRelease$ { proxy_cache_valid 1d; }
-        }
-      }
-    }
-  ' > nginx.conf
-  exec nginx -e ./error_log -c nginx.conf -p . # http://nginx.org/packages/debian/pool/nginx/n/nginx/nginx_1.26.2-1~bookworm_amd64.deb
-  exit
-  # sing-box rules += {"type":"logical","mode":"and","rules":[{"domain":"deb.debian.org"},{"process_name":"nginx","invert":true}],"outbound":"lan-9630"}
-  # sing-box outbounds += {"tag":"lan-9630","type":"direct","override_address":"127.0.0.1","override_port":9630}
-fi
-
 if [ "$1" = test ]; then
   mkdir -p /tmp/qemu_hda/EFI/BOOT /tmp/qemu_hda/LiveOS
   efi_file=/tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
