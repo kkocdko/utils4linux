@@ -43,6 +43,16 @@ Custom debian livecd.
 
 <!--
 
+# https://packages.debian.org/bookworm/cloud-init
+# https://wiki.debian.org/Cloud/SystemsComparison
+# https://salsa.debian.org/cloud-team/debian-cloud-images
+# https://github.com/docker-library/docs/blob/master/debian/README.md
+# curl -o rootfs.12.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/e3f216064528d0ad005524fbafbddfd3115be946/bookworm/slim/oci/blobs/rootfs.tar.gz
+# https://salsa.debian.org/cloud-team/debian-cloud-images/-/raw/master/src/debian_cloud_images/resources/image.yaml
+# https://salsa.debian.org/cloud-team/debian-cloud-images/-/raw/master/config_space/sid/package_config/SYSTEM_BOOT # see also /CLOUD /GENERIC /EXTRAS
+
+dhcpcd
+
 # qemu{-nographic},kernel{console=ttyS0}
 
 dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:liveuser string:liveuser int32:1
@@ -54,6 +64,8 @@ dbus-send --system --print-reply --dest=org.freedesktop.UDisks2 /org/freedesktop
 apt install -y gnome-core
 apt remove -y --purge firefox-esr baobab eog evince yelp orca totem rygel gnome-initial-setup gnome-remote-desktop low-memory-monitor gnome-sushi gnome-calculator gnome-characters gnome-contacts gnome-font-viewer gnome-logs gnome-maps gnome-software gnome-weather
 apt autoremove -y
+
+systemctl start gdm
 
 -o $dist_dir/firmware.tar.gz -L http://mirrors.ustc.edu.cn/debian-cdimage/firmware/trixie/20241021/firmware.tar.gz \
 curl -L http://mirrors.ustc.edu.cn/debian-cdimage/weekly-live-builds/amd64/iso-hybrid/debian-live-testing-amd64-standard.iso.packages | grep -o "[^[:space:]]*firmware[^[:space:]]*"

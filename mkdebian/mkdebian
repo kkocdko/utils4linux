@@ -6,63 +6,74 @@ dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
 if [ "$1" = test ]; then
-  mkdir -p /tmp/qemu_hda/EFI/BOOT /tmp/qemu_hda/LiveOS
-  efi_file=/tmp/qemu_hda/EFI/BOOT/BOOTX64.EFI
-  cp $dist_dir/linux.efi $efi_file
-  cp $dist_dir/squashfs.img /tmp/qemu_hda/LiveOS/squashfs.img
   # printf "#!/bin/sh\necho says hello\nbash\n" > /tmp/qemu_hda/hello.sh # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hello.sh"
-  printf 'rd.live.overlay.overlayfs=1 root=live:/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 rw mitigations=off selinux=0 \0' | objcopy --update-section .cmdline=/dev/stdin $efi_file
+  # printf 'rd.live.overlay.overlayfs=1 root=live:/dev/disk/by-label/KK_HELLO rw intel_iommu=off mitigations=off selinux=0 init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; exec bash init.sh" \0' | objcopy --update-section .cmdline=/dev/stdin $efi_file
+  # printf 'rd.live.overlay.overlayfs=1 root=live:/dev/disk/by-label/KKOCDKO rw intel_iommu=off mitigations=off selinux=0  \0' | objcopy --update-section .cmdline=/dev/stdin $efi_file
+  # https://stackoverflow.com/a/29798605/11338291
+  # todo: better qemu virtual fat
+
+  printf 'rd.live.overlay.overlayfs=1 root=live:/dev/disk/by-label/QEMU_HDA rw mitigations=off selinux=0 \0' | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+
+  rm -rf $temp_dir/out.img $temp_dir/out
+  truncate -s 2G $temp_dir/out.img
+  printf "g\nn\n\n\n\nt\nEFI System\nw\n" | fdisk $temp_dir/out.img
+  mkfs.fat -F 32 --offset=2048 -n QEMU_HDA $temp_dir/out.img
+  mkdir -p $temp_dir/out
+  mount -o loop,offset=$((2048*512)) $temp_dir/out.img $temp_dir/out
+  mkdir -p $temp_dir/out/EFI/BOOT $temp_dir/out/LiveOS
+  cp $dist_dir/linux.efi $temp_dir/out/EFI/BOOT/BOOTX64.EFI
+  cp $dist_dir/squashfs.img $temp_dir/out/LiveOS/squashfs.img
+  umount $temp_dir/out
+
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 9G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
-    -drive format=raw,file=fat:rw:/tmp/qemu_hda
-  rm -rf /tmp/qemu_hda
+    -hda $temp_dir/out.img
+
   exit
 fi
 
 if [ "$1" = build ]; then
   if [ $EUID != 0 ]; then echo "Should be run as root."; exit; fi
-  if [ -e $temp_dir/root ]; then echo "Need to clean the temp dir manually."; exit; fi
+  if [ -e $temp_dir/rootfs ]; then echo "Need to clean the temp dir manually."; exit; fi
   rm -rf $dist_dir/linux.efi $dist_dir/squashfs.img
   cd $temp_dir
   curl \
-    -o $dist_dir/debian.tar.xz -L http://mirrors.ustc.edu.cn/debian-cdimage/cloud/bookworm/20241004-1890/debian-12-generic-amd64-20241004-1890.tar.xz \
-    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.5-xanmod1/6.11.5-x64v3-xanmod1/linux-image-6.11.5-x64v3-xanmod1_6.11.5-x64v3-xanmod1-0~20241022.g01af8d9_amd64.deb?use_mirror=autoselect \
-    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.11.5-xanmod1/6.11.5-x64v3-xanmod1/linux-headers-6.11.5-x64v3-xanmod1_6.11.5-x64v3-xanmod1-0~20241022.g01af8d9_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/e3f216064528d0ad005524fbafbddfd3115be946/trixie/slim/oci/blobs/rootfs.tar.gz \
+    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.12.8-xanmod1/6.12.8-x64v3-xanmod1/linux-image-6.12.8-x64v3-xanmod1_6.12.8-x64v3-xanmod1-0~20250102.g457cbbe_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.12.8-xanmod1/6.12.8-x64v3-xanmod1/linux-headers-6.12.8-x64v3-xanmod1_6.12.8-x64v3-xanmod1-0~20250102.g457cbbe_amd64.deb?use_mirror=autoselect \
     --parallel --skip-existing # needs curl v8.11
-  XZ_OPT="-T0" tar -xf $dist_dir/debian.tar.xz
-  loop_dev=$(losetup --partscan --find --show disk.raw)
-  until [ $(lsblk $loop_dev -rno path | wc -l) = 4 ]; do sleep 0.1; done # wait, expect 3 partitions + 1 itself = 4 lines
-  rootfs_dev=$(lsblk $loop_dev -rno path | awk 1==NR-1{print}) # partition 1
-  mkdir root
-  mount $rootfs_dev root
-  mount --bind $dist_dir root/mnt
-  cp --dereference --remove-destination /etc/resolv.conf root/etc/resolv.conf
+  mkdir rootfs
+  tar -xf $dist_dir/rootfs.tar.gz -C rootfs
+  mount --bind $dist_dir rootfs/mnt
   echo '
     set -ex
     export LANG=C DEBIAN_FRONTEND=noninteractive
     mount -t devtmpfs dev /dev
-    rm -rf /etc/apt/mirrors /etc/apparmor.d /etc/grub.d /etc/default/grub.d /usr/share/initramfs-tools
-    echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny # disable vi compatibility mode in vim-tiny
+    mount -t proc none /proc
+    printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
+    # printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
-    echo "" > /etc/fstab
-    printf "net.ipv4.tcp_congestion_control = bbr\nnet.core.default_qdisc = fq\n" > /etc/sysctl.d/77-bbr.conf
-    printf "Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.ustc.edu.cn/debian # and -security\n# http://mirrors.tuna.tsinghua.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
-    apt remove -y --purge --allow-remove-essential netplan.io systemd-resolved systemd-timesyncd vim-runtime screen reportbug whiptail wget bind9-libs apparmor initramfs-tools-core unattended-upgrades grub-common grub-efi-amd64-signed
-    apt update
-    apt install -y --no-install-recommends tmux vim-tiny busybox-static binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic # avoid dracut-network
-    apt install -y /mnt/linux-image.deb /mnt/linux-headers.deb
-    apt autoremove -y
-    apt clean all -y
-    echo "# nameserver 8.8.8.8" > /etc/resolv.conf
+    chmod 1777 /tmp
+    apt-get update
+    apt-get install -y --no-install-recommends sudo libpam-systemd polkitd unattended-upgrades zstd apt-utils init iptables iputils-ping linux-sysctl-defaults less nano netbase vim-tiny whiptail systemd-timesyncd openssh-server ssh-import-id cloud-init cloud-guest-utils apt-listchanges bash-completion man-db manpages socat pciutils psmisc tcpdump ca-certificates curl ethtool uuid-runtime xz-utils network-manager iproute2 # from official cloud, replace netplan.io with network-manager, exclude: libpam-systemd systemd-resolved libnss-resolve libnss-myhostname netplan.io apparmor cloud-initramfs-growroot bind9-host reportbug traceroute vim screen
+    apt-get install -y --no-install-recommends busybox-static tmux binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic # avoid install dracut-network
+    apt-get install -y /mnt/linux-image.deb /mnt/linux-headers.deb
+    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools gnome-software gnome-user-docs gnome-contacts xserver-xorg
+    apt-get install -y fonts-unifont $(apt-cache depends gnome-core | awk -F" " "/ Depends:/{if(!( \$2 ~ /baobab|loupe|simple-scan|evince|yelp|orca|totem|gnome-sushi|gnome-calculator|gnome-characters|gnome-contacts|gnome-font-viewer|gnome-logs|gnome-maps|gnome-software|gnome-weather|gnome-snapshot|gnome-clocks|gnome-connections|gnome-backgrounds|gnome-user-docs/ ))print \$2}")
+    apt-get autoremove -y
+    apt-get clean all -y
+    apt-mark unhold $(apt-mark showhold)
+    rm -rf /var/lib/apt/lists/*
+    rm -rf /usr/share/desktop-base/*-theme /usr/share/plymouth
+    # gsettings set org.gnome.desktop.background primary-color "#000000"
     printf "root\nroot\n" | passwd
-    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --no-early-microcode --compress "zstd -19" --uefi /mnt/linux.efi
-  ' | unshare -m -u -p -f --root root --setgroups allow /bin/bash
-  printf " \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi # change uki cmdline without rebuild, see https://kkocdko.site/post/202410210441
+    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
+  ' | unshare -m -u -p -f --root rootfs --setgroups allow /bin/bash
   chmod 744 $dist_dir/linux.efi
-  mksquashfs root $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 19 -e ./root/mnt # exclude must have "./" prefix
-  umount --recursive root
-  losetup --detach $loop_dev
+  printf " \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi # change uki cmdline without rebuild, see https://kkocdko.site/post/202410210441
+  umount rootfs/mnt
+  mksquashfs rootfs $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 7
   rm -rf $temp_dir
   exit
 fi
@@ -70,9 +81,13 @@ fi
 exit # ==============================
 
 blockdev --rereadpt /dev/sdX # instead of partprobe
-apt-mark hold apparmor initramfs-tools-core
-apt remove -y $(dpkg-query -Wf ' ${Package}' dracut-* linux-image-*)
 xorriso -outdev out.iso -boot_image any efi_file=/EFI/BOOT/BOOTX64.EFI -map squashfs.img /squashfs.img -map linux.efi /EFI/BOOT/BOOTX64.EFI
 efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=xxx amd_pstate=passive mitigations=off selinux=0'
 cp -r /tmp/qemu_hda/* /run/media/kkocdko/KKOCDKO/
 sudo umount --recursive /tmp/mkdebian/root ; sudo losetup --detach /dev/loop0 ; sudo rm -rf /tmp/mkdebian/
+
+# todo: 如何在 systemd 之后自启动
+ssh-keygen -A
+printf "Port 4422\nPermitRootLogin yes\nPasswordAuthentication yes\n" > /etc/ssh/sshd_config.d/44easy.conf
+systemctl restart ssh
+ip a
