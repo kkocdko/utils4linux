@@ -29,6 +29,7 @@ const results = await Promise.allSettled(
     store.set("hk", { i: 1, r: /hong kong|hong\-kong|香港|🇭🇰/ });
     store.set("tw", { i: 1, r: /tai wan|tai\-wan|台湾|🇹🇼/ });
     store.set("sg", { i: 1, r: /singapore|新加坡|狮城|🇸🇬/ });
+    store.set("in", { i: 1, r: /india|印度|🇮🇳/ });
     store.set("jp", { i: 1, r: /japan|日本|🇯🇵/ });
     store.set("lu", { i: 1, r: /luxembourg|卢森堡|🇱🇺/ });
     store.set("nl", { i: 1, r: /netherlands|荷兰|🇳🇱/ });

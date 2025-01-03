@@ -1,14 +1,10 @@
-/*
-curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/proxy/config.jsonc
-*/
-
 // >>> client
 // prettier-ignore
 {
   "experimental": {
     "clash_api": {
       "external_controller": "127.0.0.1:9090",
-      "external_ui": "ui", // 打开 http://127.0.0.1:9090/ui 即可，默认会自动下载 yacd-meta。建议把延迟测试地址改成有一点点体积，更能反映实际情况的 https://www.google.com/robots.txt
+      "external_ui": "ui", // 打开 http://127.0.0.1:9090/ui 即可，默认会自动下载 yacd-meta。建议把延迟测试地址改成有一点点体积，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
       "external_ui_download_detour": "proxy" // 需要从 github 下载，走代理会稳一些，请确保第一个代理能连上
     },
     "cache_file": { "enabled": true } // store_fakeip 在极端情况下会让错误无法恢复，建议不要使用
@@ -28,31 +24,31 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
     "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }] // 尽量让落地服务器做 dns 查询，server 的域名和 direct 会用默认的 dns
   },
   "route": {
-    "auto_detect_interface": true, // 防止 tun 环路
     "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs","download_detour":"proxy"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs","download_detour":"proxy"}],
     "rules": [
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
+      { "protocol": "quic", "action": "reject" }, // 我不喜欢 quic，强制 fallback 到其他协议
       { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。建议卸载 systemd-resolved 并修改 dns 为 tun ip 段下的 172.19.0.2。不能是 loopback 否则无法劫持
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
-      { "domain": "dns.weixin.qq.com", "outbound": "block" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun 设置
-      { "domain": "dns.weixin.qq.com.cn", "outbound": "block" }, // 同上
+      { "domain": "dns.weixin.qq.com", "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun 设置
+      { "domain": "dns.weixin.qq.com.cn", "action": "reject" }, // 同上
       { "package_name": "com.eg.android.AlipayGphone", "outbound": "direct" },
       { "package_name": "com.tencent.mm", "outbound": "direct" },
       { "package_name": "com.tencent.mobileqq", "outbound": "direct" },
       { "package_name": "com.netease.party", "outbound": "direct" },
-      { "domain": "lan189.example.com", "action": "route-options", "override_address": "192.168.1.189" }, // 可以用来替代 /etc/hosts
+      // { "domain": "deb.debian.org", "process_path": "/usr/lib/apt/methods/http", "action": "route-options", "override_address": "192.168.1.77", "override_port": 9630 }, // hcp
       // { "domain_suffix": ["youtube.com", "ytimg.com", "googlevideo.com"], "outbound": "proxy" }, // 大流量走个低倍率的节点
+      // { "domain_suffix": ["stackoverflow.com","askubuntu.com","superuser.com","serverfault.com","stackexchange.com"], "outbound": "direct" },
       { "domain_suffix": "gstatic.com", "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       { "domain_suffix": "google.cn", "outbound": "proxy" }, // 同上
       { "domain_suffix": "googleapis.com", "outbound": "proxy" }, // 同上
-      { "domain_suffix": "openai-proxy.org", "outbound": "direct" }, // gpt api 国内代理商
-      { "domain_suffix": "basi.monster", "outbound": "direct" }, // gpt api 国内代理商
       { "ip_cidr": "114.114.114.114/32", "outbound": "direct" }, // 在国内的服务器
       { "rule_set": ["ip-cn", "site-cn"], "outbound": "direct" }, // 在国内的域名和 ip。原先的 @cn 已合并到 cn
       { "outbound": "proxy" } // 约等于 final
-    ]
+    ],
+    "auto_detect_interface": true // 防止 tun 环路
   },
   "inbounds": [
     {
@@ -72,9 +68,7 @@ curl --data-binary @config.jsonc -X PUT https://user:password@1.1.1.1:1111/dav/p
     {"tag":"sh-hk-hy2","type":"hysteria2","server":"114.114.114.114","server_port":53,"password":"xxxx","tls":{"enabled":true,"server_name":"registry.npmmirror.com","insecure":true}},
     // imao - paid - forever - https://example.com/api/v1/client/subscribe?token=1234
     {"tag":"imao-hk-1","flow":"xtls-rprx-vision","packet_encoding":"xudp","server":"114.114.114.114","server_port":443},
-    // sfc - paid - https|//example.com/api/v1/client/SiFangCai?token=1234&types=all
     // lan
-    {"tag":"lan-189","type":"direct","override_address":"192.168.1.189"},
     {"tag":"lan-socks","type":"socks","server":"192.168.1.128","server_port":1090},
     // built-in
     {"tag":"direct","type":"direct"}
