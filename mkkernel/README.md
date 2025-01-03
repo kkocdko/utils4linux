@@ -46,7 +46,7 @@ umount ./rootfs
 
 rm -rf linux
 mkdir -p linux
-curl -o linux.tar.xz -L https://mirrors.ustc.edu.cn/kernel.org/linux/kernel/v6.x/linux-6.11.2.tar.xz # https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.19.282.tar.xz
+curl -o linux.tar.xz -L https://mirrors.ustc.edu.cn/kernel.org/linux/kernel/v6.x/linux-6.12.8.tar.xz # https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.19.282.tar.xz
 tar_prefix="$(tar -tf linux.tar.xz | head -n 1 | cut -d / -f 1)" # the head command will closes stdout, which prevents tar command from decompressing whole file
 gen_exclude(){ for ext in c h dts dtsi; do echo -n " --exclude $tar_prefix/$1/*.$ext" ; done ;}
 tar -xf linux.tar.xz -C linux --strip-components 1 $(gen_exclude drivers/gpu/drm) $(gen_exclude drivers/accel) $(gen_exclude sound) $(gen_exclude arch/mips) $(gen_exclude arch/powerpc)
@@ -54,7 +54,7 @@ tar -xf linux.tar.xz -C linux --strip-components 1 $(gen_exclude drivers/gpu/drm
 cd linux
 make clean
 make x86_64_defconfig
-scripts/config --disable SPECULATION_MITIGATIONS --disable VIRTUALIZATION --disable SOUND --disable DRM # make menuconfig
+scripts/config --disable SPECULATION_MITIGATIONS --disable VIRTUALIZATION --disable SOUND --disable DRM --disable NETFILTER # make menuconfig
 bear -- make -j$(nproc)
 
 qemu-system-x86_64 -machine q35,accel=kvm -cpu host -smp 1 -m 1G -nographic -kernel linux/arch/x86_64/boot/bzImage -hda busybox/rootfs.img -append "root=/dev/sda console=ttyS0"
