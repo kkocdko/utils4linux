@@ -29,24 +29,24 @@ const server = http.createServer(async (_, r) => {
   if (fs.existsSync(cached)) return fs.createReadStream(cached).pipe(r);
   const response = await fetch(remote, { redirect: "follow" });
   if (!response.ok || !response.body) return r.writeHead(400).end();
-  const fileStream = fs.createWriteStream(pending);
+  const file = fs.createWriteStream(pending);
   try {
     for await (const chunk of response.body) {
-      if (fileStream.writable && !fileStream.write(chunk))
-        await new Promise((resolve) => fileStream.once("drain", resolve)); // continue downloading even if request abort
-      if (r.writable && !r.write(chunk))
-        await new Promise((resolve) => r.once("drain", resolve));
+      await Promise.allSettled([
+        new Promise((resolve) => file.write(chunk, resolve)), // not need to listen drain event, see https://github.com/clevert-app/clevert/issues/12
+        new Promise((resolve) => r.write(resolve)), // continue downloading even if request abort
+      ]);
     }
-    fileStream.close(() => fs.renameSync(pending, cached)); // use sync call here
+    file.close(() => fs.renameSync(pending, cached)); // use sync call here
   } catch (e) {
     console.error("error: ", e);
-    fileStream.close(() => fs.rmSync(pending));
+    file.close(() => fs.rmSync(pending));
   }
   r.end();
 });
 server.listen(9630);
 /*
-# node --experimental-default-type=module hcp.js
+# node --experimental-default-type=module ../hcp.js
 # sing-box: { "domain": "deb.debian.org", "process_path": "/usr/lib/apt/methods/http", "action": "route-options", "override_address": "192.168.1.77", "override_port": 9630 }, // hcp
 # curl http://192.168.1.77:9630/refresh
 rm -rf /etc/apt/sources.list
