@@ -36,6 +36,5 @@ sing-box.exe run -c config.jsonc -D . --disable-color
 ' > proxy.bat
 
 # ss -npt | grep 2400:c620 | sort
-# ./sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
 # printf "[main]\ndns=none\nrc-manager=unmanaged\n" > /etc/NetworkManager/conf.d/70-no-dns.conf ; systemctl restart NetworkManager # 禁用 nm 自动修改 resolv.conf
 # printf "# manually writen\nnameserver 172.19.0.53\n# nameserver 223.5.5.5\n" > /etc/resolv.conf # 地址最好在 tun device 对应的网段内，防止泄漏。不要设置成 127.0.0.1 否则请求无法被嗅探和拦截

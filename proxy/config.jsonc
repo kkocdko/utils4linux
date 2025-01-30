@@ -85,7 +85,8 @@
       "listen": "::",
       "listen_port": 53,
       "users": [{ "password": "xxxx" }],
-      "tls": { "enabled": true, "server_name": "registry.npmmirror.com", "certificate": ["-----BEGIN CERTIFICATE-----","xxxx","-----END CERTIFICATE-----"], "key": ["-----BEGIN PRIVATE KEY-----","xxxx","-----END PRIVATE KEY-----"] }
+      // 通过此命令生成 sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
+      "tls": { "enabled": true, "server_name": "www.mihoyo.com", "certificate": ["-----BEGIN CERTIFICATE-----","xxxx","-----END CERTIFICATE-----"], "key": ["-----BEGIN PRIVATE KEY-----","xxxx","-----END PRIVATE KEY-----"] }
     },
     {
       "tag": "sh-hk-stls",
@@ -94,8 +95,8 @@
       "listen_port": 19549,
       "detour": "sh-hk-stls-inner",
       "version": 3,
-      "users": [{ "password": "xxxx" }], // 执行 sing-box generate rand 16 --base64 生成
-      "handshake": { "server": "registry.npmmirror.com", "server_port": 443 }, // 这个域名需要支持 TLS 1.3
+      "users": [{ "password": "xxxx" }], // 通过此命令生成 sing-box generate rand 16 --base64
+      "handshake": { "server": "www.1688.com", "server_port": 443 }, // 此域名需要支持 TLS 1.3
       "strict_mode": true
     },
     {
