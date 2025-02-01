@@ -2,62 +2,78 @@
 set -ex
 trap exit INT
 
-# My backup proposal:
-# - Unidirectional data flow. Phone > PC > Cloud.
-# - The code dir backup with history, others have no history.
+# My backup proposal: Unidirectional data flow. Phone -> PC -> Cloud. The code dir backup with history, others have no history.
 alias rclone=/home/kkocdko/misc/apps/rclone # https://github.com/rclone/rclone/releases/download/v1.69.0/rclone-v1.69.0-linux-amd64.zip
-alias rsync=/home/kkocdko/misc/apps/rsync # https://github.com/kkocdko/utils4linux/releases/tag/mksb.rsync_3.3.0_8846311740
-alias 7zz=/home/kkocdko/misc/apps/7zz
-alias dusort="du -a -d 1 2> /dev/null | sort -n"
 
 if [ "$1" = pack-code-dir ]; then
-  echo "do this step manually please"; exit
+  rclone sync --config "" --links \
+    --filter "- **/{dist,node_modules,target,venv}/" \
+    --filter "- /clevert/temp/_test_res/" \
+    --filter "- /clevert/temp/extensions/" \
+    --filter "- /kblog/public/" \
+    --filter "- /ripgrep/" \
+    --filter "- /hello-cpp/build/" \
+    --filter "- /hinapi/build/" \
+    --filter "- /hinapi/third_party/" \
+    --filter "- /tlsimple/3rdparty/" \
+    --filter "- /tlsimple/src/ffi.rs" \
+    /home/kkocdko/misc/code /tmp/pack-code-dir/code
+  tar -c -C /tmp/pack-code-dir code | dd conv=swab of=/home/kkocdko/misc/bak/packed_code_$(date +%Y%m%d).tar.swab # prevent auto-scanning
   rm -rf /tmp/pack-code-dir
-  rsync --recursive --times --links --delete --filter=":- /home/kkocdko/misc/code/.rsyncignore" /home/kkocdko/misc/code /tmp/pack-code-dir
-  password="7777" # code dir includes private keys and tokens, set a password to prevent auto-scanning
-  slimname="code_$(date +%Y%m%d)_p$password"
-  cd /tmp/pack-code-dir
-  # 7z a -p$password -mhe=on -mx -myx -mmt=off -ms=on -mtm=off -mtc=off -mta=off -mtr=off -m0=LZMA2:d=384m:fb=273 -mmc=1000000000 $slimname.7z archive
-  7zz a -p$password -mhe=on $slimname.7z code
+  exit
+  # tips: 7z.exe a -snl -mmt=2 -mx9 packed_code_201810-202501.7z archive # dd conv=swab
+fi
+
+if [ "$1" = pack-apps-dir ]; then
+  rm -rf /tmp/pack-apps-dir
+  rclone sync --config "" --links \
+    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier}" \
+    --filter "- /frp/{frpc,frps}" \
+    --filter "- /electron/" \
+    --filter "+ /ungoogled-chromium/launch" \
+    --filter "- /ungoogled-chromium/" \
+    /home/kkocdko/misc/apps /tmp/pack-apps-dir/apps
+  tar -c -C /tmp/pack-apps-dir apps | dd conv=swab of=/home/kkocdko/misc/bak/packed_apps_$(date +%Y%m%d).tar.swab
+  rm -rf /tmp/pack-apps-dir
   exit
 fi
 
 if [ "$1" = pc-to-cloud ]; then
-  rclone_sync() { rclone --config rclone.conf sync --progress $1 onedrive_kkocdko:$2 ;}
-  rclone_sync /home/kkocdko/misc/bak /rclone/bak
-  rclone_sync /home/kkocdko/misc/media /rclone/media
-  rclone_sync /home/kkocdko/misc/res /rclone/res
+  # printf -- '[onedrive_kkocdko]\ntype = onedrive\ntoken = {"access_token":"xxx"}\ndrive_id = abc123\ndrive_type = personal\n' > rclone.conf
+  export RCLONE_ONEDRIVE_DRIVE_TYPE='personal' RCLONE_ONEDRIVE_DRIVE_ID='xxx' RCLONE_ONEDRIVE_TOKEN='{"access_token":"xxx"}'
+  # export RCLONE_CRYPT_REMOTE=':onedrive:/rclone_kk' RCLONE_CRYPT_PASSWORD='xxx' # rclone obscure the_password
+  # rclone_sync() { rclone sync --config "" --progress $1 :crypt:/$2 ;}
+  rclone_sync() { rclone sync --config "" --progress --checksum $1 :onedrive:/rclone/$2 ;}
+  rclone_sync /home/kkocdko/misc/bak bak
+  rclone_sync /home/kkocdko/misc/media media
+  rclone_sync /home/kkocdko/misc/res res
   exit
 fi
 
 if [ "$1" = phone-to-pc ]; then
-  from_root=rsync://192.168.192.92:9426/sdcard # use phone's wifi hotspot, which is fastest
-  to_root=/home/kkocdko/misc/bak/kpa1
-  rsync $from_root/ # will print the list
-  rsync_sync() { rsync --checksum --progress --recursive --times --links --delete "$from_root$1" "$to_root" ;}
-  rsync_sync /Pictures
-  rsync_sync /DCIM
-  rsync_sync /Download
-  # rsync_sync /DataBackup # direct to pc using webdav, don't sync here # ~/misc/apps/dufs -A /home/kkocdko/misc/bak/kpa1/
+  rclone_sync() { rclone sync --config "" --progress --webdav-url http://192.168.192.92:8181 :webdav:/$1 /home/kkocdko/misc/bak/kpa1/$1 ;}
+  rclone_sync Pictures
+  rclone_sync DCIM
+  rclone_sync Download
+  # rclone_sync DataBackup # direct to pc using webdav, don't sync here # rclone serve webdav --addr :9439 /home/kkocdko/misc/bak/kpa1/
   # todo: exclude .thumbnails and others?
   exit
 fi
 
 exit 1
 
+# [DEPRECATED]
 # paste below to the "anywhere" app, remember to check "execute with root". recommend to use with `anywhere settings > show shell result > dialog`
-if pgrep rsync; then
-  killall rsync
+if pgrep rclone; then
+  killall rclone
   sleep 0.1
-  rm -rf /data/_shell/rsync
+  rm -rf /data/_shell/rclone
 else
-  mkdir -p /data/_shell/rsync
-  cd /data/_shell/rsync
-  cp /sdcard/Download/_shell/rsync ./rsync
-  chmod +x ./rsync
-  # why uid = 0 ? what i think about at that time?
-  printf -- "uid = 0\ngid = 0\nuse chroot = no\nfake super = yes\nread only = false\n[sdcard]\npath = /sdcard\n" > rsyncd.conf
-  nohup ./rsync --daemon --no-detach --port=9426 --config=rsyncd.conf --log-file=rsyncd.log </dev/null >/dev/null 2>&1 &
+  mkdir -p /data/_shell/rclone
+  cd /data/_shell/rclone
+  cp /sdcard/Download/_shell/rclone ./rclone
+  chmod +x ./rclone
+  nohup ./rclone serve webdav --addr :9439 --read-only /sdcard </dev/null >/dev/null 2>&1 &
   ip a | grep "inet " | grep -v 127.0.0.1
 fi
 
