@@ -61,22 +61,3 @@ if [ "$1" = phone-to-pc ]; then
 fi
 
 exit 1
-
-# [DEPRECATED]
-# paste below to the "anywhere" app, remember to check "execute with root". recommend to use with `anywhere settings > show shell result > dialog`
-if pgrep rclone; then
-  killall rclone
-  sleep 0.1
-  rm -rf /data/_shell/rclone
-else
-  mkdir -p /data/_shell/rclone
-  cd /data/_shell/rclone
-  cp /sdcard/Download/_shell/rclone ./rclone
-  chmod +x ./rclone
-  nohup ./rclone serve webdav --addr :9439 --read-only /sdcard </dev/null >/dev/null 2>&1 &
-  ip a | grep "inet " | grep -v 127.0.0.1
-fi
-
-# these are some tips
-su shell -c "cmd notification post -S bigtext ip '$(ip a | grep "inet " | grep -v 127.0.0.1)'"
-# todo: other things like chromium data
