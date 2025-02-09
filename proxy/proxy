@@ -4,9 +4,7 @@ cd $(dirname $0)
 if [ ! -e dist ]; then
   mkdir dist
   cd dist
-  curl -L https://github.com/SagerNet/sing-box/releases/download/v1.11.0-beta.20/sing-box-1.11.0-beta.20-linux-amd64.tar.gz | tar -xz --strip-component 1
-  curl -L https://github.com/xmdhs/clash2singbox/releases/download/v0.1.4/clash2singbox-linux-amd64 -o clash2singbox
-  chmod +x clash2singbox
+  # curl -L https://github.com/SagerNet/sing-box/releases/download/v1.12.0-alpha.3/sing-box-1.12.0-alpha.3-linux-amd64.tar.gz | tar -xz --strip-component 1
   # rm -f registerSW.js sw.js *.ico *.png manifest.webmanifest Twemoji_* assets/Twemoji_* assets/roboto-* assets/inter-*
   exit
 fi
@@ -26,15 +24,10 @@ fi
 exit 1
 
 echo '
-@echo off
-title sing-box
-fltmc>nul || echo Please run as administrator && pause && exit
 cd /d %~dp0
-cd dist
-sing-box.exe run -c config.jsonc -D . --disable-color
-:: curl -o config.jsonc -L "https://114.114.114.114:9114/dav/proxy/config.jsonc"
+curl -o config.jsonc -L "https://kkocdko.site/hidden/proxy/config.jsonc?token=xxx"
+start "proxy" sing-box.exe run -c config.jsonc -D . --disable-color
 ' > proxy.bat
 
 # ss -npt | grep 2400:c620 | sort
-# printf "[main]\ndns=none\nrc-manager=unmanaged\n" > /etc/NetworkManager/conf.d/70-no-dns.conf ; systemctl restart NetworkManager # 禁用 nm 自动修改 resolv.conf
-# printf "# manually writen\nnameserver 172.19.0.53\n# nameserver 223.5.5.5\n" > /etc/resolv.conf # 地址最好在 tun device 对应的网段内，防止泄漏。不要设置成 127.0.0.1 否则请求无法被嗅探和拦截
+# https://120.53.53.53/resolve?type=A&name=qq.com // { "tag": "dhcp", "type": "dhcp" }
