@@ -1,46 +1,82 @@
-#!/bin/sh
+#!/bin/bash
 set -ex
 trap exit INT
+type unshare curl mkfs.fat mtools tar mksquashfs chroot
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
 if [ "$1" = test ]; then
-  if [ $EUID != 0 ]; then echo "Should be run as root."; exit; fi
   # printf "#!/bin/sh\necho hi\nbash\n" > /tmp/qemu_test/hi.sh # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh"
-  # printf "root=live:/dev/disk/by-label/KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_20250110.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
-  printf 'root=live:/dev/disk/by-label/QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off selinux=0 console=ttyS0 \0' | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
-  rm -rf $temp_dir/out.img $temp_dir/out
-  truncate -s 1300M $temp_dir/out.img
+  # printf "root=/dev/disk/by-path/pci-0000:01:00.0-nvme-1-part2 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  # printf "root=live:/dev/disk/by-label/KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_20250110.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  printf 'root=live:/dev/disk/by-label/QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 console=ttyS0 \0' | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  truncate -s 0 $temp_dir/out.img
+  truncate -s $(du -c $dist_dir/linux.efi $dist_dir/squashfs.img | awk 'END {print $1 + 3072}')K $temp_dir/out.img
   mkfs.fat -F 32 -n QEMU_TEST $temp_dir/out.img
-  mkdir -p $temp_dir/out
-  mount $temp_dir/out.img $temp_dir/out
-  mkdir -p $temp_dir/out/EFI/BOOT $temp_dir/out/LiveOS
-  cp $dist_dir/linux.efi $temp_dir/out/EFI/BOOT/BOOTX64.EFI
-  cp $dist_dir/squashfs.img $temp_dir/out/LiveOS/squashfs.img
-  umount $temp_dir/out
+  mmd -i $temp_dir/out.img ::/EFI ::/EFI/BOOT ::/LiveOS
+  mcopy -i $temp_dir/out.img $dist_dir/linux.efi ::/EFI/BOOT/BOOTX64.EFI
+  mcopy -i $temp_dir/out.img $dist_dir/squashfs.img ::/LiveOS/squashfs.img
   qemu-system-x86_64 \
-    -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 5G \
+    -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 4G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=$temp_dir/out.img
-  rm -rf $temp_dir/out.img $temp_dir/out
   exit
 fi
 
 if [ "$1" = build ]; then
-  if [ $EUID != 0 ]; then echo "Should be run as root."; exit; fi
   curl \
-    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/e3f216064528d0ad005524fbafbddfd3115be946/trixie/slim/oci/blobs/rootfs.tar.gz \
-    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.12.8-xanmod1/6.12.8-x64v3-xanmod1/linux-image-6.12.8-x64v3-xanmod1_6.12.8-x64v3-xanmod1-0~20250102.g457cbbe_amd64.deb?use_mirror=autoselect \
-    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.12.8-xanmod1/6.12.8-x64v3-xanmod1/linux-headers-6.12.8-x64v3-xanmod1_6.12.8-x64v3-xanmod1-0~20250102.g457cbbe_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/c75e1cbd17082ba26de19b4a979aab7e7b4dccd9/trixie/slim/oci/blobs/rootfs.tar.gz \
+    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.5-xanmod1/6.13.5-x64v3-xanmod1/linux-image-6.13.5-x64v3-xanmod1_6.13.5-x64v3-xanmod1-0~20250227.gdc8f2a7_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.5-xanmod1/6.13.5-x64v3-xanmod1/linux-headers-6.13.5-x64v3-xanmod1_6.13.5-x64v3-xanmod1-0~20250227.gdc8f2a7_amd64.deb?use_mirror=autoselect \
     -o $dist_dir/adw-gtk3.deb -L https://julianfairfax.codeberg.page/package-repo/debs/pool/main/a/adw-gtk3/adw-gtk3_5.6_all.deb \
-    --parallel --skip-existing # needs curl v8.11
-  cd $temp_dir
-  # ============================================================
-  rm -rf rootfs $dist_dir/squashfs.img
-  mkdir rootfs
-  tar -xf $dist_dir/squashfs.img.tar -C rootfs
+    --parallel --skip-existing
+  echo temp_dir=$temp_dir dist_dir=$dist_dir '
+    . /etc/profile
+    set -ex
+    rm -rf $temp_dir/rootfs $dist_dir/linux.efi $dist_dir/squashfs.img
+    mkdir $temp_dir/rootfs
+    tar -xf $dist_dir/rootfs.tar.gz -C $temp_dir/rootfs
+    cp $dist_dir/linux-image.deb $dist_dir/linux-headers.deb $dist_dir/adw-gtk3.deb $temp_dir/rootfs/mnt
+    mount -t tmpfs tmpfs $temp_dir/rootfs/dev # https://github.com/containers/bubblewrap/blob/v0.11.0/bubblewrap.c#L1378
+    for entry in zero full random urandom; do # no /dev/null here
+      touch $temp_dir/rootfs/dev/$entry
+      mount --bind /dev/$entry $temp_dir/rootfs/dev/$entry
+    done
+    mount --bind /etc/resolv.conf $temp_dir/rootfs/etc/resolv.conf # fix domain resolve
+    exec chroot $temp_dir/rootfs /bin/bash # below inside chroot
+    . /etc/profile
+    set -ex
+    mount -t proc none /proc
+    ln -s /proc/self/fd/0 /dev/stdin
+    ln -s /proc/self/fd/1 /dev/stdout
+    ln -s /proc/self/fd/2 /dev/stderr
+    ln -s /proc/self/fd /dev/fd
+    export LANG=C LC_ALL=C DEBIAN_FRONTEND=noninteractive
+    printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
+    echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
+    chmod 1777 /tmp
+    apt-get update
+    pkgs="$pkgs sudo libpam-systemd polkitd unattended-upgrades zstd apt-utils init iptables iputils-ping linux-sysctl-defaults less nano netbase vim-tiny whiptail systemd-timesyncd openssh-server ssh-import-id cloud-init cloud-guest-utils apt-listchanges bash-completion bind9-host man-db manpages socat pciutils reportbug traceroute psmisc tcpdump ca-certificates curl ethtool uuid-runtime screen xz-utils" # from official cloud, exclude: systemd-resolved libnss-resolve libnss-myhostname netplan.io apparmor cloud-initramfs-growroot vim
+    pkgs="$pkgs busybox-static util-linux-extra tmux binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic" # avoid install dracut hooks and dracut-network
+    pkgs="$pkgs amd64-microcode intel-microcode atmel-firmware bluez-firmware dahdi-firmware-nonfree firmware-amd-graphics firmware-ast firmware-ath9k-htc firmware-atheros firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-carl9170 firmware-cavium firmware-cirrus firmware-intel-graphics firmware-intel-misc firmware-intel-sound firmware-iwlwifi firmware-libertas firmware-linux-free firmware-linux-nonfree firmware-linux firmware-marvell-prestera firmware-mediatek firmware-misc-nonfree firmware-myricom firmware-netronome firmware-netxen firmware-nvidia-graphics firmware-qlogic firmware-realtek firmware-siano firmware-sof-signed firmware-zd1211" # from debian-live-testing-amd64-standard.iso, exclude: firmware-ivtv firmware-ipw2x00
+    pkgs="$pkgs /mnt/*.deb"
+    apt-get install -y --no-install-recommends $pkgs
+    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools gnome-software gnome-icon-theme gnome-user-docs gnome-contacts xserver-xorg gnome-remote-desktop
+    # sudo apt remove tracker-miner-fs
+    # --mark-auto
+    apt-get install -y iproute2 iw network-manager fonts-unifont $(apt-cache depends gnome-core | awk -F" " "/ Depends:/{if(!( \$2 ~ /baobab|loupe|simple-scan|evince|yelp|orca|totem|gnome-sushi|gnome-calculator|gnome-characters|gnome-contacts|gnome-font-viewer|gnome-logs|gnome-maps|gnome-software|gnome-weather|gnome-snapshot|gnome-clocks|gnome-connections|gnome-backgrounds|gnome-user-docs/ ))print \$2}")
+    apt-get autoremove -y
+    apt-get clean all -y
+    apt-mark unhold $(apt-mark showhold)
+    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-refresh.timer /etc/systemd/system/timers.target.wants/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer /etc/systemd/system/display-manager.service /usr/share/desktop-base/*-theme /usr/share/plymouth
+    echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
+    printf "root\nroot\n" | passwd
+    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
+    # after the chroot and unshare exited, all mounts were gone
+  ' | unshare -mupfr --map-auto --mount-proc /bin/bash
   echo '
+    #!/bin/sh
     user_obj=$(dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1 | tr \" "\n" | tail -2 | head -1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetAutomaticLogin boolean:true
@@ -49,56 +85,12 @@ if [ "$1" = build ]; then
     gsettings set org.gnome.desktop.background primary-color "#35363a"
     gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
     gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
-  ' > rootfs/de.sh
-  echo '
-    set -ex
-    export LANG=C DEBIAN_FRONTEND=noninteractive
-    mount -t devtmpfs dev /dev
-    mount -t proc none /proc
-  ' | unshare -m -u -p -f --root rootfs --setgroups allow /bin/bash
-  mksquashfs rootfs $temp_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1
-  ln -s $temp_dir/squashfs.img $dist_dir/squashfs.img
-  exit
-  # ============================================================
-  rm -rf rootfs $dist_dir/linux.efi $dist_dir/squashfs.img
-  mkdir rootfs
-  tar -xf $dist_dir/rootfs.tar.gz -C rootfs
-  cp $dist_dir/linux-image.deb $dist_dir/linux-headers.deb $dist_dir/adw-gtk3.deb rootfs/mnt
-  echo '
-    set -ex
-    export LANG=C DEBIAN_FRONTEND=noninteractive
-    mount -t devtmpfs dev /dev
-    mount -t proc none /proc
-    printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
-    echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
-    chmod 1777 /tmp
-    apt-get update
-    pkgs="$pkgs sudo libpam-systemd polkitd unattended-upgrades zstd apt-utils init iptables iputils-ping linux-sysctl-defaults less nano netbase vim-tiny whiptail systemd-timesyncd openssh-server ssh-import-id cloud-init cloud-guest-utils apt-listchanges bash-completion bind9-host man-db manpages socat pciutils reportbug traceroute psmisc tcpdump ca-certificates curl ethtool uuid-runtime screen xz-utils" # from official cloud, exclude: systemd-resolved libnss-resolve libnss-myhostname netplan.io apparmor cloud-initramfs-growroot vim
-    pkgs="$pkgs busybox-static tmux binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic" # avoid install dracut hooks and dracut-network
-    pkgs="$pkgs amd64-microcode intel-microcode atmel-firmware bluez-firmware dahdi-firmware-nonfree firmware-amd-graphics firmware-ast firmware-ath9k-htc firmware-atheros firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-carl9170 firmware-cavium firmware-cirrus firmware-intel-graphics firmware-intel-misc firmware-intel-sound firmware-iwlwifi firmware-libertas firmware-linux-free firmware-linux-nonfree firmware-linux firmware-marvell-prestera firmware-mediatek firmware-misc-nonfree firmware-myricom firmware-netronome firmware-netxen firmware-nvidia-graphics firmware-qlogic firmware-realtek firmware-siano firmware-sof-signed firmware-zd1211" # from debian-live-testing-amd64-standard.iso, exclude: firmware-ivtv firmware-ipw2x00
-    pkgs="$pkgs /mnt/linux-image.deb /mnt/linux-headers.deb /mnt/adw-gtk3.deb"
-    apt-get install -y --no-install-recommends $pkgs
-    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools gnome-software gnome-icon-theme gnome-user-docs gnome-contacts xserver-xorg gnome-remote-desktop
-    apt-get install -y fonts-unifont network-manager-gnome iproute2 iw $(apt-cache depends gnome-core | awk -F" " "/ Depends:/{if(!( \$2 ~ /baobab|loupe|simple-scan|evince|yelp|orca|totem|gnome-sushi|gnome-calculator|gnome-characters|gnome-contacts|gnome-font-viewer|gnome-logs|gnome-maps|gnome-software|gnome-weather|gnome-snapshot|gnome-clocks|gnome-connections|gnome-backgrounds|gnome-user-docs/ ))print \$2}")
-    apt-get autoremove -y
-    apt-get clean all -y
-    apt-mark unhold $(apt-mark showhold)
-    rm -rf /var/lib/apt/lists/*
-    rm /etc/systemd/system/timers.target.wants/fwupd-refresh.timer
-    rm /etc/systemd/system/timers.target.wants/apt-daily.timer
-    rm /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer
-    # rm /etc/systemd/system/display-manager.service
-    rm -rf /usr/share/desktop-base/*-theme /usr/share/plymouth
-    echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
-    # gsettings set org.gnome.desktop.background primary-color "#35363a"
-    # gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-    # gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
-    # cp -a /run/rootfsbase /mnt/sda1 # or try: tar -c /from | tar -x -C /to
-    printf "root\nroot\n" | passwd
-    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
-  ' | unshare -m -u -p -f --root rootfs --setgroups allow /bin/bash
-  mv rootfs/mnt/linux.efi $dist_dir/linux.efi
-  mksquashfs rootfs $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1 -e ./rootfs/mnt/* # excludes must have "./" prefix
-  rm -rf $temp_dir
+    # install to disk: cp -a /run/rootfsbase /mnt/sda1 # or try: tar -c /from | tar -x -C /to
+  ' > $temp_dir/rootfs/root/de.sh
+  echo temp_dir=$temp_dir dist_dir=$dist_dir '
+    mv $temp_dir/rootfs/mnt/linux.efi $dist_dir/linux.efi
+    mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1 -e $temp_dir/rootfs/mnt/*
+    rm -rf $temp_dir
+  ' | unshare -mupfr --map-auto --mount-proc /bin/bash
   exit
 fi
