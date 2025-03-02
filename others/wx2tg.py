@@ -338,6 +338,13 @@ async def from_tg():
             for update in updates:
                 config["tg_offset"] = update.update_id + 1
                 sync_config()
+                if update.edited_message is not None and update.edited_message.text.startswith("- "):
+                    # 实现发送时合并。按照 "- " 切割成多个部分，发送最后一部分
+                    parts = update.edited_message.text.split("- ")
+                    wcf_lock.acquire()
+                    wcf.send_text(receiver=wxid, msg=parts.pop())
+                    wcf_lock.release()
+                    continue
                 if update.message is None:
                     continue
                 if update.message.chat_id != config["tg_group"]:
