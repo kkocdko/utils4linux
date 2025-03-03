@@ -37,12 +37,12 @@ if [ "$1" = build ]; then
     rm -rf $temp_dir/rootfs $dist_dir/linux.efi $dist_dir/squashfs.img
     mkdir $temp_dir/rootfs
     tar -xf $dist_dir/rootfs.tar.gz -C $temp_dir/rootfs
-    cp $dist_dir/linux-image.deb $dist_dir/linux-headers.deb $dist_dir/adw-gtk3.deb $temp_dir/rootfs/mnt
     mount -t tmpfs tmpfs $temp_dir/rootfs/dev # https://github.com/containers/bubblewrap/blob/v0.11.0/bubblewrap.c#L1378
     for entry in zero full random urandom; do # no /dev/null here
       touch $temp_dir/rootfs/dev/$entry
       mount --bind /dev/$entry $temp_dir/rootfs/dev/$entry
     done
+    mount --bind $dist_dir $temp_dir/rootfs/mnt
     mount --bind /etc/resolv.conf $temp_dir/rootfs/etc/resolv.conf # fix domain resolve
     exec chroot $temp_dir/rootfs /bin/bash # below inside chroot
     . /etc/profile
@@ -62,21 +62,20 @@ if [ "$1" = build ]; then
     pkgs="$pkgs amd64-microcode intel-microcode atmel-firmware bluez-firmware dahdi-firmware-nonfree firmware-amd-graphics firmware-ast firmware-ath9k-htc firmware-atheros firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-carl9170 firmware-cavium firmware-cirrus firmware-intel-graphics firmware-intel-misc firmware-intel-sound firmware-iwlwifi firmware-libertas firmware-linux-free firmware-linux-nonfree firmware-linux firmware-marvell-prestera firmware-mediatek firmware-misc-nonfree firmware-myricom firmware-netronome firmware-netxen firmware-nvidia-graphics firmware-qlogic firmware-realtek firmware-siano firmware-sof-signed firmware-zd1211" # from debian-live-testing-amd64-standard.iso, exclude: firmware-ivtv firmware-ipw2x00
     pkgs="$pkgs /mnt/*.deb"
     apt-get install -y --no-install-recommends $pkgs
-    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools gnome-software gnome-icon-theme gnome-user-docs gnome-contacts xserver-xorg gnome-remote-desktop
-    # sudo apt remove tracker-miner-fs
-    # --mark-auto
-    apt-get install -y iproute2 iw network-manager fonts-unifont $(apt-cache depends gnome-core | awk -F" " "/ Depends:/{if(!( \$2 ~ /baobab|loupe|simple-scan|evince|yelp|orca|totem|gnome-sushi|gnome-calculator|gnome-characters|gnome-contacts|gnome-font-viewer|gnome-logs|gnome-maps|gnome-software|gnome-weather|gnome-snapshot|gnome-clocks|gnome-connections|gnome-backgrounds|gnome-user-docs/ ))print \$2}")
+    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-user-docs gnome-icon-theme gnome-sushi gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono fonts-dejavu-core fonts-dejavu-mono evolution-data-server gstreamer1.0-plugins-bad evince
+    # sudo apt remove tracker-miner-fs # --mark-auto
+    apt-get install -y iproute2 iw network-manager fonts-unifont adwaita-icon-theme at-spi2-core cups dconf-cli dconf-gsettings-backend gdm3 gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-clocks gnome-connections gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gstreamer1.0-packagekit gstreamer1.0-plugins-good gvfs-backends gvfs-fuse libatk-adaptor libcanberra-pulse libglib2.0-bin libpam-gnome-keyring libproxy1-plugin-gsettings libproxy1-plugin-webkit nautilus orca pipewire-audio system-config-printer-common system-config-printer-udev tecla tracker xdg-desktop-portal-gnome zenity gnome-remote-desktop # apt-cache depends gnome-core
     apt-get autoremove -y
     apt-get clean all -y
     apt-mark unhold $(apt-mark showhold)
-    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-refresh.timer /etc/systemd/system/timers.target.wants/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer /etc/systemd/system/display-manager.service /usr/share/desktop-base/*-theme /usr/share/plymouth
+    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-refresh.timer /etc/systemd/system/timers.target.wants/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer /etc/systemd/system/display-manager.service /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-*.dict /usr/share/fonts/opentype/unifont/unifont_*.otf
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
     # after the chroot and unshare exited, all mounts were gone
   ' | unshare -mupfr --map-auto --mount-proc /bin/bash
   echo '
-    #!/bin/sh
+    #!/bin/bash
     user_obj=$(dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1 | tr \" "\n" | tail -2 | head -1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetAutomaticLogin boolean:true
@@ -88,8 +87,7 @@ if [ "$1" = build ]; then
     # install to disk: cp -a /run/rootfsbase /mnt/sda1 # or try: tar -c /from | tar -x -C /to
   ' > $temp_dir/rootfs/root/de.sh
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
-    mv $temp_dir/rootfs/mnt/linux.efi $dist_dir/linux.efi
-    mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1 -e $temp_dir/rootfs/mnt/*
+    mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1
     rm -rf $temp_dir
   ' | unshare -mupfr --map-auto --mount-proc /bin/bash
   exit
