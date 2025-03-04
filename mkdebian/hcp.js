@@ -34,7 +34,7 @@ const server = http.createServer(async (_, r) => {
     for await (const chunk of response.body) {
       await Promise.allSettled([
         new Promise((resolve) => file.write(chunk, resolve)), // not need to listen drain event, see https://github.com/clevert-app/clevert/issues/12
-        new Promise((resolve) => r.write(resolve)), // continue downloading even if request abort
+        new Promise((resolve) => r.write(chunk, resolve)), // continue downloading even if request abort
       ]);
     }
     file.close(() => fs.renameSync(pending, cached)); // use sync call here

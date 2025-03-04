@@ -1,7 +1,5 @@
 # mkdebian
 
-**This project is paused until debain 13 released.**
-
 Custom debian livecd.
 
 ## Goals
@@ -80,6 +78,33 @@ https://pykickstart.readthedocs.io/en/latest/kickstart-docs.html#url
 https://unix.stackexchange.com/questions/103926/kickstart-copy-file-to-new-system
 https://access.redhat.com/discussions/6978850
 ```
+
+/etc/apt/mirrors
+# https://wiki.debian.org/Gnome#Options
+efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root initrd=\initramfs.img amd_pstate=passive mitigations=off selinux=0'
+
+#!/bin/sh
+
+mkdir -p /tmp/mkfedora
+cd /tmp/mkfedora
+
+printf "import sqlite3\nf=lambda p:sqlite3.connect(p).execute('vacuum;')\nf('/usr/lib/sysimage/rpm/rpmdb.sqlite')\nf('/var/lib/dnf/history.sqlite')" | python3 # tidy database
+rm -rf /usr/share/locale/* # remove useless locale files
+rm -rf /var/lib/selinux/targeted/active/modules/* /var/cache/swcatalog/cache/* # temp files
+rm -rf /usr/share/ibus/dicts/emoji-* /usr/lib64/libpinyin/data/bigram.db # emoji and bigram in ibus
+sed -i /etc/selinux/config -e 's|SELINUX=enforcing|SELINUX=disabled|' # it sucks, cause systemd-xxx failed even after removing a normal package like qemu
+mkdir -p /etc/systemd/logind.conf.d
+printf "[Login]\nHandleLidSwitch=ignore\nHandleLidSwitchExternalPower=ignore\nHandleLidSwitchDocked=ignore\n" >/etc/systemd/logind.conf.d/90-ignore-lid.conf
+mkdir -p /etc/systemd/journald.conf.d
+printf "[Journal]\nSystemMaxUse=128M\nCompress=1M\n" >/etc/systemd/journald.conf.d/90-less-log.conf
+# grub2-mkconfig -o /boot/grub2/grub.cfg # apply "/etc/default/grub", GRUB_CMDLINE_LINUX="amd_pstate=passive mitigations=off selinux=0"
+EOF
+# https://extensions.gnome.org/extension/3843/just-perfection/ | https://extensions.gnome.org/extension-data/just-perfection-desktopjust-perfection.v27.shell-extension.zip
+# run as non-root user please
+# gnome-extensions install ./just-[TAB]
+# gnome-extensions prefs just-[TAB]
+
+
 -->
 
 ```json

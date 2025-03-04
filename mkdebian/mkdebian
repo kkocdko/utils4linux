@@ -1,15 +1,15 @@
 #!/bin/bash
 set -ex
 trap exit INT
-type unshare curl mkfs.fat mtools tar mksquashfs chroot
+type unshare curl mkfs.fat mtools tar mksquashfs pivot_root
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
 if [ "$1" = test ]; then
   # printf "#!/bin/sh\necho hi\nbash\n" > /tmp/qemu_test/hi.sh # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh"
-  # printf "root=/dev/disk/by-path/pci-0000:01:00.0-nvme-1-part2 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
-  # printf "root=live:/dev/disk/by-label/KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_20250110.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  # printf "root=/dev/disk/by-path/pci-0000:01:00.0-nvme-1-part2 rw mitigations=off apparmor=0 selinux=0 \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  # printf "root=live:/dev/disk/by-label/KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_kk.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
   printf 'root=live:/dev/disk/by-label/QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 console=ttyS0 \0' | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
   truncate -s 0 $temp_dir/out.img
   truncate -s $(du -c $dist_dir/linux.efi $dist_dir/squashfs.img | awk 'END {print $1 + 3072}')K $temp_dir/out.img
@@ -28,52 +28,49 @@ if [ "$1" = build ]; then
   curl \
     -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/c75e1cbd17082ba26de19b4a979aab7e7b4dccd9/trixie/slim/oci/blobs/rootfs.tar.gz \
     -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.5-xanmod1/6.13.5-x64v3-xanmod1/linux-image-6.13.5-x64v3-xanmod1_6.13.5-x64v3-xanmod1-0~20250227.gdc8f2a7_amd64.deb?use_mirror=autoselect \
-    -o $dist_dir/linux-headers.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.5-xanmod1/6.13.5-x64v3-xanmod1/linux-headers-6.13.5-x64v3-xanmod1_6.13.5-x64v3-xanmod1-0~20250227.gdc8f2a7_amd64.deb?use_mirror=autoselect \
     -o $dist_dir/adw-gtk3.deb -L https://julianfairfax.codeberg.page/package-repo/debs/pool/main/a/adw-gtk3/adw-gtk3_5.6_all.deb \
     --parallel --skip-existing
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
     . /etc/profile
     set -ex
     rm -rf $temp_dir/rootfs $dist_dir/linux.efi $dist_dir/squashfs.img
-    mkdir $temp_dir/rootfs
+    mkdir -p $temp_dir/rootfs/oldroot
     tar -xf $dist_dir/rootfs.tar.gz -C $temp_dir/rootfs
+    mount --bind $temp_dir/rootfs $temp_dir/rootfs # pivot_root requires a mountpoint to work
     mount -t tmpfs tmpfs $temp_dir/rootfs/dev # https://github.com/containers/bubblewrap/blob/v0.11.0/bubblewrap.c#L1378
-    for entry in zero full random urandom; do # no /dev/null here
-      touch $temp_dir/rootfs/dev/$entry
-      mount --bind /dev/$entry $temp_dir/rootfs/dev/$entry
+    for entry in etc/resolv.conf etc/hosts dev/zero dev/full dev/random dev/urandom; do # omit dev/null
+      touch $temp_dir/rootfs/$entry
+      mount --bind /$entry $temp_dir/rootfs/$entry
     done
     mount --bind $dist_dir $temp_dir/rootfs/mnt
-    mount --bind /etc/resolv.conf $temp_dir/rootfs/etc/resolv.conf # fix domain resolve
-    exec chroot $temp_dir/rootfs /bin/bash # below inside chroot
+    cd $temp_dir/rootfs
+    pivot_root . oldroot
     . /etc/profile
     set -ex
     mount -t proc none /proc
     ln -s /proc/self/fd/0 /dev/stdin
     ln -s /proc/self/fd/1 /dev/stdout
     ln -s /proc/self/fd/2 /dev/stderr
-    ln -s /proc/self/fd /dev/fd
     export LANG=C LC_ALL=C DEBIAN_FRONTEND=noninteractive
     printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
-    chmod 1777 /tmp
     apt-get update
     pkgs="$pkgs sudo libpam-systemd polkitd unattended-upgrades zstd apt-utils init iptables iputils-ping linux-sysctl-defaults less nano netbase vim-tiny whiptail systemd-timesyncd openssh-server ssh-import-id cloud-init cloud-guest-utils apt-listchanges bash-completion bind9-host man-db manpages socat pciutils reportbug traceroute psmisc tcpdump ca-certificates curl ethtool uuid-runtime screen xz-utils" # from official cloud, exclude: systemd-resolved libnss-resolve libnss-myhostname netplan.io apparmor cloud-initramfs-growroot vim
     pkgs="$pkgs busybox-static util-linux-extra tmux binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic" # avoid install dracut hooks and dracut-network
     pkgs="$pkgs amd64-microcode intel-microcode atmel-firmware bluez-firmware dahdi-firmware-nonfree firmware-amd-graphics firmware-ast firmware-ath9k-htc firmware-atheros firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-carl9170 firmware-cavium firmware-cirrus firmware-intel-graphics firmware-intel-misc firmware-intel-sound firmware-iwlwifi firmware-libertas firmware-linux-free firmware-linux-nonfree firmware-linux firmware-marvell-prestera firmware-mediatek firmware-misc-nonfree firmware-myricom firmware-netronome firmware-netxen firmware-nvidia-graphics firmware-qlogic firmware-realtek firmware-siano firmware-sof-signed firmware-zd1211" # from debian-live-testing-amd64-standard.iso, exclude: firmware-ivtv firmware-ipw2x00
-    pkgs="$pkgs /mnt/*.deb"
+    pkgs="$pkgs /mnt/linux-image.deb /mnt/adw-gtk3.deb"
     apt-get install -y --no-install-recommends $pkgs
-    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-user-docs gnome-icon-theme gnome-sushi gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono fonts-dejavu-core fonts-dejavu-mono evolution-data-server gstreamer1.0-plugins-bad evince
-    # sudo apt remove tracker-miner-fs # --mark-auto
-    apt-get install -y iproute2 iw network-manager fonts-unifont adwaita-icon-theme at-spi2-core cups dconf-cli dconf-gsettings-backend gdm3 gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-clocks gnome-connections gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gstreamer1.0-packagekit gstreamer1.0-plugins-good gvfs-backends gvfs-fuse libatk-adaptor libcanberra-pulse libglib2.0-bin libpam-gnome-keyring libproxy1-plugin-gsettings libproxy1-plugin-webkit nautilus orca pipewire-audio system-config-printer-common system-config-printer-udev tecla tracker xdg-desktop-portal-gnome zenity gnome-remote-desktop # apt-cache depends gnome-core
+    apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-icon-theme gnome-sushi gnome-software gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono evolution-data-server gstreamer1.0-plugins-bad evince
+    apt-get install -y iproute2 iw network-manager fonts-unifont adwaita-icon-theme at-spi2-core dconf-cli dconf-gsettings-backend gdm3 gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-backends gvfs-fuse libatk-adaptor libcanberra-pulse libglib2.0-bin libpam-gnome-keyring libproxy1-plugin-gsettings nautilus orca pipewire-audio tecla xdg-desktop-portal-gnome zenity gnome-remote-desktop # apt-cache depends gnome-core
     apt-get autoremove -y
     apt-get clean all -y
     apt-mark unhold $(apt-mark showhold)
-    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-refresh.timer /etc/systemd/system/timers.target.wants/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer /etc/systemd/system/display-manager.service /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-*.dict /usr/share/fonts/opentype/unifont/unifont_*.otf
+    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-refresh.timer /etc/systemd/system/timers.target.wants/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-miner-fs-3.service /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
+    update-locale LANG=C LC_ALL=C
     printf "root\nroot\n" | passwd
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
-    # after the chroot and unshare exited, all mounts were gone
-  ' | unshare -mupfr --map-auto --mount-proc /bin/bash
+  ' | unshare -mupfr --map-auto --mount-proc /bin/bash # after the unshare exited, all mounts were gone
   echo '
     #!/bin/bash
     user_obj=$(dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1 | tr \" "\n" | tail -2 | head -1)
@@ -84,6 +81,7 @@ if [ "$1" = build ]; then
     gsettings set org.gnome.desktop.background primary-color "#35363a"
     gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
     gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
+    # systemctl --user mask tracker-miner-fs-3.service
     # install to disk: cp -a /run/rootfsbase /mnt/sda1 # or try: tar -c /from | tar -x -C /to
   ' > $temp_dir/rootfs/root/de.sh
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
