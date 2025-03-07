@@ -38,7 +38,7 @@ if [ "$1" = build ]; then
     tar -xf $dist_dir/rootfs.tar.gz -C $temp_dir/rootfs
     mount --bind $temp_dir/rootfs $temp_dir/rootfs # pivot_root requires a mountpoint to work
     mount -t tmpfs tmpfs $temp_dir/rootfs/dev # https://github.com/containers/bubblewrap/blob/v0.11.0/bubblewrap.c#L1378
-    for entry in etc/resolv.conf etc/hosts dev/zero dev/full dev/random dev/urandom; do # omit dev/null
+    for entry in etc/resolv.conf etc/hosts proc dev/zero dev/random dev/urandom; do # omit dev/null
       touch $temp_dir/rootfs/$entry
       mount --bind /$entry $temp_dir/rootfs/$entry
     done
@@ -47,7 +47,6 @@ if [ "$1" = build ]; then
     pivot_root . oldroot
     . /etc/profile
     set -ex
-    mount -t proc none /proc
     ln -s /proc/self/fd/0 /dev/stdin
     ln -s /proc/self/fd/1 /dev/stdout
     ln -s /proc/self/fd/2 /dev/stderr
@@ -62,30 +61,28 @@ if [ "$1" = build ]; then
     apt-get install -y --no-install-recommends $pkgs
     apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-icon-theme gnome-sushi gnome-software gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono evolution-data-server gstreamer1.0-plugins-bad evince
     apt-get install -y iproute2 iw network-manager fonts-unifont adwaita-icon-theme at-spi2-core dconf-cli dconf-gsettings-backend gdm3 gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-backends gvfs-fuse libatk-adaptor libcanberra-pulse libglib2.0-bin libpam-gnome-keyring libproxy1-plugin-gsettings nautilus orca pipewire-audio tecla xdg-desktop-portal-gnome zenity gnome-remote-desktop # apt-cache depends gnome-core
+    apt-mark unhold $(apt-mark showhold)
     apt-get autoremove -y
     apt-get clean all -y
-    apt-mark unhold $(apt-mark showhold)
-    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-refresh.timer /etc/systemd/system/timers.target.wants/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-miner-fs-3.service /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
-    echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     update-locale LANG=C LC_ALL=C
+    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-*.timer /etc/systemd/system/timers.target.wants/apt-*.timer /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-*.service /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
+    echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
   ' | unshare -mupfr --map-auto --mount-proc /bin/bash # after the unshare exited, all mounts were gone
   echo '
-    #!/bin/bash
-    user_obj=$(dbus-send --system --print-reply --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1 | tr \" "\n" | tail -2 | head -1)
+    user_obj=$(dbus-send --system --print-reply=literal --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetAutomaticLogin boolean:true
     passwd -d live
     systemctl start gdm
-    gsettings set org.gnome.desktop.background primary-color "#35363a"
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-    gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
-    # systemctl --user mask tracker-miner-fs-3.service
+    # gsettings set org.gnome.desktop.background primary-color "#35363a"
+    # gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
+    # gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
     # install to disk: cp -a /run/rootfsbase /mnt/sda1 # or try: tar -c /from | tar -x -C /to
   ' > $temp_dir/rootfs/root/de.sh
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
-    mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -no-recovery -comp zstd -Xcompression-level 1
+    mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -comp zstd -Xcompression-level 1 -e $temp_dir/rootfs/oldroot
     rm -rf $temp_dir
   ' | unshare -mupfr --map-auto --mount-proc /bin/bash
   exit
