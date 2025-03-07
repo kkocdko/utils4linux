@@ -16,13 +16,15 @@ fi
 
 if [ "$1" = "" ]; then
   cd dist
-  if [ $EUID != 0 ]; then echo "Should be run as root."; exit; fi
   exec ./sing-box run -c config.jsonc -D .
-  exit
+  exit 1
 fi
 
 exit 1
 
+echo '
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"><trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges><requestedExecutionLevel level="requireAdministrator" uiAccess="false"/></requestedPrivileges></security></trustInfo></assembly>
+' > sing-box.exe.manifest
 echo '
 cd /d %~dp0
 curl -o config.jsonc -L "https://kkocdko.site/hidden/proxy/config.jsonc?token=xxx"
