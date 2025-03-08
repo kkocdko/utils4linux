@@ -7,10 +7,10 @@ dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
 if [ "$1" = test ]; then
-  # printf "#!/bin/sh\necho hi\nbash\n" > /tmp/qemu_test/hi.sh # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh"
+  # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh" # printf "echo hi\nbash\n" > hi.sh
   # printf "root=/dev/disk/by-path/pci-0000:01:00.0-nvme-1-part2 rw mitigations=off apparmor=0 selinux=0 \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
-  # printf "root=live:/dev/disk/by-label/KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_kk.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
-  printf 'root=live:/dev/disk/by-label/QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 console=ttyS0 \0' | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  # printf "root=live:LABEL=KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_kk.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  printf 'root=live:LABEL=QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 console=ttyS0 \0' | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
   truncate -s 0 $temp_dir/out.img
   truncate -s $(du -c $dist_dir/linux.efi $dist_dir/squashfs.img | awk 'END {print $1 + 3072}')K $temp_dir/out.img
   mkfs.fat -F 32 -n QEMU_TEST $temp_dir/out.img
@@ -27,7 +27,7 @@ fi
 if [ "$1" = build ]; then
   curl \
     -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/c75e1cbd17082ba26de19b4a979aab7e7b4dccd9/trixie/slim/oci/blobs/rootfs.tar.gz \
-    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.5-xanmod1/6.13.5-x64v3-xanmod1/linux-image-6.13.5-x64v3-xanmod1_6.13.5-x64v3-xanmod1-0~20250227.gdc8f2a7_amd64.deb?use_mirror=autoselect \
+    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.6-xanmod1/6.13.6-x64v3-xanmod1/linux-image-6.13.6-x64v3-xanmod1_6.13.6-x64v3-xanmod1-0~20250307.gd9dbd86_amd64.deb?use_mirror=autoselect \
     -o $dist_dir/adw-gtk3.deb -L https://julianfairfax.codeberg.page/package-repo/debs/pool/main/a/adw-gtk3/adw-gtk3_5.6_all.deb \
     --parallel --skip-existing
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
@@ -60,16 +60,16 @@ if [ "$1" = build ]; then
     pkgs="$pkgs /mnt/linux-image.deb /mnt/adw-gtk3.deb"
     apt-get install -y --no-install-recommends $pkgs
     apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-icon-theme gnome-sushi gnome-software gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono evolution-data-server gstreamer1.0-plugins-bad evince
-    apt-get install -y iproute2 iw network-manager fonts-unifont adwaita-icon-theme at-spi2-core dconf-cli dconf-gsettings-backend gdm3 gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-backends gvfs-fuse libatk-adaptor libcanberra-pulse libglib2.0-bin libpam-gnome-keyring libproxy1-plugin-gsettings nautilus orca pipewire-audio tecla xdg-desktop-portal-gnome zenity gnome-remote-desktop # apt-cache depends gnome-core
+    apt-get install -y iproute2 iw network-manager fonts-unifont dconf-cli dconf-gsettings-backend gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-fuse at-spi2-core libatk-adaptor libcanberra-pulse libpam-gnome-keyring libproxy1-plugin-gsettings nautilus orca pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop # apt-cache depends gnome-core
     apt-mark unhold $(apt-mark showhold)
-    apt-get autoremove -y
+    apt-get autoremove -y --purge
     apt-get clean all -y
     update-locale LANG=C LC_ALL=C
-    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/fwupd-*.timer /etc/systemd/system/timers.target.wants/apt-*.timer /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-*.service /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
+    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-miner-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/tracker-miner-* /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
-  ' | unshare -mupfr --map-auto --mount-proc /bin/bash # after the unshare exited, all mounts were gone
+  ' | unshare -mupfr --map-auto --mount-proc # after the unshare exited, all mounts were gone
   echo '
     user_obj=$(dbus-send --system --print-reply=literal --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
@@ -84,6 +84,6 @@ if [ "$1" = build ]; then
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
     mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -comp zstd -Xcompression-level 1 -e $temp_dir/rootfs/oldroot
     rm -rf $temp_dir
-  ' | unshare -mupfr --map-auto --mount-proc /bin/bash
+  ' | unshare -mupfr --map-auto --mount-proc
   exit
 fi

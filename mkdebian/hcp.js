@@ -14,7 +14,7 @@ const server = http.createServer(async (_, r) => {
     r.req.url?.startsWith("/debian/") ||
     r.req.url?.startsWith("/debian-security/")
   ) {
-    remote = "http://mirrors.ustc.edu.cn" + r.req.url;
+    remote = "http://mirrors.jcut.edu.cn" + r.req.url; // ustc,nju,jcut
   } else if (
     r.req.url?.startsWith("/archive/debian/") ||
     r.req.url?.startsWith("/archive/debian-security/")
