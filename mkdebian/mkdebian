@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 set -ex
 trap exit INT
-type unshare curl mkfs.fat mtools tar mksquashfs pivot_root
+type unshare curl tar mksquashfs pivot_root mkfs.fat mtools qemu-system-x86_64
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
@@ -18,7 +18,7 @@ if [ "$1" = test ]; then
   mcopy -i $temp_dir/out.img $dist_dir/linux.efi ::/EFI/BOOT/BOOTX64.EFI
   mcopy -i $temp_dir/out.img $dist_dir/squashfs.img ::/LiveOS/squashfs.img
   qemu-system-x86_64 \
-    -machine q35,accel=kvm -bios /usr/share/OVMF/OVMF_CODE.fd -cpu host -smp 3 -m 4G \
+    -machine q35,accel=kvm -bios /usr/share/ovmf/OVMF.fd -cpu host -smp 3 -m 4G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=$temp_dir/out.img
   exit
@@ -50,6 +50,7 @@ if [ "$1" = build ]; then
     ln -s /proc/self/fd/0 /dev/stdin
     ln -s /proc/self/fd/1 /dev/stdout
     ln -s /proc/self/fd/2 /dev/stderr
+    ln -s /proc/self/fd /dev/fd
     export LANG=C LC_ALL=C DEBIAN_FRONTEND=noninteractive
     printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
@@ -69,7 +70,7 @@ if [ "$1" = build ]; then
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
-  ' | unshare -mupfr --map-auto --mount-proc # after the unshare exited, all mounts were gone
+  ' | unshare -mupfr --map-auto --mount-proc /bin/sh # after the unshare exited, all mounts were gone
   echo '
     user_obj=$(dbus-send --system --print-reply=literal --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
@@ -84,6 +85,6 @@ if [ "$1" = build ]; then
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
     mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -comp zstd -Xcompression-level 1 -e $temp_dir/rootfs/oldroot
     rm -rf $temp_dir
-  ' | unshare -mupfr --map-auto --mount-proc
+  ' | unshare -mupfr --map-auto --mount-proc /bin/sh
   exit
 fi
