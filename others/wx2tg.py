@@ -15,17 +15,17 @@ import pathlib
 import xml.etree.ElementTree
 import urllib.parse
 
-config = {
+config = {  # 不要写一些无法编码成 json 的东西
     "tg_bot_token": "123123:ABCDEF--ABC123-ABC123",
     "tg_sticker_preview": "https://workers.cloudflare.com",  # https://api.moeworld.top/messageSync/member.php?origin=QQ&avatar=2533307356&bigTitle=空梦『永不落幕的次元之界』&subTitle=软.
     "tg_offset": 0,
     "tg_group": -1001234567,
     "tg_rotate_message": 45743,
     "tg_rotate_message_content": "",
-    "tg_wx_map": {  # thread_id -> wxid
-        "4010": "gh_3dfda90e39d6",  # 微信支付
-        "284": "filehandler",  # 文件传输助手
-        "41458": "123123123@chatroom",  # 桥测试群1
+    "tg_wx_map": {  # thread_id -> {wxid,label}
+        "4010": {"wxid": "gh_3dfda90e39d6", "label": "微信支付"},
+        "284": {"wxid": "filehandler", "label": "文件传输助手"},
+        "41458": {"wxid": "123123123@chatroom", "label": "桥测试群1"},
     },
 }
 config_file_path = "wx2tg.json"
@@ -34,16 +34,16 @@ config_file = None
 
 def sync_config():
     config_file.seek(0)
-    json.dump(config, config_file, indent=2)
+    json.dump(config, config_file, indent=2, ensure_ascii=False)
     config_file.truncate()
 
 
 if not os.path.exists(config_file_path):
-    config_file = open(config_file_path, "w+")
+    config_file = open(config_file_path, "w+", encoding="utf-8")
     sync_config()
     config_file.close()
 
-config_file = open(config_file_path, "r+")
+config_file = open(config_file_path, "r+", encoding="utf-8")
 config = json.load(config_file)
 
 download_dir = "download_attachment"
@@ -91,7 +91,7 @@ async def from_wx():
             msg = wcf.get_msg()
             # https://wechatferry.readthedocs.io/zh/latest/autoapi/wcferry/wxmsg/index.html
             # print(f"{'-'*60}\n.type = [{msg.type}]\n.content = [{msg.content}]\n")
-            wx_tg_map = {v: k for k, v in config["tg_wx_map"].items()}
+            wx_tg_map = {v["wxid"]: k for k, v in config["tg_wx_map"].items()}
             match_wxid = msg.sender
             if msg.from_group():
                 match_wxid = msg.roomid
@@ -338,7 +338,10 @@ async def from_tg():
             for update in updates:
                 config["tg_offset"] = update.update_id + 1
                 sync_config()
-                if update.edited_message is not None and update.edited_message.text.startswith("- "):
+                if (
+                    update.edited_message is not None
+                    and update.edited_message.text.startswith("- ")
+                ):
                     # 实现发送时合并。按照 "- " 切割成多个部分，发送最后一部分
                     parts = update.edited_message.text.split("- ")
                     wcf_lock.acquire()
@@ -354,7 +357,7 @@ async def from_tg():
                 thread_id = str(update.message.message_thread_id)
                 if thread_id not in config["tg_wx_map"]:
                     continue
-                wxid = config["tg_wx_map"][thread_id]
+                wxid = config["tg_wx_map"][thread_id]["wxid"]
                 # for attr in dir(update.message):
                 #     print(f"{attr}: {getattr(update.message, attr)}")
                 if update.message.text != None:
