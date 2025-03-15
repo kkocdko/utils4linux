@@ -19,7 +19,7 @@ https://www.vinnie.work/blog/2020-12-27-a-simple-busybox-system
 https://github.com/cirosantilli/linux-kernel-module-cheat/tree/b3868a3b009f2ab44fa6d3db3d174930b3cf7b69#initrd
 
 ```sh
-dnf install flex bison ncurses-devel elfutils-libelf-devel perl bear openssl-devel
+dnf install flex bison ncurses-devel elfutils-libelf-devel bear # perl openssl-devel
 apt install -y build-essential flex bison bear bc libelf-dev libssl-dev libncurses-dev qemu-system-x86
 ```
 
@@ -54,7 +54,7 @@ tar -xf linux.tar.xz -C linux --strip-components 1 $(gen_exclude drivers/gpu/drm
 cd linux
 make clean
 make x86_64_defconfig
-scripts/config --disable SPECULATION_MITIGATIONS --disable VIRTUALIZATION --disable SOUND --disable DRM --disable NETFILTER # make menuconfig
+scripts/config --disable SPECULATION_MITIGATIONS --disable VIRTUALIZATION --disable SOUND --disable DRM # make menuconfig
 bear -- make -j$(nproc)
 
 qemu-system-x86_64 -machine q35,accel=kvm -cpu host -smp 1 -m 1G -nographic -kernel linux/arch/x86_64/boot/bzImage -hda busybox/rootfs.img -append "root=/dev/sda console=ttyS0"
