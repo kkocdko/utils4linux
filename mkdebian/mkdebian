@@ -1,13 +1,12 @@
 #!/bin/sh
 set -ex
 trap exit INT
-type unshare curl tar mksquashfs zstd xz pivot_root mkfs.fat mtools qemu-system-x86_64 # apt install -y squashfs-tools mtools qemu-system-x86
+type unshare curl tar mksquashfs zstd pivot_root mkfs.fat mtools qemu-system-x86_64 # apt install -y squashfs-tools mtools qemu-system-x86
 temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
-# BOOT_IMAGE=(hd0,gpt2)/root/boot/vmlinuz-6.8.9-300.fc40.x86_64 root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root amd_pstate=passive mitigations=off selinux=0
-# subvol=root,compress=zstd:1
+# BOOT_IMAGE=(hd0,gpt2)/root/boot/vmlinuz-6.8.9-300.fc40.x86_64 root=UUID=657491eb-ced0-4f03-8e0f-04a0997d4781 ro rootflags=subvol=root amd_pstate=passive mitigations=off selinux=0 # subvol=root,compress=zstd:1
 
 if [ "$1" = test ]; then
   # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh" # printf "echo hi\nbash\n" > hi.sh
@@ -22,7 +21,7 @@ if [ "$1" = test ]; then
   mcopy -i $temp_dir/out.img $dist_dir/squashfs.img ::/LiveOS/squashfs.img
   qemu-system-x86_64 \
     -machine q35,accel=kvm -bios /usr/share/ovmf/OVMF.fd -cpu host -smp 3 -m 4G \
-    -nographic \
+    -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=$temp_dir/out.img
   exit
 fi
@@ -32,13 +31,12 @@ if [ "$1" = build-cachyos-kernel-deb ]; then
     -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://archive.cachyos.org/archive/cachyos/linux-cachyos-6.13.0-2-x86_64.pkg.tar.zst \
     -o $dist_dir/linux-cachyos-headers.pkg.tar.zst -L https://archive.cachyos.org/archive/cachyos/linux-cachyos-headers-6.13.0-2-x86_64.pkg.tar.zst \
     --parallel --skip-existing
-  rm -rf $temp_dir
   mkdir -p $temp_dir/linux-cachyos-deb/data/boot $temp_dir/linux-cachyos-deb/control
-  tar -xf $dist_dir/linux-cachyos.pkg.tar.zst -C $temp_dir/linux-cachyos-deb/data
-  zstd --rm -d $(find $temp_dir/linux-cachyos-deb/data -name '*.zst')
-  kver=$(ls $temp_dir/linux-cachyos-deb/data/usr/lib/modules)
-  mv $temp_dir/linux-cachyos-deb/data/usr/lib $temp_dir/linux-cachyos-deb/data/lib
+  tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C $temp_dir/linux-cachyos-deb/data
+  find $temp_dir/linux-cachyos-deb/data -name '*.zst' | xargs zstd --rm -q -d
+  kver=$(ls $temp_dir/linux-cachyos-deb/data/lib/modules)
   mv $temp_dir/linux-cachyos-deb/data/lib/modules/$kver/vmlinuz $temp_dir/linux-cachyos-deb/data/boot/vmlinuz-$kver
+  depmod -b $temp_dir/linux-cachyos-deb/data $kver
   export XZ_OPT=-e9
   tar -cJf $temp_dir/linux-cachyos-deb/data.tar.xz -C $temp_dir/linux-cachyos-deb/data .
   printf "Package: linux-image-$kver\nSource: linux-upstream\nVersion: $kver\nArchitecture: amd64\nMaintainer: anonymous\nSection: kernel\nPriority: optional\nDescription: Converted from linux-cachyos\n" > $temp_dir/linux-cachyos-deb/control/control
@@ -95,7 +93,6 @@ if [ "$1" = build ]; then
     rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-miner-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/tracker-miner-* /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
-    depmod $(ls /lib/modules)
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
   ' | unshare -mupfr --map-auto --mount-proc /bin/sh # after the unshare exited, all mounts were gone
   echo '
