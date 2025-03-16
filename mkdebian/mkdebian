@@ -29,7 +29,6 @@ fi
 if [ "$1" = build-cachyos-kernel-deb ]; then
   curl \
     -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://archive.cachyos.org/archive/cachyos/linux-cachyos-6.13.0-2-x86_64.pkg.tar.zst \
-    -o $dist_dir/linux-cachyos-headers.pkg.tar.zst -L https://archive.cachyos.org/archive/cachyos/linux-cachyos-headers-6.13.0-2-x86_64.pkg.tar.zst \
     --parallel --skip-existing
   mkdir -p $temp_dir/linux-cachyos-deb/data/boot $temp_dir/linux-cachyos-deb/control
   tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C $temp_dir/linux-cachyos-deb/data
@@ -39,6 +38,9 @@ if [ "$1" = build-cachyos-kernel-deb ]; then
   depmod -b $temp_dir/linux-cachyos-deb/data $kver
   export XZ_OPT=-e9
   tar -cJf $temp_dir/linux-cachyos-deb/data.tar.xz -C $temp_dir/linux-cachyos-deb/data .
+  for entry in preinst prerm postinst postrm; do # simple scripts, copy from xanmod
+    printf '#!/bin/sh\nset -e\n# Pass maintainer script parameters to hook scripts\nexport DEB_MAINT_PARAMS="$*"\n# Tell initramfs builder whether it is wanted\nexport INITRD=Yes\ntest -d /etc/kernel/'$entry'.d && run-parts --arg="'$kver'" --arg="/boot/vmlinuz-'$kver'" /etc/kernel/'$entry'.d\nexit 0\n' > $temp_dir/linux-cachyos-deb/control/$entry
+  done
   printf "Package: linux-image-$kver\nSource: linux-upstream\nVersion: $kver\nArchitecture: amd64\nMaintainer: anonymous\nSection: kernel\nPriority: optional\nDescription: Converted from linux-cachyos\n" > $temp_dir/linux-cachyos-deb/control/control
   tar -cJf $temp_dir/linux-cachyos-deb/control.tar.xz -C $temp_dir/linux-cachyos-deb/control .
   echo "2.0" > $temp_dir/linux-cachyos-deb/debian-binary
@@ -93,7 +95,7 @@ if [ "$1" = build ]; then
     rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/tracker-miner-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/tracker-miner-* /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
-    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --compress "zstd -1" --uefi /mnt/linux.efi
+    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --omit-drivers "xfs bcachefs ocfs2 cifs lpfc qla2xxx bfa efct" --compress "zstd -1" --uefi /mnt/linux.efi
   ' | unshare -mupfr --map-auto --mount-proc /bin/sh # after the unshare exited, all mounts were gone
   echo '
     user_obj=$(dbus-send --system --print-reply=literal --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:live string:live int32:1)
