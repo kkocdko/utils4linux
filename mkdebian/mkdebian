@@ -34,7 +34,7 @@ if [ "$1" = build-cachyos-kernel-deb ]; then
   mv $temp_dir/linux-cachyos-deb/data/lib/modules/$kver/vmlinuz $temp_dir/linux-cachyos-deb/data/boot/vmlinuz-$kver
   depmod -b $temp_dir/linux-cachyos-deb/data $kver
   tar -cf $temp_dir/linux-cachyos-deb/data.tar -C $temp_dir/linux-cachyos-deb/data .
-  xz -T2 -0 --block-size $(du -sb $temp_dir/linux-cachyos-deb/data.tar | awk '{print $1/2+64}') $temp_dir/linux-cachyos-deb/data.tar # allow 2 threads decompress and still keep good ratio
+  xz -T2 -9e --block-size $(du -sb $temp_dir/linux-cachyos-deb/data.tar | awk '{print $1/2+64}') $temp_dir/linux-cachyos-deb/data.tar # allow 2 threads decompress and still keep good ratio
   for entry in preinst prerm postinst postrm; do # simple scripts, copy from xanmod kernel
     printf '#!/bin/sh\nset -e\n# Pass maintainer script parameters to hook scripts\nexport DEB_MAINT_PARAMS="$*"\n# Tell initramfs builder whether it is wanted\nexport INITRD=Yes\ntest -d /etc/kernel/'$entry'.d && run-parts --arg="'$kver'" --arg="/boot/vmlinuz-'$kver'" /etc/kernel/'$entry'.d\nexit 0\n' > $temp_dir/linux-cachyos-deb/control/$entry
   done
