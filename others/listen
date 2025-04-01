@@ -1,6 +1,7 @@
 #!/bin/sh
 file="/run/media/kkocdko/data/media/audio/listen/童话镇__陈一发儿__暗杠.m4a"
 file="/home/kkocdko/misc/media/audio/listen/破旧世界.mid.mp3"
+file="/home/kkocdko/misc/media/audio/listen/apt__rose.m4a"
 [ "$1" != "" ] && file="$1"
 ~/misc/apps/ffmpeg -y -hide_banner -i $file -ac 1 /tmp/listen.wav
 ls -lh /tmp/listen.wav

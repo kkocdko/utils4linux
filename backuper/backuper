@@ -55,7 +55,7 @@ if [ "$1" = phone-to-pc ]; then
   rclone_sync Pictures
   rclone_sync DCIM
   rclone_sync Download
-  # rclone_sync DataBackup # direct to pc using webdav, don't sync here # rclone serve webdav --addr :9439 /home/kkocdko/misc/bak/kpa1/
+  # rclone_sync DataBackup # direct to pc using webdav, don't sync here # rclone --config "" serve webdav --addr :9439 /home/kkocdko/misc/bak/kpa1/
   # todo: exclude .thumbnails and others?
   exit
 fi
