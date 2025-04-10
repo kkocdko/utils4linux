@@ -6,7 +6,7 @@ trap exit INT
 alias rclone=/home/kkocdko/misc/apps/rclone # https://github.com/rclone/rclone/releases/download/v1.69.0/rclone-v1.69.0-linux-amd64.zip
 
 if [ "$1" = pack-code-dir ]; then
-  rclone sync --config "" --links \
+  rclone sync --config "" --links --delete-excluded \
     --filter "- **/{dist,node_modules,target,venv}/" \
     --filter "- /clevert/temp/_test_res/" \
     --filter "- /clevert/temp/extensions/" \
@@ -26,7 +26,7 @@ fi
 
 if [ "$1" = pack-apps-dir ]; then
   rm -rf /tmp/pack-apps-dir
-  rclone sync --config "" --links \
+  rclone sync --config "" --links --delete-excluded \
     --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier}" \
     --filter "- /frp/{frpc,frps}" \
     --filter "- /electron/" \
@@ -42,11 +42,11 @@ if [ "$1" = pc-to-cloud ]; then
   # printf -- '[onedrive_kkocdko]\ntype = onedrive\ntoken = {"access_token":"xxx"}\ndrive_id = abc123\ndrive_type = personal\n' > rclone.conf
   export RCLONE_ONEDRIVE_DRIVE_TYPE='personal' RCLONE_ONEDRIVE_DRIVE_ID='xxx' RCLONE_ONEDRIVE_TOKEN='{"access_token":"xxx"}'
   # export RCLONE_CRYPT_REMOTE=':onedrive:/rclone_kk' RCLONE_CRYPT_PASSWORD='xxx' # rclone obscure the_password
-  # rclone_sync() { rclone sync --config "" --progress $1 :crypt:/$2 ;}
-  rclone_sync() { rclone sync --config "" --progress --checksum $1 :onedrive:/rclone/$2 ;}
-  rclone_sync /home/kkocdko/misc/bak bak
-  rclone_sync /home/kkocdko/misc/media media
-  rclone_sync /home/kkocdko/misc/res res
+  rclone sync --config "" --progress --checksum --delete-excluded \
+    --filter "- /apps/" \
+    --filter "- /code/" \
+    --filter "- /temp/" \
+    /home/kkocdko/misc :onedrive:/rclone
   exit
 fi
 
