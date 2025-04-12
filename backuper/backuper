@@ -12,13 +12,16 @@ if [ "$1" = pack-code-dir ]; then
     --filter "- /clevert/temp/extensions/" \
     --filter "- /kblog/public/" \
     --filter "- /ripgrep/" \
+    --filter "- /sdsplash/build/" \
+    --filter "- /sdsplash/subprojects/" \
     --filter "- /hello-cpp/build/" \
     --filter "- /hinapi/build/" \
     --filter "- /hinapi/third_party/" \
     --filter "- /tlsimple/3rdparty/" \
     --filter "- /tlsimple/src/ffi.rs" \
     /home/kkocdko/misc/code /tmp/pack-code-dir/code
-  tar -c -C /tmp/pack-code-dir code | dd conv=swab of=/home/kkocdko/misc/bak/packed_code_$(date +%Y%m%d).tar.swab # prevent auto-scanning
+  # (cd /tmp/pack-code-dir/code ; du -a -d 1 2> /dev/null | sort -n)
+  tar -c --zstd -C /tmp/pack-code-dir code | dd conv=swab of=/home/kkocdko/misc/bak/packed_code_$(date +%Y%m%d).tzst.swab # prevent auto-scanning
   rm -rf /tmp/pack-code-dir
   exit
   # tips: 7z.exe a -snl -mmt=2 -mx9 packed_code_201810-202501.7z archive # dd conv=swab
@@ -27,13 +30,17 @@ fi
 if [ "$1" = pack-apps-dir ]; then
   rm -rf /tmp/pack-apps-dir
   rclone sync --config "" --links --delete-excluded \
-    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier}" \
+    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier,tailscale,tailscaled,gitui,tokei}" \
     --filter "- /frp/{frpc,frps}" \
     --filter "- /electron/" \
     --filter "+ /ungoogled-chromium/launch" \
     --filter "- /ungoogled-chromium/" \
+    --filter "+ /vscode/vscode" \
+    --filter "- /vscode/" \
+    --filter "- /wechat/" \
     /home/kkocdko/misc/apps /tmp/pack-apps-dir/apps
-  tar -c -C /tmp/pack-apps-dir apps | dd conv=swab of=/home/kkocdko/misc/bak/packed_apps_$(date +%Y%m%d).tar.swab
+  # (cd /tmp/pack-apps-dir/apps ; du -a -d 1 2> /dev/null | sort -n)
+  tar -c --zstd -C /tmp/pack-apps-dir apps | dd conv=swab of=/home/kkocdko/misc/bak/packed_apps_$(date +%Y%m%d).tzst.swab
   rm -rf /tmp/pack-apps-dir
   exit
 fi
@@ -46,6 +53,8 @@ if [ "$1" = pc-to-cloud ]; then
     --filter "- /apps/" \
     --filter "- /code/" \
     --filter "- /temp/" \
+    --filter "- /res/qemu_win10/vvfat/" \
+    --filter "- /res/qemu_win10/win10_*.qcow2" \
     /home/kkocdko/misc :onedrive:/rclone
   exit
 fi
