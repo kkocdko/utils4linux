@@ -1,4 +1,0 @@
-#!/bin/sh
-export NPM_CONFIG_PREFIX=$(realpath $(dirname $0)/..)
-export ELECTRON_RUN_AS_NODE=1
-exec $NPM_CONFIG_PREFIX/bin/electron $@
