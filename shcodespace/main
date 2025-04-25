@@ -20,3 +20,21 @@ docker exec -it -w /vscode-dist -e UV_USE_IO_URING=0 $codespace_name ./node ./ou
 # apt install -y python3 tmux curl procps busybox libasan8 gcc
 # apt install default-mysql-server
 # mysqld --user root --port 13306
+
+exit
+
+# use caddy
+
+#!/bin/sh
+cd $(dirname $0)
+if [ ! -e ./dist ]; then
+mkdir -p ./dist
+curl -L https://github.com/caddyserver/caddy/releases/download/v2.7.6/caddy_2.7.6_linux_amd64.tar.gz | tar -xz -C ./dist caddy
+fi
+cd ./dist
+./caddy run -c ../caddy.json
+# ./caddy adapt --config ../Caddyfile --pretty > ../caddyfile.json
+# - for http only, add into "automatic_https" section: ` "skip": ["127.0.0.1"] `
+# - for testing: ` { "handler": "static_response", "body": "hi" } `
+# ssh -N -R 10448:127.0.0.1:9458 root@1.1.1.1 # ensure "GatewayPorts yes" in /etc/ssh/sshd_config
+# https://1.1.1.1:10448/?folder=/root/projects/hi

@@ -29,7 +29,7 @@ echo '
 cd /d %~dp0
 curl -o config.jsonc -L "https://kkocdko.site/hidden/proxy/config.jsonc?token=xxx"
 start "proxy" sing-box.exe run -c config.jsonc -D . --disable-color
-' > proxy.bat
+' > main.bat
 
 # ss -npt | grep 2400:c620 | sort
 # https://120.53.53.53/resolve?type=A&name=qq.com // { "tag": "dhcp", "type": "dhcp" }

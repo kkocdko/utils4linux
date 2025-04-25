@@ -1,3 +1,4 @@
+```sh
 #!/bin/sh
 cd $(dirname $0)
 
@@ -31,3 +32,5 @@ fi
 # https://github.com/lightvector/KataGo
 # https://github.com/leela-zero/leela-zero
 # https://github.com/kaorahi/lizgoban
+
+```

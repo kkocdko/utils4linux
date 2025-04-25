@@ -3,4 +3,5 @@ export ELECTRON_RUN_AS_NODE=1
 export NPM_CONFIG_PREFIX=$(realpath $(dirname $0)/..)
 exec $NPM_CONFIG_PREFIX/bin/electron $@
 
+# https://registry.npmmirror.com/binary.html?path=electron/
 # kkocdko@klp1:~/misc/apps/nodejs/bin$ ln -f -s ../../../code/utils4linux/rt4web/electron-as-node node

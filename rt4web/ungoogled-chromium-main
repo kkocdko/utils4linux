@@ -36,7 +36,7 @@ exec $(dirname $0)/chrome \
 --enable-zero-copy \
 --use-gl=angle \
 --use-angle=vulkan \
---enable-features=WebUIDarkMode,OverlayScrollbar,VaapiVideoDecodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo \
+--enable-features=WebUIDarkMode,OverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
 "$@"
 
 exit 1
@@ -45,7 +45,7 @@ cat <<EOF > /usr/share/applications/chromium.desktop
 [Desktop Entry]
 Version=1.0
 Name=Chromium
-Exec=/home/kkocdko/misc/apps/ungoogled-chromium/launch %U
+Exec=/home/kkocdko/misc/apps/ungoogled-chromium/main %U
 Terminal=false
 Type=Application
 Categories=Network;WebBrowser;
@@ -84,10 +84,13 @@ rm -rf ungoogled-chromium.tar.xz
 strip chrome
 strip chromedriver
 find locales/* -not -name 'en-US.*' -delete
-chmod +x launch
+chmod +x main
 
 # chrome://media-internals/
 # chrome://gpu/
 # --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" # "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Edg/120.0.0.0"
 
-# kkocdko@klp1:~/misc/apps/ungoogled-chromium$ ln -sf ../../code/utils4linux/rt4web/ungoogled-chromium-launch launch
+mkdir -p /tmp/chromium-cache-tmp ~/.cache/chromium
+sudo mount --bind /tmp/chromium-cache-tmp ~/.cache/chromium
+
+# kkocdko@klp1:~/misc/apps/ungoogled-chromium$ ln -sf ../../code/utils4linux/rt4web/ungoogled-chromium-main main
