@@ -7,11 +7,11 @@ func main() {
     panic(err)
   }
   defer mouse.Close()
-  for {
-    time.Sleep(time.Millisecond * 500)
-    mouse.Wheel(false, -3) // wheel down
-    time.Sleep(time.Millisecond * 500)
-    mouse.Wheel(false, 3) // wheel up
+  time.Sleep(time.Millisecond * 5000)
+	mouse.LeftPress()
+  for{
+
+  time.Sleep(time.Millisecond * 5000)
   }
 }
 // CGO_ENABLED=0 go build --ldflags "-s -w" main.go ; sudo ./main
