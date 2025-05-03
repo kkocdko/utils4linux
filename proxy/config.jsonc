@@ -1,59 +1,62 @@
-// >>> client
 // prettier-ignore
+// https://kkocdko.site/hidden/proxy/config.jsonc?token=1234&user=kkocdko
+// >>> client
 {
   "experimental": {
-    "clash_api": {
-      "external_controller": "127.0.0.1:9090",
-      "external_ui": "ui" // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
-    },
-    "cache_file": { "enabled": true } // 建议不要使用 store_fakeip，在极端情况下会让错误无法恢复
+    "cache_file": { "enabled": true }, // 建议不要使用 store_fakeip，在极端情况下会让错误无法恢复
+    "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui" } // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
   },
   "dns": {
     "servers": [
-      { "tag": "local", "type": "local", "detour": "direct" },
+      { "tag": "local", "type": "local" },
+      { "tag": "google", "type": "https", "server": "8.8.8.8", "detour": "proxy" },
       { "tag": "fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" } // 虽然停止运行后 fakeip 会导致短期内解析异常，但我建议始终运行代理，大多数时候使用规则分流，必要时切换到 direct 而非关闭代理
     ],
     "rules": [{ "query_type": ["A", "AAAA"], "server": "fakeip" }], // 尽量让落地服务器做 dns 查询
     "strategy": "prefer_ipv4",
-    "independent_cache": true // 不要让 fakeip 和其他 dns 缓存混淆
+    "independent_cache": true // 也许可以不要让 fakeip 和其他 dns 缓存混淆
   },
   "route": {
     "default_domain_resolver": "local",
-    "rule_set": [{"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"},{"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs"}],
+    "rule_set": [{"tag":"site-not-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-!cn.srs"},{"tag":"site-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-cn.srs"},{"tag":"site-cn-ext","type":"remote","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},{"tag":"ip-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geoip/geoip-cn.srs"}],
     "rules": [
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
       { "protocol": "quic", "action": "reject" }, // 我不喜欢 quic，强制 fallback 到其他协议
-      { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved 并修改 dns 为 tun 段下的 172.19.0.2
+      { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
       { "domain": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
-      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone"], "outbound": "direct" },
-      // { "domain": "deb.debian.org", "process_path": "/usr/lib/apt/methods/http", "action": "route-options", "override_address": "192.168.1.77", "override_port": 9630 },
-      { "domain_suffix": ["googleapis.com", "gstatic.com", "google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
-      { "rule_set": ["ip-cn", "site-cn"], "outbound": "direct" }, // 在国内的域名和 ip。原先的 @cn 已合并到 cn
-      { "outbound": "proxy" } // 约等于 final
+      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.zhihu.android", "com.coolapk.market"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名，android 下的 profile override 也不生效
+      { "domain_suffix": ["google.cn", "googleapis.com", "gstatic.com"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
+      { "domain_suffix": ["edu.cn", "gov.cn"], "outbound": "direct" }, // 额外的一些应当直连的网站
+      { "rule_set": ["site-not-cn"], "outbound": "proxy" },
+      { "rule_set": ["site-cn", "site-cn-ext"], "outbound": "direct" },
+      { "action": "resolve", "server": "google", "client_subnet": "114.114.114.114/24" }, // 弱点在此，冷门的境外域名会被解析
+      { "rule_set": ["ip-cn"], "outbound": "direct" },
+      { "outbound": "proxy" } // 兜底
     ],
-    "auto_detect_interface": true // 防止 tun 环路
+    "auto_detect_interface": true // 防止环路
   },
   "inbounds": [
     {
-      "type": "tun", // 当应用不理会环境变量时，以 tun 为兜底措施 // 在 android 上 platform.http_proxy 会让知乎等垃圾应用挂掉
+      "type": "tun", // 当应用不理会环境变量时，以 tun 为兜底措施
       "address": ["172.18.0.1/30", "fdfe:dcba:9876::1/126"], // 即便原本无 ipv6 接入，tun 的地址也会让应用误以为可用，见 issue 932。用 prefer_ipv4 无法避免问题，因为微信等应用会使用内置 doh
-      "route_exclude_address": ["111.206.174.0/24"], // 绕过 tun，适用于内网的、大流量的、需要 nat 打洞的。注意不要包含上面的 tun 自身与 fakeip
+      "route_exclude_address": ["111.206.0.0/16"], // 绕过 tun，适用于内网的、大流量的、需要 nat 打洞的。注意不要包含上面的 tun 自身与 fakeip
       "auto_route": true,
-      "strict_route": true // 避免各种流量泄漏。可能造成无法使用 android 局域网分享，在某些旧 windows 中可能需禁用此项并使用 gvisor stack，详见文档
+      "strict_route": true, // 避免各种流量泄漏。可能造成无法使用 android 局域网分享，在某些旧 windows 中可能需禁用此项并使用 gvisor stack，详见文档
+      "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 9091 } } // 在 android 上 platform.http_proxy 会让 知乎 等垃圾应用挂掉，但是可以排除应用来解决。也可以按 sfa 里的按钮关闭
     },
-    { "type": "mixed", "listen_port": 1080 } // 尽量用开销较小的 socks，主流应用一般都支持，建议设置系统代理。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY
+    { "type": "mixed", "listen_port": 9091 } // 尽量用开销较小的 socks，主流应用一般都支持，建议设置系统代理。如遇 pip 警告等情况，可以 unset all_proxy ALL_PROXY http_proxy HTTP_PROXY https_proxy HTTPS_PROXY
   ],
   "outbounds": [
     // groups
     {"tag":"proxy","type":"selector","outbounds":["sh-hk-stls","sh-hk-hy2","mkc-hk-1"]},
     // self-hosted [ aliyun.com | wawo.wiki ]
     {"tag":"sh-hk-stls","detour":"sh-hk-stls-o","type":"shadowsocks","method":"2022-blake3-aes-128-gcm","password":"xxx","multiplex":{"enabled":true,"max_connections":2}},{"tag":"sh-hk-stls-o","type":"shadowtls","server":"1.1.1.1","server_port":11111,"version":3,"password":"xxx","tls":{"enabled":true,"server_name":"v.qq.com"}},
-    {"tag":"sh-hk-hy2","type":"hysteria2","server":"1.1.1.1","server_port":11112,"password":"cT_kamFo","tls":{"enabled":true,"server_name":"v.qq.com","insecure":true}},
+    {"tag":"sh-hk-hy2","type":"hysteria2","server":"1.1.1.1","server_port":11112,"password":"xxx","tls":{"enabled":true,"server_name":"v.qq.com","insecure":true}},
     // mkc - friend - t.me/Maker_Cloud - https://clash2sfa.xmdhs.com/sub?sub=https://example.com/api/v1/client/subscribe?token=xxx
-    {"tag":"mkc-hk-1","password":"xxx","server":"1.1.1.1","server_port":11111,"type":"shadowsocks","method":"chacha20-ietf-poly1305"},
+    {"tag":"mkc-hk-1","type":"shadowsocks","server":"1.1.1.1","server_port":11111,"method":"chacha20-ietf-poly1305","password":"xxx"},
     // built-in
     {"tag":"direct","type":"direct"}
   ]
