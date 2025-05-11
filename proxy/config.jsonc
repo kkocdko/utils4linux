@@ -10,7 +10,7 @@
     "servers": [
       { "tag": "local", "type": "local" },
       { "tag": "google", "type": "https", "server": "8.8.8.8", "detour": "proxy" },
-      { "tag": "fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" } // 虽然停止运行后 fakeip 会导致短期内解析异常，但我建议始终运行代理，大多数时候使用规则分流，必要时切换到 direct 而非关闭代理
+      { "tag": "fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" } // 退出后 fakeip 会导致短期内解析异常，但我建议在必要时切换到 direct 而非退出
     ],
     "rules": [{ "query_type": ["A", "AAAA"], "server": "fakeip" }], // 尽量让落地服务器做 dns 查询
     "strategy": "prefer_ipv4",
@@ -21,7 +21,7 @@
     "rule_set": [{"tag":"site-not-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-!cn.srs"},{"tag":"site-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-cn.srs"},{"tag":"site-cn-ext","type":"remote","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},{"tag":"ip-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geoip/geoip-cn.srs"}],
     "rules": [
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
-      { "protocol": "quic", "action": "reject" }, // 我不喜欢 quic，强制 fallback 到其他协议
+      { "protocol": "quic", "action": "reject" }, // 嵌套 quic 抖动很大，强迫浏览器 h3 回落到其他协议
       { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持

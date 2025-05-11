@@ -1,8 +1,0 @@
-{
-  "clangd.fallbackFlags": [
-    "-I",
-    "/lib/gcc/x86_64-redhat-linux/13/include",
-    "-I",
-    "${workspaceFolder}/napibun/dist"
-  ]
-}
