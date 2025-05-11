@@ -3,11 +3,10 @@ if pidof chrome > /dev/null; then
 echo skip set text-scaling-factor
 else
 gsettings set org.gnome.desktop.interface text-scaling-factor 1
-nohup sh -c 'sleep 2 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
+nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
 sleep 0.1
 fi
-export GTK_IM_MODULE=ibus
-exec $(dirname $0)/chrome \
+GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
 --disable-breakpad \
 --disable-logging \
 --disable-sync \
@@ -18,25 +17,27 @@ exec $(dirname $0)/chrome \
 --disable-nacl \
 --disable-quic \
 --disable-crash-reporter \
+--disable-chrome-tracing-computation \
+--disable-component-update \
 --disable-renderer-accessibility \
 --disable-ax-menu-list \
 --disable-top-sites \
 --disable-features=WebGPU,TabHoverCardImages,ChromeRefresh2023,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading \
 --password-store=basic \
---ozone-platform=wayland \
 --force-device-scale-factor=1 \
 --gtk-version=4 \
 --force-dark-mode \
 --force-local-ntp \
 --extension-mime-request-handling=always-prompt-for-install \
 --webrtc-ip-handling-policy=default_public_and_private_interfaces \
---wayland-text-input-version=3 \
+--ozone-platform=wayland \
 --ozone-platform-hint=auto \
 --enable-wayland-ime \
---enable-zero-copy \
+--wayland-text-input-version=3 \
 --use-gl=angle \
 --use-angle=vulkan \
---enable-features=WebUIDarkMode,OverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
+--enable-zero-copy \
+--enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
 "$@"
 
 exit 1
@@ -74,11 +75,12 @@ if [ "$(id -u)" = "0" ]; then
 echo "don't run as root please"
 exit
 fi
+
 cd /home/kkocdko/misc/apps
 rm -rf ungoogled-chromium
 mkdir ungoogled-chromium
 cd ungoogled-chromium
-curl -o ungoogled-chromium.tar.xz -L https://github.com/ungoogled-software/ungoogled-chromium-portablelinux/releases/download/135.0.7049.84-1/ungoogled-chromium_135.0.7049.84-1_linux.tar.xz
+curl -o ungoogled-chromium.tar.xz -L https://github.com/ungoogled-software/ungoogled-chromium-portablelinux/releases/download/135.0.7049.114-1/ungoogled-chromium_135.0.7049.114-1_linux.tar.xz
 tar -xf ungoogled-chromium.tar.xz --strip-components 1
 rm -rf ungoogled-chromium.tar.xz
 strip chrome
@@ -89,6 +91,8 @@ chmod +x main
 # chrome://media-internals/
 # chrome://gpu/
 # --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" # "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Edg/120.0.0.0"
+
+# stable # Google Chrome	135.0.7049.95 (Official Build) unknown (64-bit)
 
 mkdir -p /tmp/chromium-cache-tmp ~/.cache/chromium
 sudo mount --bind /tmp/chromium-cache-tmp ~/.cache/chromium
