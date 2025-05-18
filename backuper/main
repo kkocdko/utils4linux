@@ -30,14 +30,16 @@ fi
 if [ "$1" = pack-apps-dir ]; then
   rm -rf /tmp/pack-apps-dir
   rclone sync --config "" --links --delete-excluded \
-    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier,tailscale,tailscaled,gitui,tokei}" \
-    --filter "- /frp/{frpc,frps}" \
+    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier,tailscale,tailscaled,gitui,tokei,coreutils,rustscan,rg,goawk,rsync}" \
+    --filter "+ /frp/main" --filter "- /frp/" \
+    --filter "+ /google-chrome/main" --filter "- /google-chrome/" \
+    --filter "+ /vscode/main" --filter "- /vscode/" \
     --filter "- /electron/" \
-    --filter "+ /ungoogled-chromium/launch" \
-    --filter "- /ungoogled-chromium/" \
-    --filter "+ /vscode/vscode" \
-    --filter "- /vscode/" \
+    --filter "- /aria2/aria2c" \
     --filter "- /wechat/" \
+    --filter "- /minecraft/{dependencies,jre,logs,skins,.minecraft,.openjfx}/" \
+    --filter "+ /nodejs/lib/node_modules/vercel/" \
+    --filter "- /nodejs/lib/node_modules/" \
     /home/kkocdko/misc/apps /tmp/pack-apps-dir/apps
   # (cd /tmp/pack-apps-dir/apps ; du -a -d 1 2> /dev/null | sort -n)
   tar -c --zstd -C /tmp/pack-apps-dir apps | dd conv=swab of=/home/kkocdko/misc/bak/packed_apps_$(date +%Y%m%d).tzst.swab
