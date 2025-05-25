@@ -1,4 +1,4 @@
-# python -m venv venv # venv\scripts\activate # pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple --upgrade wcferry python-telegram-bot[socks]
+# python\python.exe -m venv .venv # .venv\scripts\activate # pip install -i https://mirrors.bfsu.edu.cn/pypi/web/simple --upgrade wcferry==39.4.2.2 python-telegram-bot[socks]
 # https://mp.weixin.qq.com/s/g9AjM3A04sAylP-Q-17fAg # https://docs.python-telegram-bot.org/en/stable/examples.rawapibot.html
 
 import wcferry.client
@@ -19,16 +19,17 @@ config = {  # 不要写一些无法编码成 json 的东西
     "tg_bot_token": "123123:ABCDEF--ABC123-ABC123",
     "tg_sticker_preview": "https://workers.cloudflare.com",  # https://api.moeworld.top/messageSync/member.php?origin=QQ&avatar=2533307356&bigTitle=空梦『永不落幕的次元之界』&subTitle=软.
     "tg_offset": 0,
-    "tg_group": -1001234567,
-    "tg_rotate_message": 45743,
+    "tg_master": 123,
+    "tg_rotate_message_id": 12,
     "tg_rotate_message_content": "",
-    "tg_wx_map": {  # thread_id -> {wxid,label}
-        "4010": {"wxid": "gh_3dfda90e39d6", "label": "微信支付"},
-        "284": {"wxid": "filehandler", "label": "文件传输助手"},
-        "41458": {"wxid": "123123123@chatroom", "label": "桥测试群1"},
+    "tg_wx_map": {  # tgid -> {wxid,label}
+        # https://t.me/c/123/13
+        "-4321212121": {"wxid": "gh_3dfda90e39d6", "label": "微信支付"},
+        # "284": {"wxid": "filehandler", "label": "文件传输助手"},
+        # "12": {"wxid": "12@chatroom", "label": "桥测试群1"},
     },
 }
-config_file_path = "wx2tg.json"
+config_file_path = "wx4tg.json"
 config_file = None
 
 
@@ -53,10 +54,11 @@ if not os.path.exists(download_dir):
 wcf = wcferry.client.Wcf(port=9225, debug=True, block=True)
 wcf.enable_receiving_msg()
 wcf_self_info = wcf.get_user_info()
+print(wcf_self_info)
 wcf_contacts = wcf.get_contacts()
 wcf_lock = threading.Lock()
 httpx_request = telegram.request.HTTPXRequest(
-    proxy="socks5://127.0.0.1:1080",
+    proxy="socks5://127.0.0.1:9091",
     connection_pool_size=3,
     pool_timeout=5,
     # http_version="2", # httpx's h2 is unstable, don't use it!
@@ -69,7 +71,7 @@ bot = telegram.Bot(
 
 
 def signal_handler(sig, frame):
-    wcf.cleanup()
+    # wcf.cleanup()
     exit(0)
 
 
@@ -84,7 +86,38 @@ wx_emotion_map = "CoolGuy=😎,"
 # "".replace("[CoolGuy]","😎").replace("[CoolGuy]","😎")
 
 
-# loop pull msg from queue by  wcf.get_msg()
+async def rotate_message(s):
+    text = str(config["tg_rotate_message_content"])
+    text += "\n－ " + time.strftime("%H:%M") + " " + s + "\n"
+    while len(text) > 2048:
+        lines = text.split("\n")
+        lines.pop(0)  # Remove first line
+        text = "\n".join(lines)
+    text = text.lstrip()
+    config["tg_rotate_message_content"] = text
+    sync_config()
+    try:
+        await bot.edit_message_text(
+            chat_id=config["tg_master"],
+            message_id=config["tg_rotate_message_id"],
+            text=text,
+            link_preview_options=telegram.LinkPreviewOptions(
+                is_disabled=True,
+            ),
+        )
+    except telegram.error.BadRequest as e:
+        if "Message to edit not found" in str(e):
+            message = await bot.send_message(
+                chat_id=config["tg_master"],
+                text=text,
+                link_preview_options=telegram.LinkPreviewOptions(
+                    is_disabled=True,
+                ),
+            )
+            config["tg_rotate_message_id"] = message.message_id
+            sync_config()
+
+
 async def from_wx():
     while True:
         try:
@@ -117,19 +150,19 @@ async def from_wx():
                 if not match_wxid in wx_tg_map:
                     await rotate_message(text_prefix + msg.content)
                     continue
+                print(f"tgid={wx_tg_map[match_wxid]}")
                 await bot.send_message(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     text=text_prefix + msg.content,
                 )
+                print(msg.content)
             if msg.type == 3:
                 if not match_wxid in wx_tg_map:
                     await rotate_message(text_prefix + "[photo]")
                     continue
                 image_path = wcf.download_image(msg.id, msg.extra, download_dir, 20)
                 await bot.send_photo(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     photo=pathlib.Path(image_path),
                     caption=(text_prefix + "[image]") if msg.from_group() else None,
                 )
@@ -140,8 +173,7 @@ async def from_wx():
                 while not os.path.exists(msg.thumb):
                     await asyncio.sleep(0.2)
                 await bot.send_photo(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     caption=text_prefix + "[video_thumb]",
                     photo=pathlib.Path(msg.thumb),
                 )
@@ -162,8 +194,7 @@ async def from_wx():
                 sticker_previewurl = config["tg_sticker_preview"] + sticker_previewurl
                 # 是 收藏的表情 或者 商城的表情。商城表情虽然响应的 mime 能用，但是 tg 的链接预览不稳定，所以这里需要 cloudflare worker
                 await bot.send_message(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     text=(
                         text_prefix
                         + f'[sticker <a href="{sticker_previewurl}">preview</a> <a href="{sticker_cdnurl}">full</a>]'
@@ -204,8 +235,7 @@ async def from_wx():
                         await rotate_message(text_prefix + text.replace("\n", "\\n"))
                         continue
                     await bot.send_message(
-                        chat_id=config["tg_group"],
-                        message_thread_id=wx_tg_map[match_wxid],
+                        chat_id=wx_tg_map[match_wxid],
                         text=text_prefix + text,
                     )
                 if appmsg_type == "19":
@@ -214,8 +244,7 @@ async def from_wx():
                         await rotate_message(text_prefix + "[bundled_forward] todo")
                         continue
                     await bot.send_message(
-                        chat_id=config["tg_group"],
-                        message_thread_id=wx_tg_map[match_wxid],
+                        chat_id=wx_tg_map[match_wxid],
                         text=text_prefix + "[bundled_forward] todo",
                     )
                 if appmsg_type == "6":
@@ -224,8 +253,7 @@ async def from_wx():
                         await rotate_message(text_prefix + "[file] todo")
                         continue
                     await bot.send_message(
-                        chat_id=config["tg_group"],
-                        message_thread_id=wx_tg_map[match_wxid],
+                        chat_id=wx_tg_map[match_wxid],
                         text=text_prefix + "[file] todo",
                     )
                 if appmsg_type == "17":
@@ -234,8 +262,7 @@ async def from_wx():
                         await rotate_message(text_prefix + "[location_realtime] todo")
                         continue
                     await bot.send_message(
-                        chat_id=config["tg_group"],
-                        message_thread_id=wx_tg_map[match_wxid],
+                        chat_id=wx_tg_map[match_wxid],
                         text=text_prefix + "[location_realtime] todo",
                     )
             if msg.type == 34:
@@ -247,8 +274,7 @@ async def from_wx():
                     print("wcf.get_audio_msg() failed")
                     continue
                 await bot.send_voice(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     voice=pathlib.Path(audio_path),
                 )
             if msg.type == 48:
@@ -267,8 +293,7 @@ async def from_wx():
                     await rotate_message(text_prefix + text)
                     continue
                 await bot.send_message(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     text=text_prefix + text,
                 )
             if msg.type == 10000:
@@ -278,15 +303,13 @@ async def from_wx():
                     await rotate_message(text_prefix + text)
                     continue
                 await bot.send_message(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     text=text_prefix + text,
                 )
             if msg.type == 10002:
                 # 撤回消息目前收到不到， https://github.com/lich0821/WeChatFerry/issues/162
                 await bot.send_message(
-                    chat_id=config["tg_group"],
-                    message_thread_id=wx_tg_map[match_wxid],
+                    chat_id=wx_tg_map[match_wxid],
                     text=text_prefix + "[revoke]",
                 )
             # todo: 合并转发，小程序卡片，红包和转帐，音频视频通话，文件。部分难以实现的要增加提示信息返回
@@ -296,38 +319,6 @@ async def from_wx():
             print(error)
         # allow other threads to acquire wcf_lock
         time.sleep(0.1)
-
-
-async def rotate_message(s):
-    text = str(config["tg_rotate_message_content"])
-    text += "\n－ " + time.strftime("%H:%M") + " " + s + "\n"
-    while len(text) > 2048:
-        lines = text.split("\n")
-        lines.pop(0)  # Remove first line
-        text = "\n".join(lines)
-    text = text.lstrip()
-    config["tg_rotate_message_content"] = text
-    sync_config()
-    try:
-        await bot.edit_message_text(
-            chat_id=config["tg_group"],
-            message_id=config["tg_rotate_message"],
-            text=text,
-            link_preview_options=telegram.LinkPreviewOptions(
-                is_disabled=True,
-            ),
-        )
-    except telegram.error.BadRequest as e:
-        if "Message to edit not found" in str(e):
-            message = await bot.send_message(
-                chat_id=config["tg_group"],
-                text=text,
-                link_preview_options=telegram.LinkPreviewOptions(
-                    is_disabled=True,
-                ),
-            )
-            config["tg_rotate_message"] = message.message_id
-            sync_config()
 
 
 async def from_tg():
@@ -341,22 +332,23 @@ async def from_tg():
             for update in updates:
                 config["tg_offset"] = update.update_id + 1
                 sync_config()
+                # print(f"> {update.message.chat_id}: {update.message.text}\n\n")
+                # continue
+                # print(f"msgid:{update.message.message_id}")
                 if update.message is None:
                     continue
-                if update.message.chat_id != config["tg_group"]:
+                if update.message.chat_id is None:
                     continue
-                if update.message.message_thread_id is None:
+                tgid = str(update.message.chat_id)
+                if tgid not in config["tg_wx_map"]:
                     continue
-                thread_id = str(update.message.message_thread_id)
-                if thread_id not in config["tg_wx_map"]:
-                    continue
-                wxid = config["tg_wx_map"][thread_id]["wxid"]
+                wxid = config["tg_wx_map"][tgid]["wxid"]
                 # for attr in dir(update.message):
                 #     print(f"{attr}: {getattr(update.message, attr)}")
                 if update.message.text != None:
-                    wcf_lock.acquire()
+                    # wcf_lock.acquire()
                     wcf.send_text(receiver=wxid, msg=update.message.text)
-                    wcf_lock.release()
+                    # wcf_lock.release()
                     continue
                 if update.message.video != None:
                     file = await update.message.video.get_file()
