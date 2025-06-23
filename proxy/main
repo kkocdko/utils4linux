@@ -4,8 +4,8 @@ cd $(dirname $0)
 if [ ! -e dist ]; then
   mkdir dist
   cd dist
-  # curl -L https://github.com/SagerNet/sing-box/releases/download/v1.12.0-alpha.3/sing-box-1.12.0-alpha.3-linux-amd64.tar.gz | tar -xz --strip-component 1
-  # rm -f registerSW.js sw.js *.ico *.png manifest.webmanifest Twemoji_* assets/Twemoji_* assets/roboto-* assets/inter-*
+  # curl -L https://github.com/SagerNet/sing-box/releases/download/v1.12.0/sing-box-1.12.0-linux-amd64.tar.gz | tar -xz --strip-component 1
+  # cd ui; rm -f registerSW.js sw.js *.ico *.png manifest.webmanifest Twemoji_* assets/Twemoji_* assets/roboto-* assets/inter-*; sed -i.bak "s|</title>|</title><script>requestAnimationFrame=f=>setTimeout(f,250)</script>|" index.html
   exit
 fi
 

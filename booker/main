@@ -82,6 +82,7 @@ ln -s "$archive_dir/深入理解计算机系统（第三版）.pdf" chunks/csapp
 ln -s "$archive_dir/计算机网络自顶向下方法 第七版.pdf" chunks/cnatda-zh.pdf
 ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" chunks/aoapc.pdf
 ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" chunks/bulletproof-ssl-and-tls-zh.pdf
+ln -s "/home/kkocdko/misc/res/ipp_proj/html/SW64_Core4_指令系统手册-已处理.pdf" chunks/sw64-core4-asm-manual.pdf
 ls chunks
 exit
 fi

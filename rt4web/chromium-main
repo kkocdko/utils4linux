@@ -18,11 +18,14 @@ GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
 --disable-quic \
 --disable-crash-reporter \
 --disable-chrome-tracing-computation \
---disable-component-update \
 --disable-renderer-accessibility \
 --disable-ax-menu-list \
 --disable-top-sites \
---disable-features=WebGPU,TabHoverCardImages,ChromeRefresh2023,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading \
+--disable-component-update \
+--check-for-update-interval=315360000 \
+--disable-gpu-driver-bug-workarounds \
+--disable-logging \
+--disable-features=TabHoverCardImages,ChromeRefresh2023,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading \
 --password-store=basic \
 --force-device-scale-factor=1 \
 --gtk-version=4 \
@@ -37,16 +40,16 @@ GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
 --use-gl=angle \
 --use-angle=vulkan \
 --enable-zero-copy \
---enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
+--enable-features=WebGPU,WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
 "$@"
 
 exit 1
 
-cat <<EOF > /usr/share/applications/chromium.desktop
+cat <<EOF > /usr/share/applications/google-chrome.desktop
 [Desktop Entry]
 Version=1.0
-Name=Chromium
-Exec=/home/kkocdko/misc/apps/ungoogled-chromium/main %U
+Name=google-chrome
+Exec=/home/kkocdko/misc/apps/google-chrome/main %U
 Terminal=false
 Type=Application
 Categories=Network;WebBrowser;

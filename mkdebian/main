@@ -93,7 +93,7 @@ if [ "$1" = build ]; then
     apt-mark unhold $(apt-mark showhold)
     apt-get autoremove -y --purge
     apt-get clean all -y
-    update-locale LANG=C LC_ALL=C
+    update-locale LANG=C.UTF-8 LC_ALL=C.UTF-8
     rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/localsearch-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/localsearch-* /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
