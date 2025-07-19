@@ -7,6 +7,9 @@ nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-
 sleep 0.1
 fi
 GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
+--disable-crashpad-forwarding \
+--disable-component-update \
+--disable-default-browser-promo \
 --disable-breakpad \
 --disable-logging \
 --disable-sync \
@@ -41,6 +44,8 @@ GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
 --use-angle=vulkan \
 --enable-zero-copy \
 --enable-features=WebGPU,WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
+--user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
+--disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
 "$@"
 
 exit 1

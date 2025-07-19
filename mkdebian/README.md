@@ -12,6 +12,9 @@ Custom debian livecd.
 <details>
 <summary>Notes</summary>
 
+- https://mirrors.cernet.edu.cn/debian/
+- https://github.com/microsoft/vscode/raw/refs/tags/1.99.2/src/vs/workbench/contrib/terminal/common/terminalColorRegistry.ts
+- https://gitlab.gnome.org/chergert/ptyxis/-/issues/149
 - https://www.ventoy.net/en/plugin_grubmenu.html
 - https://packages.debian.org/bookworm/cloud-init
 - https://wiki.debian.org/Cloud/SystemsComparison
