@@ -1,28 +1,34 @@
 #!/bin/sh
 cd $(dirname $0)
 
-if [ ! -e dist ]; then
+if [ "$1" = "" ]; then
+  cd dist
+  exec $HOME/misc/apps/rclone --config "" serve webdav -L --dir-cache-time 0 --poll-interval 0 --addr 127.0.0.1:9005 . # v1.68.2
+  exit 1
+  # trap exit INT
+  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
+  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda.pdf&x-text-enhance&x-invert
+  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+fi
+
+exit 1
+
 echo ">>> init"
+rm -rf dist
 mkdir dist
 cd dist
-echo ">>> download miniserve" # because python's http.server doesn't support http range
-curl -o miniserve -L https://github.com/svenstaro/miniserve/releases/download/v0.24.0/miniserve-0.24.0-x86_64-unknown-linux-gnu
-chmod +x miniserve
 echo ">>> download and modify pdfjs"
-curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v4.0.269/pdfjs-4.0.269-dist.zip
+curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v5.3.93/pdfjs-5.3.93-dist.zip
 unzip -qq -d pdfjs pdfjs-dist.zip
+rm -rf pdfjs-dist.zip
 mv pdfjs/web/locale/en-US/viewer.ftl pdfjs/web/locale/viewer.ftl
 sed -i pdfjs/web/locale/locale.json -e 's|/|/../|g'
 sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
-sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg/>|'
+sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg>|'
 sed -i pdfjs/build/pdf.mjs -e 's|(CanvasGraphics\.prototype|(xopts["x-text-enhance"]){CanvasGraphics.prototype.showText=()=>{}}if&|'
-rm -rf \
-  pdfjs/**/*.map \
-  pdfjs/**/*.pdf \
-  pdfjs/web/cmaps/ \
-  pdfjs/web/locale/*/ \
-  pdfjs/build/pdf.sandbox.mjs
-cat <<EOF >pdfjs/web/booker.css
+rm -rf pdfjs/**/*.map pdfjs/**/*.pdf pdfjs/web/cmaps/ pdfjs/web/locale/*/ pdfjs/build/pdf.sandbox.mjs
+cat <<EOF > pdfjs/web/booker.css
   ::-webkit-scrollbar {
     display: none;
   }
@@ -51,9 +57,10 @@ cat <<EOF >pdfjs/web/booker.css
   }
   html[x-invert] canvas {
     filter: brightness(0.77) contrast(2.4) hue-rotate(180deg) invert(1);
+    /* alternative = invert(1) brightness(0.5) contrast(1.2) */
   }
 EOF
-cat <<EOF >pdfjs/web/booker.js
+cat <<EOF > pdfjs/web/booker.js
   addEventListener("keypress", ({ key: k }) => {
     if (k === "]") viewerContainer.scrollBy(0, innerHeight / 3);
     if (k === "[") viewerContainer.scrollBy(0, innerHeight / -3);
@@ -84,18 +91,3 @@ ln -s "$archive_dir/算法竞赛入门经典 第2版.pdf" chunks/aoapc.pdf
 ln -s "$archive_dir/HTTPS权威指南 在服务器和Web应用上部署SSL-TLS和PKI.pdf" chunks/bulletproof-ssl-and-tls-zh.pdf
 ln -s "/home/kkocdko/misc/res/ipp_proj/html/SW64_Core4_指令系统手册-已处理.pdf" chunks/sw64-core4-asm-manual.pdf
 ls chunks
-exit
-fi
-
-if [ "$1" = "" ]; then
-cd dist
-./miniserve --header Cache-Control:no-store -p 9005 . # https://github.com/svenstaro/miniserve/releases/download/v0.24.0/miniserve-0.24.0-x86_64-unknown-linux-gnu
-exit
-fi
-
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda.pdf&x-text-enhance&x-invert
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
-# http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
-
-# trap exit INT
