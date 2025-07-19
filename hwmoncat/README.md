@@ -75,8 +75,6 @@ in0:          15.75 V
 
 - https://unix.stackexchange.com/questions/558112/
 
-- https://www.gnu.org/software/gawk/manual/gawk.html
-
 <!--
 ./hyperfine -w 5 -r 32 -p 'sleep 0.1' ./hwmoncat
 

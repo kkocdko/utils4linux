@@ -1,38 +1,50 @@
-#!/bin/awk -f
-BEGIN {
-cmd = "ls /sys/class/hwmon/*/*_input"
-device = "_"
-while ( ( cmd | getline entry ) != 0 ) {
-  split(entry, sections, "/")
-  if (device != sections[5]) {
-    device = sections[5]
-    getline name < ("/sys/class/hwmon/" device "/name")
-    print("- " tolower(name))
-  }
-  split(sections[6], item, "_")
-  value = "unavaliable"
-  getline value < entry
-  label = ""
-  getline label < ("/sys/class/hwmon/" device "/" item[1] "_label")
-  if (label != "") {
-    label = ("_" label)
-  }
-  label = tolower(item[1] label)
-  if (value == "unavaliable") {
-    printf("%s: unavaliable\n", label)
-  } else if (item[1] ~ "^fan[0-9]") {
-    printf("%s: %d RPM\n", label, value)
-  } else if (item[1] ~ "^freq[0-9]") {
-    printf("%s: %d MHz\n", label, value / 1000000)
-  } else if (item[1] ~ "^in[0-9]") {
-    printf("%s: %.2f V\n", label, value / 1000)
-  } else if (item[1] ~ "^temp[0-9]") {
-    printf("%s: %.2f C\n", label, value / 1000)
-  } else if (item[1] ~ "^power[0-9]") {
-    printf("%s: %.2f W\n", label, value / 1000000)
-  } else {
-    printf("%s: %d\n", label, value)
-  }
-}
-exit(0)
-}
+#!/bin/sh
+prefix=_
+for entry in /sys/class/hwmon/*/*_input; do
+  case $entry in
+    $prefix/*)
+      ;;
+    *)
+      prefix=$(dirname $entry)
+      read name < $prefix/name
+      if [ -e $prefix/device/model ]; then
+        read model < $prefix/device/model 2> /dev/null
+        name="$name ($model)"
+      fi
+      echo "- $name" | tr [:upper:] [:lower:]
+      ;;
+  esac
+  v=""
+  read v < $entry 2> /dev/null
+  name=$(basename $entry | cut -d _ -f 1)
+  echo -n $name
+  if [ -e $prefix/$name\_label ]; then
+    echo -n _
+    read label < $prefix/$name\_label
+    echo -n $label | tr [:upper:] [:lower:]
+  fi
+  if [ "$v" = "" ]; then
+    echo ": unknown"
+    continue
+  fi
+  case "$name" in
+    fan*)
+      printf ": %d RPM\n" "$v"
+      ;;
+    freq*)
+      printf ": %.0f MHz\n" "$(($v))e-6"
+      ;;
+    temp*)
+      printf ": %.2f C\n" "$(($v))e-3"
+      ;;
+    power*)
+      printf ": %.3f W\n" "$(($v))e-6"
+      ;;
+    in*)
+      printf ": %.3f V\n" "$(($v))e-3"
+      ;;
+    *)
+      echo ": $v"
+      ;;
+  esac
+done
