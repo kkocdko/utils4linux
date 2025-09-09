@@ -53,19 +53,20 @@ elif [ "$1" = "stable" ]; then
   cpu_governor performance
   cpu_boost 0
 elif [ "$1" = "doze" ]; then
-  kill -STOP `heavy_tasks_pids`
+  # kill -STOP `heavy_tasks_pids` # already stoped by s2idle
   cpu_boost 0
   acpi_profile low-power
   gpu_level low
   cpu_governor powersave
   cpu_multi_core 0
+  echo freeze > /sys/power/state # s2idle
 elif [ "$1" = "undoze" ]; then
   cpu_multi_core 1
   cpu_governor conservative # ondemand
   cpu_boost 1
   acpi_profile low-power
   gpu_level low
-  kill -CONT `heavy_tasks_pids`
+  # kill -CONT `heavy_tasks_pids`
   # echo 999 >/sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
   # echo 99 >/sys/devices/system/cpu/cpufreq/ondemand/up_threshold
   # echo 80000 >/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
