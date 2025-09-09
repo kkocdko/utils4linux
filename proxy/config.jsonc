@@ -1,5 +1,5 @@
 // prettier-ignore
-// https://kkocdko.site/hidden/proxy/config.jsonc?token=1234&user=kkocdko
+// https://kkocdko.site/hidden/proxy/config.jsonc?user=kkocdko&&token=1234
 // >>> client
 {
   "experimental": {
@@ -7,9 +7,16 @@
     "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui" } // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
   },
   "dns": {
+    // 保持兼容 1.11 旧版本
+    // "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" },
+    // "servers": [
+    //   { "tag": "local", "address": "local", "detour": "direct" },
+    //   { "tag": "google", "address": "https://8.8.8.8/dns-query", "client_subnet": "111.0.0.0/10", "detour": "proxy" },
+    //   { "tag": "fakeip", "address": "fakeip" }
+    // ],
     "servers": [
       { "tag": "local", "type": "local" },
-      { "tag": "google", "type": "https", "server": "8.8.8.8", "detour": "proxy" },
+      { "tag": "google", "type": "https", "server": "8.8.8.8", "detour": "proxy" }, // 小技巧 https://1.12.12.12/resolve?type=A&name=qq.com
       { "tag": "fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" } // 退出后 fakeip 会导致短期内解析异常，但我建议在必要时切换到 direct 而非退出
     ],
     "rules": [{ "query_type": ["A", "AAAA"], "server": "fakeip" }], // 尽量让落地服务器做 dns 查询
@@ -17,24 +24,35 @@
     "independent_cache": true // 也许可以不要让 fakeip 和其他 dns 缓存混淆
   },
   "route": {
-    "default_domain_resolver": "local",
-    "rule_set": [{"tag":"site-not-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-!cn.srs"},{"tag":"site-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-geolocation-cn.srs"},{"tag":"site-cn-ext","type":"remote","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},{"tag":"ip-cn","type":"remote","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geoip/geoip-cn.srs"}],
+    "default_domain_resolver": "local", // 规则下载 url、节点服务器域名等会使用此 dns 解析
+    "rule_set": [
+      {"tag":"site-ad","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-ads-all.srs"},
+      {"tag":"site-not-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs"},
+      {"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs"},
+      {"tag":"site-cn-ext","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},
+      {"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
+    ],
     "rules": [
+      // { "ip_cidr": "192.168.1.77", "override_address": "100.79.45.69", "outbound": "ts-kk-1" }, { "domain_suffix": ["tailscale.com"], "outbound": "direct" },
+      // { "domain_suffix": ["sw8a.lan"], "outbound": "lnks-klc2" },
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
       { "protocol": "quic", "action": "reject" }, // 嵌套 quic 抖动很大，强迫浏览器 h3 回落到其他协议
       { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
+      { "clash_mode": "Script", "rule_set": ["site-ad"], "action": "reject" }, // 可选启用 去广告模式，基于域名的简陋过滤，不能替代浏览器扩展
       { "domain": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
-      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.zhihu.android", "com.coolapk.market"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名，android 下的 profile override 也不生效
-      { "domain_suffix": ["google.cn", "googleapis.com", "gstatic.com"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
-      { "domain_suffix": ["edu.cn", "gov.cn"], "outbound": "direct" }, // 额外的一些应当直连的网站
+      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名
+      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal"], "outbound": "direct" }, // 额外一些应当直连的
+      { "domain_suffix": ["google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       { "rule_set": ["site-not-cn"], "outbound": "proxy" },
       { "rule_set": ["site-cn", "site-cn-ext"], "outbound": "direct" },
-      { "action": "resolve", "server": "google", "client_subnet": "114.114.114.114/24" }, // 弱点在此，冷门的境外域名会被解析
+      { "domain_keyword": [".ffzy-play", ".ffzy-online", ".ffzy-video"], "outbound": "direct" }, // 非凡资源 视频站 使用了 Cloudflare，可直连
+      // { "action": "resolve", "server": "google" },
+      { "action": "resolve", "server": "google", "client_subnet": "111.0.0.0/10" }, // 弱点在此，冷门的境外域名会被解析，此 subnet 属于中国移动
       { "rule_set": ["ip-cn"], "outbound": "direct" },
-      { "outbound": "proxy" } // 兜底
+      { "outbound": "proxy" } // 兜底，也就是很多机场规则里的 漏网之鱼
     ],
     "auto_detect_interface": true // 防止环路
   },
@@ -42,7 +60,8 @@
     {
       "type": "tun", // 当应用不理会环境变量时，以 tun 为兜底措施
       "address": ["172.18.0.1/30", "fdfe:dcba:9876::1/126"], // 即便原本无 ipv6 接入，tun 的地址也会让应用误以为可用，见 issue 932。用 prefer_ipv4 无法避免问题，因为微信等应用会使用内置 doh
-      "route_exclude_address": ["111.206.0.0/16"], // 绕过 tun，适用于内网的、大流量的、需要 nat 打洞的。注意不要包含上面的 tun 自身与 fakeip
+      "route_exclude_address": ["111.0.0.0/10"], // 绕过 tun，适用于内网的、大流量的、需要 nat 打洞的。注意不要包含上面的 tun 自身与 fakeip
+      "exclude_package": ["com.zhihu.android", "com.coolapk.market"], // 与上文 route.rules.package_name 不同，此列表直接绕过 tun，似乎解决了下面的 知乎 挂掉的问题
       "auto_route": true,
       "strict_route": true, // 避免各种流量泄漏。可能造成无法使用 android 局域网分享，在某些旧 windows 中可能需禁用此项并使用 gvisor stack，详见文档
       "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 9091 } } // 在 android 上 platform.http_proxy 会让 知乎 等垃圾应用挂掉，但是可以排除应用来解决。也可以按 sfa 里的按钮关闭
@@ -59,6 +78,9 @@
     {"tag":"mkc-hk-1","type":"shadowsocks","server":"1.1.1.1","server_port":11111,"method":"chacha20-ietf-poly1305","password":"xxx"},
     // built-in
     {"tag":"direct","type":"direct"}
+  ],
+  "endpoints": [
+    // { "tag": "ts-kk-1", "hostname": "klp1", "type": "tailscale" } // 在 connections 栏观察可鉴别 直连/中继，直连时与 derp 域名的连接几乎无流量。使用环境变量 TS_DEBUG_ALWAYS_USE_DERP=true 可强制中继 // mixed/0(tcp) | sing-box-1-12-4 (kkocdko) | derp7b.tailscale.com:443
   ]
 }
 // >>> server
