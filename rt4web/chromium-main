@@ -6,15 +6,13 @@ gsettings set org.gnome.desktop.interface text-scaling-factor 1
 nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
 sleep 0.1
 fi
-GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
+cd /home/kkocdko/misc/apps/google-chrome
+GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_CLIENT_SECRET=no exec $(dirname $0)/chrome \
 --disable-crashpad-forwarding \
 --disable-component-update \
---disable-default-browser-promo \
 --disable-breakpad \
 --disable-logging \
---disable-sync \
 --disable-speech-api \
---disable-voice-input \
 --disable-domain-reliability \
 --disable-smooth-scrolling \
 --disable-nacl \
@@ -24,18 +22,14 @@ GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
 --disable-renderer-accessibility \
 --disable-ax-menu-list \
 --disable-top-sites \
---disable-component-update \
 --check-for-update-interval=315360000 \
---disable-gpu-driver-bug-workarounds \
---disable-logging \
---disable-features=TabHoverCardImages,ChromeRefresh2023,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading \
+--disable-features=TabHoverCardImages,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading,ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
 --password-store=basic \
 --force-device-scale-factor=1 \
 --gtk-version=4 \
 --force-dark-mode \
 --force-local-ntp \
 --extension-mime-request-handling=always-prompt-for-install \
---webrtc-ip-handling-policy=default_public_and_private_interfaces \
 --ozone-platform=wayland \
 --ozone-platform-hint=auto \
 --enable-wayland-ime \
@@ -43,7 +37,11 @@ GTK_IM_MODULE=ibus exec $(dirname $0)/chrome \
 --use-gl=angle \
 --use-angle=vulkan \
 --enable-zero-copy \
---enable-features=WebGPU,WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
+--enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
+--google-api-key=no \
+--google-apis-url=no \
+--google-base-url=no \
+--google-doodle-url=no \
 --user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
 --disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
 "$@"
@@ -101,8 +99,19 @@ chmod +x main
 # --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" # "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Edg/120.0.0.0"
 
 # stable # Google Chrome	135.0.7049.95 (Official Build) unknown (64-bit)
+mkdir google-chrome
+cd google-chrome
+curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+ar -p google-chrome.deb data.tar.xz | tar -xJ
+mv opt/google/chrome/* .
+rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block
 
+# https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
+example.io
+google.com
 mkdir -p /tmp/chromium-cache-tmp ~/.cache/chromium
 sudo mount --bind /tmp/chromium-cache-tmp ~/.cache/chromium
+
+# https://github.com/chromium/chromium/blob/141.0.7356.1/components/optimization_guide/core/optimization_guide_features.cc
 
 # kkocdko@klp1:~/misc/apps/ungoogled-chromium$ ln -sf ../../code/utils4linux/rt4web/ungoogled-chromium-main main
