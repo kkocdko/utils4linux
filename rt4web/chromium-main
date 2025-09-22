@@ -1,11 +1,11 @@
 #!/bin/sh
-if pidof chrome > /dev/null; then
-echo skip set text-scaling-factor
-else
-gsettings set org.gnome.desktop.interface text-scaling-factor 1
-nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
-sleep 0.1
-fi
+# if pidof chrome > /dev/null; then
+# echo skip set text-scaling-factor
+# else
+# gsettings set org.gnome.desktop.interface text-scaling-factor 1
+# nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
+# sleep 0.1
+# fi
 cd /home/kkocdko/misc/apps/google-chrome
 GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_CLIENT_SECRET=no exec $(dirname $0)/chrome \
 --disable-crashpad-forwarding \
@@ -23,28 +23,34 @@ GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_
 --disable-ax-menu-list \
 --disable-top-sites \
 --check-for-update-interval=315360000 \
---disable-features=TabHoverCardImages,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading,ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
+--disable-features=TabHoverCardImages,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading,AIPromptAPI,LanguageDetectionAPI,TranslationAPI,ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
 --password-store=basic \
 --force-device-scale-factor=1 \
 --gtk-version=4 \
 --force-dark-mode \
 --force-local-ntp \
 --extension-mime-request-handling=always-prompt-for-install \
---ozone-platform=wayland \
---ozone-platform-hint=auto \
---enable-wayland-ime \
---wayland-text-input-version=3 \
 --use-gl=angle \
 --use-angle=vulkan \
 --enable-zero-copy \
---enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,UseOzonePlatform,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
+--enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
 --google-api-key=no \
---google-apis-url=no \
---google-base-url=no \
---google-doodle-url=no \
+--google-url=http://example.com \
+--google-apis-url=http://example.com \
+--google-base-url=http://example.com \
+--google-doodle-url=http://example.com \
+--search-provider-logo-url=http://example.com \
+--secure-connect-api-url=http://example.com \
 --user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
 --disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
 "$@"
+
+# --enable-unsafe-webgpu
+# --ignore-gpu-blocklist
+# --enable-skia-graphite
+# SkiaGraphite
+# --optimization-guide-service-get-hints-url=http://example.com \
+# --optimization-guide-service-get-models-url=http://example.com \
 
 exit 1
 
@@ -59,59 +65,21 @@ Categories=Network;WebBrowser;
 MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;
 EOF
 
-ln_to_tmp(){ from="$HOME/$2" ; to="/tmp/chromium_cache/$3" ; rm -rf "$from" ; if [ $1 = d ]; then mkdir -p "$(dirname "$from")" "$to" ; else touch "$to" ; fi ; ln -s "$to" "$from" ;}
-ln_to_tmp d ".cache/chromium" main_cache
-ln_to_tmp d ".config/chromium/GraphiteDawnCache" graphite_dawn_cache
-ln_to_tmp d ".config/chromium/GrShaderCache" gr_shader_cache
-ln_to_tmp d ".config/chromium/ShaderCache" shader_cache
-ln_to_tmp d ".config/chromium/Default/GPUCache" gpu_cache
-ln_to_tmp d ".config/chromium/Default/DawnWebGPUCache" dawn_webgpu_cache
-ln_to_tmp d ".config/chromium/Default/DawnGraphiteCache" dawn_graphite_cache
-ln_to_tmp d ".config/chromium/Default/Service Worker/CacheStorage" sw_cache_storage
-ln_to_tmp d ".config/chromium/Default/Service Worker/ScriptCache" sw_script_cache
-ln_to_tmp d ".config/chromium/Default/optimization_guide_hint_cache_store" opti_guide_cache
-ln_to_tmp d ".config/chromium/segmentation_platform" segmentation_platform
-ln_to_tmp f ".config/chromium/Default/DIPS" dips
-ln_to_tmp f ".config/chromium/Default/DIPS-journal" dips_journal
-ln_to_tmp f ".config/chromium/Default/History-journal" history_journal
-ln_to_tmp f ".config/chromium/Default/Shortcuts-journal" shortcuts_journal
-ln_to_tmp f ".config/chromium/Default/Network Action Predictor-journal" net_predictor_journal
-
-if [ "$(id -u)" = "0" ]; then
-echo "don't run as root please"
-exit
-fi
-
-cd /home/kkocdko/misc/apps
-rm -rf ungoogled-chromium
-mkdir ungoogled-chromium
-cd ungoogled-chromium
-curl -o ungoogled-chromium.tar.xz -L https://github.com/ungoogled-software/ungoogled-chromium-portablelinux/releases/download/135.0.7049.114-1/ungoogled-chromium_135.0.7049.114-1_linux.tar.xz
-tar -xf ungoogled-chromium.tar.xz --strip-components 1
-rm -rf ungoogled-chromium.tar.xz
-strip chrome
-strip chromedriver
-find locales/* -not -name 'en-US.*' -delete
-chmod +x main
-
-# chrome://media-internals/
-# chrome://gpu/
-# --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" # "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Edg/120.0.0.0"
-
-# stable # Google Chrome	135.0.7049.95 (Official Build) unknown (64-bit)
+# stable # 140.0.7339.185 (Official Build) unknown (64-bit)
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 ar -p google-chrome.deb data.tar.xz | tar -xJ
 mv opt/google/chrome/* .
 rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block
-
-# https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
-example.io
-google.com
-mkdir -p /tmp/chromium-cache-tmp ~/.cache/chromium
-sudo mount --bind /tmp/chromium-cache-tmp ~/.cache/chromium
+rm -rf locales/ml.pak locales/ta.pak locales/kn.pak locales/te.pak locales/hi.pak locales/bn.pak locales/gu.pak locales/mr.pak locales/th.pak locales/el.pak
 
 # https://github.com/chromium/chromium/blob/141.0.7356.1/components/optimization_guide/core/optimization_guide_features.cc
+# https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
+# example.io
+# google.com
 
-# kkocdko@klp1:~/misc/apps/ungoogled-chromium$ ln -sf ../../code/utils4linux/rt4web/ungoogled-chromium-main main
+# >>> chrome_crashpad_handler
+# #!/bin/sh
+# exec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"
+
