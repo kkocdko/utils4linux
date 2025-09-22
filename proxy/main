@@ -31,5 +31,7 @@ cd /d %~dp0
 start "proxy" sing-box.exe run -c config.jsonc -D . --disable-color
 ' > main.bat
 
+# nssm install nssm_proxy C:\misc\proxy\sing-box.exe run -c config.jsonc -D . --disable-color # https://nssm.cc/ci/nssm-2.24-101-g897c7ad.zip # do not use sc.exe which requires special symbol export
+
 # ss -npt | grep 2400:c620 | sort
 # https://120.53.53.53/resolve?type=A&name=qq.com // { "tag": "dhcp", "type": "dhcp" }
