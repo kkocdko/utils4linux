@@ -8,10 +8,10 @@ mkdir -p $temp_dir $dist_dir
 
 if [ "$1" = test ]; then
   # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh" # printf "echo hi\nbash\n" > hi.sh
-  # printf "root=UUID=a0b1-c2d3 rw rootflags=subvol=root,compress=zstd:1 mitigations=off apparmor=0 selinux=0 amd_pstate=passive \0"
-  # printf "root=/dev/disk/by-path/pci-0000:01:00.0-nvme-1-part2 rw mitigations=off apparmor=0 selinux=0 \0"
-  # printf "root=live:LABEL=KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_kk.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 intel_iommu=off \0"
-  printf "root=live:LABEL=QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off apparmor=0 selinux=0 console=ttyS0 \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
+  # printf "root=UUID=a0b1-c2d3 rw rootflags=subvol=root,compress=zstd:1 mitigations=off audit=0 apparmor=0 selinux=0 amd_pstate=passive \0"
+  # printf "root=/dev/disk/by-path/pci-0000:01:00.0-nvme-1-part2 rw mitigations=off audit=0 apparmor=0 selinux=0 \0"
+  # printf "root=live:LABEL=KK_MAIN rd.live.dir=ventoy/boot rd.live.squashimg=debian_kk.squashfs rd.live.overlay.overlayfs=1 rw mitigations=off audit=0 apparmor=0 selinux=0 intel_iommu=off \0"
+  printf "root=live:LABEL=QEMU_TEST rd.live.overlay.overlayfs=1 rw mitigations=off audit=0 apparmor=0 selinux=0 console=ttyS0 \0" | objcopy --update-section .cmdline=/dev/stdin $dist_dir/linux.efi
   truncate -s 0 $temp_dir/out.img
   truncate -s $(du -c $dist_dir/linux.efi $dist_dir/squashfs.img | awk 'END {print $1 + 3072}')K $temp_dir/out.img
   mkfs.fat -F 32 -n QEMU_TEST $temp_dir/out.img
@@ -88,12 +88,13 @@ if [ "$1" = build ]; then
     apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-icon-theme gnome-sushi gnome-software gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono evolution-data-server gstreamer1.0-plugins-bad evince
     pkgs=""
     pkgs="$pkgs iproute2 iw network-manager"
-    pkgs="$pkgs fonts-unifont dconf-cli dconf-gsettings-backend gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-fuse at-spi2-core libatk-adaptor libcanberra-pulse libpam-gnome-keyring libproxy1-plugin-gsettings nautilus orca pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop" # apt-cache depends gnome-core
+    pkgs="$pkgs fonts-unifont dconf-cli dconf-gsettings-backend gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-fuse at-spi2-core libatk-adaptor libcanberra-pulse libpam-gnome-keyring libproxy1-plugin-gsettings nautilus pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop" # apt-cache depends gnome-core
     apt-get install -y --install-recommends $pkgs
     apt-mark unhold $(apt-mark showhold)
+    # apt-get purge orca speech-dispatcher network-manager-l10n
     apt-get autoremove -y --purge
     apt-get clean all -y
-    update-locale LANG=C.UTF-8 LC_ALL=C.UTF-8
+    update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
     rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/localsearch-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/localsearch-* /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
