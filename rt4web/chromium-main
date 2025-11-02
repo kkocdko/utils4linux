@@ -6,8 +6,9 @@
 # nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
 # sleep 0.1
 # fi
-cd /home/kkocdko/misc/apps/google-chrome
-GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_CLIENT_SECRET=no exec $(dirname $0)/chrome \
+# cd /home/kkocdko/misc/apps/google-chrome
+cd /media/kkocdko/KK_TMP_1/google-chrome
+GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_CLIENT_SECRET=no exec ./chrome \
 --disable-crashpad-forwarding \
 --disable-component-update \
 --disable-breakpad \
@@ -35,37 +36,45 @@ GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_
 --enable-zero-copy \
 --enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
 --google-api-key=no \
---google-url=http://example.com \
---google-apis-url=http://example.com \
---google-base-url=http://example.com \
---google-doodle-url=http://example.com \
---search-provider-logo-url=http://example.com \
---secure-connect-api-url=http://example.com \
+--google-url=http://noway \
+--google-apis-url=http://noway \
+--google-base-url=http://noway \
+--google-doodle-url=http://noway \
+--search-provider-logo-url=http://noway \
+--secure-connect-api-url=http://noway \
 --user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
 --disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
-"$@"
+"$@" > /dev/null 2>&1
 
 # --enable-unsafe-webgpu
 # --ignore-gpu-blocklist
 # --enable-skia-graphite
+# SkiaGraphite:dawn_skip_validation/true
 # SkiaGraphite
-# --optimization-guide-service-get-hints-url=http://example.com \
-# --optimization-guide-service-get-models-url=http://example.com \
+# --optimization-guide-service-get-hints-url=http://noway \
+# --optimization-guide-service-get-models-url=http://noway \
 
 exit 1
 
 cat <<EOF > /usr/share/applications/google-chrome.desktop
 [Desktop Entry]
 Version=1.0
-Name=google-chrome
+Name=Google Chrome
 Exec=/home/kkocdko/misc/apps/google-chrome/main %U
 Terminal=false
 Type=Application
 Categories=Network;WebBrowser;
 MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;
 EOF
+sudo update-desktop-database
 
-# stable # 140.0.7339.185 (Official Build) unknown (64-bit)
+mv chrome_crashpad_handler chrome_crashpad_handler_origin
+cat <<EOF
+#!/bin/sh
+exec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"
+EOF > chrome_crashpad_handler
+
+# stable # 142
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
