@@ -52,6 +52,18 @@ Custom debian livecd.
 }
 ```
 
+apt install systemd-timesyncd
+
+/etc/systemd/timesyncd.conf.d/local.conf
+
+https://wiki.archlinux.org/title/Systemd-timesyncd
+
+```
+[Time]
+NTP=time.cloudflare.com time.apple.com
+FallbackNTP=1.pool.ntp.org 2.pool.ntp.org
+```
+
 ```sh
 dhcpcd
 # qemu{-nographic},kernel{console=ttyS0}
