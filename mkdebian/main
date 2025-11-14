@@ -95,24 +95,34 @@ if [ "$1" = build ]; then
     apt-get autoremove -y --purge
     apt-get clean all -y
     update-locale LANG=C.UTF-8 LC_ALL=C.UTF-8 # if you needs en_US.UTF-8, apt install locales-all
-    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/localsearch-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/localsearch-* /usr/share/plymouth /usr/share/desktop-base/*-theme /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
-    # todo: mask, try systemctl list-unit-files --state=masked
+    for entry in apt-daily.timer apt-daily-upgrade.timer apt-listchanges.timer dpkg-db-backup.timer fwupd-refresh.timer man-db.timer display-manager.service; do
+      ln -sf /dev/null /etc/systemd/system/$entry # equal to systemctl mask
+    done
+    rm -rf /usr/share/plymouth /var/lib/apt/lists/* /usr/share/desktop-base/*-theme /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
+    # /etc/systemd/user/gnome-session.target.wants/localsearch-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/localsearch-*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
     dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --aggressive-strip --omit-drivers "xfs bcachefs f2fs ocfs2 ocfs2_dlm ocfs2_nodemanager ceph libceph cifs lpfc kafs bfa fnic efct mpt3sas aic7xxx aic79xx qla2xxx qla4xxx intel_qat" --compress "zstd -9" --uefi /mnt/linux.efi
-    # debug: mkdir -p /dev/pts ; mount -t devpts devpts /dev/pts ; ln -sf /dev/pts/ptmx /dev/ptmx ; busybox telnetd -F -b 127.0.0.1 -p 9783 -l bash || true # busybox telnet 127.0.0.1 9783
+    # debug: mkdir -p /dev/pts ; mount -t devpts devpts /dev/pts ; ln -sf /dev/pts/ptmx /dev/ptmx ; busybox telnetd -F -b 127.0.0.1:9783 -l bash || true # busybox telnet 127.0.0.1 9783
   ' | unshare -mupfr --map-auto --mount-proc /bin/sh # after the unshare exited, all mounts were gone
   echo '
-    if [ "$1" = "" -o $(expr index "$1" " ") != 0 ]; then echo "usage: $0 username" ; exit; fi
+    if [ "$(id -u)" != "0" ]; then
+      sleep 0.5 ; until gsettings get org.gnome.mutter auto-maximize 2> /dev/null; do sleep 0.2; done
+      export $(tr "[:cntrl:]" " " < /proc/$(pgrep -u $(id -u) gnome-shell)/environ)
+      gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
+      gsettings set org.gnome.desktop.background primary-color "#35363a"
+      systemctl --user mask localsearch-3
+      exit
+    fi
+    if [ "$1" = "" -o $(expr index "$1" " ") != 0 ]; then echo "usage: bash $0 new_user_name" ; exit; fi
     user_obj=$(dbus-send --system --print-reply=literal --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:$1 string:$1 int32:1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetAutomaticLogin boolean:true
     passwd -d $1
     systemctl start gdm
-    # gsettings set org.gnome.desktop.background primary-color "#35363a"
-    # gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
-    # gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-    # install to disk: cp -a /run/rootfsbase/* /mnt/sda1/
+    cat $0 | su $1 -l
+    # todo: install to disk: cp -a /run/rootfsbase/* /mnt/sda1/
+    # todo: why must use: tmux new -d bash de.sh live
   ' > $temp_dir/rootfs/root/de.sh
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
     mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -comp zstd -Xcompression-level 9 -e $temp_dir/rootfs/oldroot
