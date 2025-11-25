@@ -3,7 +3,7 @@
 Custom debian livecd.
 
 - debian 13
-- xanmod kernel
+- cachyos kernel
 - x86_64 uefi-only uki with dracut
 - fast install by simple cp
 - optional gnome in livecd
@@ -21,8 +21,10 @@ Custom debian livecd.
 - https://salsa.debian.org/cloud-team/debian-cloud-images
 - https://github.com/docker-library/docs/blob/master/debian/README.md
 - https://github.com/debuerreotype/docker-debian-artifacts/raw/e3f216064528d0ad005524fbafbddfd3115be946/bookworm/slim/oci/blobs/rootfs.tar.gz
+
 - https://salsa.debian.org/cloud-team/debian-cloud-images/-/raw/master/src/debian_cloud_images/resources/image.yaml
 - https://salsa.debian.org/cloud-team/debian-cloud-images/-/raw/master/config_space/sid/package_config/SYSTEM_BOOT # see also /CLOUD /GENERIC /EXTRAS
+
 - https://salsa.debian.org/images-team/debian-cd/-/blob/master/tasks/bookworm/exclude-firmware
 - https://salsa.debian.org/live-team/live-build/-/tree/master?ref_type=heads
 - http://mirrors.ustc.edu.cn/debian-cdimage/weekly-live-builds/amd64/iso-hybrid/debian-live-testing-amd64-standard.iso
@@ -50,6 +52,18 @@ Custom debian livecd.
   "max-concurrent-downloads": 8,
   "data-root": "/tmp/docker"
 }
+```
+
+apt install systemd-timesyncd
+
+/etc/systemd/timesyncd.conf.d/local.conf
+
+https://wiki.archlinux.org/title/Systemd-timesyncd
+
+```
+[Time]
+NTP=time.cloudflare.com time.apple.com
+FallbackNTP=1.pool.ntp.org 2.pool.ntp.org
 ```
 
 ```sh

@@ -26,7 +26,8 @@ if [ "$1" = test ]; then
 fi
 
 if [ "$1" = build-cachyos-kernel-deb ]; then
-  curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://archive.cachyos.org/archive/cachyos-v3/linux-cachyos-6.13.7-3-x86_64_v3.pkg.tar.zst
+  # curl -L https://packages.cachyos.org/package/cachyos-v3/x86_64_v3/linux-cachyos | awk -v RS='"' '/pkg.tar.zst/{print;exit}'
+  curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://cdn77.cachyos.org/repo/x86_64_v3/cachyos-v3/linux-cachyos-6.17.7-3-x86_64_v3.pkg.tar.zst
   mkdir -p $temp_dir/linux-cachyos-deb/data/boot $temp_dir/linux-cachyos-deb/control
   tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C $temp_dir/linux-cachyos-deb/data
   find $temp_dir/linux-cachyos-deb/data -name '*.zst' | xargs zstd --rm -q -d
@@ -48,10 +49,10 @@ if [ "$1" = build-cachyos-kernel-deb ]; then
 fi
 
 if [ "$1" = build ]; then
+  export ALL_PROXY=http://127.0.0.1:9091 ; export HTTP_PROXY=$ALL_PROXY ; export HTTPS_PROXY=$ALL_PROXY
   curl \
-    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/4f247a577df7ed918a6894ecb017d4be322a0737/trixie/slim/oci/blobs/rootfs.tar.gz \
-    -o $dist_dir/linux-image.deb -L https://downloads.sourceforge.net/project/xanmod/releases/main/6.13.9-xanmod1/6.13.9-x64v3-xanmod1/linux-image-6.13.9-x64v3-xanmod1_6.13.9-x64v3-xanmod1-0~20250330.gaa865f0_amd64.deb?use_mirror=autoselect \
-    -o $dist_dir/adw-gtk3.deb -L https://julianfairfax.codeberg.page/package-repo/debs/pool/main/a/adw-gtk3/adw-gtk3_5.6_all.deb \
+    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/06a7b511b90f4cc6c8b41d2f01a57702556fe63e/trixie/slim/oci/blobs/rootfs.tar.gz \
+    -o $dist_dir/adw-gtk3.deb -L https://julianfairfax.codeberg.page/package-repo/debs/pool/main/a/adw-gtk3/adw-gtk3_6.2_all.deb \
     --parallel --skip-existing
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
     . /etc/profile
@@ -74,12 +75,12 @@ if [ "$1" = build ]; then
     ln -s /proc/self/fd/1 /dev/stdout
     ln -s /proc/self/fd/2 /dev/stderr
     ln -s /proc/self/fd /dev/fd
-    export LANG=C LC_ALL=C DEBIAN_FRONTEND=noninteractive
+    export LANG=C.UTF-8 LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive
     printf "Types: deb\nURIs: http://192.168.1.189:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.189:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
     apt-get update
     pkgs=""
-    pkgs="$pkgs dhcpcd-base eject fdisk util-linux gdisk locales lsb-release netcat-openbsd procps python3" # apt-cache depends cloud-init
+    pkgs="$pkgs eject fdisk util-linux gdisk dhcpcd-base locales lsb-release netcat-openbsd procps python3" # apt info cloud-init | grep Depends:
     pkgs="$pkgs sudo libpam-systemd polkitd unattended-upgrades zstd apt-utils init nftables iputils-ping linux-sysctl-defaults less nano netbase vim-tiny whiptail systemd-timesyncd openssh-server ssh-import-id cloud-guest-utils apt-listchanges bash-completion bind9-host man-db manpages socat pciutils reportbug traceroute psmisc tcpdump ca-certificates curl ethtool uuid-runtime screen xz-utils" # from official cloud, exclude: systemd-resolved libnss-resolve libnss-myhostname netplan.io apparmor cloud-initramfs-growroot vim
     pkgs="$pkgs amd64-microcode intel-microcode atmel-firmware bluez-firmware dahdi-firmware-nonfree firmware-amd-graphics firmware-ast firmware-ath9k-htc firmware-atheros firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-carl9170 firmware-cavium firmware-cirrus firmware-intel-graphics firmware-intel-misc firmware-intel-sound firmware-iwlwifi firmware-libertas firmware-linux-free firmware-linux-nonfree firmware-linux firmware-marvell-prestera firmware-mediatek firmware-misc-nonfree firmware-myricom firmware-netronome firmware-netxen firmware-nvidia-graphics firmware-qlogic firmware-realtek firmware-siano firmware-sof-signed firmware-zd1211" # from debian-live-testing-amd64-standard.iso, exclude: firmware-ivtv firmware-ipw2x00
     pkgs="$pkgs busybox-static util-linux-extra tmux binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic" # extra packages, avoid install dracut hooks and dracut-network
@@ -88,29 +89,41 @@ if [ "$1" = build ]; then
     apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-icon-theme gnome-sushi gnome-software gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono evolution-data-server gstreamer1.0-plugins-bad evince
     pkgs=""
     pkgs="$pkgs iproute2 iw network-manager"
-    pkgs="$pkgs fonts-unifont dconf-cli dconf-gsettings-backend gkbd-capplet glib-networking gnome-bluetooth-sendto gnome-calculator gnome-control-center gnome-disk-utility gnome-keyring gnome-menus gnome-session gnome-shell gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gnome-user-share gvfs-fuse at-spi2-core libatk-adaptor libcanberra-pulse libpam-gnome-keyring libproxy1-plugin-gsettings nautilus pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop" # apt-cache depends gnome-core
+    pkgs="$pkgs fonts-unifont gnome-calculator gnome-disk-utility gdm3 gnome-shell gnome-keyring gnome-menus gnome-session gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gvfs-fuse libpam-gnome-keyring libproxy1-plugin-gsettings nautilus pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop" # apt info gnome-core | grep Depends:
     apt-get install -y --install-recommends $pkgs
     apt-mark unhold $(apt-mark showhold)
-    # apt-get purge orca speech-dispatcher network-manager-l10n
+    # apt-get purge wsdd orca speech-dispatcher network-manager-l10n gnome-classic
     apt-get autoremove -y --purge
     apt-get clean all -y
-    update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-    rm -rf /var/lib/apt/lists/* /etc/systemd/system/timers.target.wants/apt-* /etc/systemd/system/timers.target.wants/fwupd-* /etc/systemd/system/display-manager.service /etc/systemd/user/gnome-session.target.wants/localsearch-* /var/lib/systemd/deb-systemd-user-helper-enabled/gnome-session.target.wants/localsearch-* /usr/share/desktop-base/*-theme /usr/share/plymouth /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
+    update-locale LANG=C.UTF-8 LC_ALL=C.UTF-8 # if you needs en_US.UTF-8, apt install locales-all
+    for entry in apt-daily.timer apt-daily-upgrade.timer apt-listchanges.timer dpkg-db-backup.timer fwupd-refresh.timer man-db.timer display-manager.service; do
+      ln -sf /dev/null /etc/systemd/system/$entry # equal to systemctl mask
+    done
+    rm -rf /usr/share/plymouth /var/lib/apt/lists/* /usr/share/desktop-base/*-theme /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
-    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --omit-drivers "xfs bcachefs f2fs ocfs2 ceph cifs lpfc bfa qla2xxx" --compress "zstd -9" --uefi /mnt/linux.efi
+    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --aggressive-strip --omit-drivers "xfs bcachefs f2fs ocfs2 ocfs2_dlm ocfs2_nodemanager ceph libceph cifs lpfc kafs bfa fnic efct mpt3sas aic7xxx aic79xx qla2xxx qla4xxx intel_qat" --compress "zstd -9" --uefi /mnt/linux.efi
+    # debug: mkdir -p /dev/pts ; mount -t devpts devpts /dev/pts ; ln -sf /dev/pts/ptmx /dev/ptmx ; busybox telnetd -F -b 127.0.0.1:9783 -l bash || true # busybox telnet 127.0.0.1 9783
   ' | unshare -mupfr --map-auto --mount-proc /bin/sh # after the unshare exited, all mounts were gone
   echo '
-    if [ "$1" = "" -o $(expr index "$1" " ") != 0 ]; then exit; fi
+    if [ "$(id -u)" != "0" ]; then
+      sleep 0.5 ; until gsettings get org.gnome.mutter auto-maximize 2> /dev/null; do sleep 0.2; done
+      export $(tr "[:cntrl:]" " " < /proc/$(pgrep -u $(id -u) gnome-shell)/environ)
+      gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
+      gsettings set org.gnome.desktop.background primary-color "#35363a"
+      gsettings set org.freedesktop.Tracker3.Miner.Files enable-monitors false
+      systemctl --user mask localsearch-3
+      exit
+    fi
+    if [ "$1" = "" -o $(expr index "$1" " ") != 0 ]; then echo "usage: bash $0 new_user_name" ; exit; fi
     user_obj=$(dbus-send --system --print-reply=literal --dest=org.freedesktop.Accounts /org/freedesktop/Accounts org.freedesktop.Accounts.CreateUser string:$1 string:$1 int32:1)
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetLocked boolean:false
     dbus-send --system --print-reply --dest=org.freedesktop.Accounts $user_obj org.freedesktop.Accounts.User.SetAutomaticLogin boolean:true
     passwd -d $1
     systemctl start gdm
-    # gsettings set org.gnome.desktop.background primary-color "#35363a"
-    # gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
-    # gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-    # install to disk: cp -a /run/rootfsbase/* /mnt/sda1/
+    cat $0 | su $1 -l
+    # todo: install to disk: cp -a /run/rootfsbase/* /mnt/sda1/
+    # todo: why must use: tmux new -d bash de.sh live
   ' > $temp_dir/rootfs/root/de.sh
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
     mksquashfs $temp_dir/rootfs $dist_dir/squashfs.img -b 1M -comp zstd -Xcompression-level 9 -e $temp_dir/rootfs/oldroot
