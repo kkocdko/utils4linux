@@ -1,5 +1,5 @@
 // prettier-ignore
-// https://kkocdko.site/hidden/proxy/config.jsonc?user=kkocdko&&token=1234
+// https://kkocdko.site/hidden/proxy/config.jsonc?user=a&&token=b
 // >>> client
 {
   "experimental": {
@@ -11,7 +11,7 @@
     // "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" },
     // "servers": [
     //   { "tag": "local", "address": "local", "detour": "direct" },
-    //   { "tag": "google", "address": "https://8.8.8.8/dns-query", "client_subnet": "111.0.0.0/10", "detour": "proxy" },
+    //   { "tag": "ali", "address": "https://223.5.5.5/dns-query", "client_subnet": "111.0.0.0/10", "detour": "direct" },
     //   { "tag": "fakeip", "address": "fakeip" }
     // ],
     "servers": [
@@ -26,30 +26,28 @@
   "route": {
     "default_domain_resolver": "local", // 规则下载 url、节点服务器域名等会使用此 dns 解析
     "rule_set": [
-      {"tag":"site-ad","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-ads-all.srs"},
       {"tag":"site-not-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs"},
       {"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs"},
       {"tag":"site-cn-ext","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},
       {"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
     ],
     "rules": [
-      // { "ip_cidr": "192.168.1.77", "override_address": "100.79.45.69", "outbound": "ts-kk-1" }, { "domain_suffix": ["tailscale.com"], "outbound": "direct" },
-      // { "domain_suffix": ["sw8a.lan"], "outbound": "lnks-klc2" },
+      // { "ip_cidr": "192.168.1.77", "override_address": "100.79.45.69", "outbound": "ts-kk-1" }, { "domain_suffix": ["sw8a.lan"], "outbound": "ts-kk-1" }, { "domain_suffix": ["tailscale.com"], "outbound": "direct" },
+      // { "domain": "ender3v3ke.internal", "override_address": "192.168.69.97", "outbound": "direct" },
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
       { "protocol": "quic", "action": "reject" }, // 嵌套 quic 抖动很大，强迫浏览器 h3 回落到其他协议
       { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
-      { "clash_mode": "Script", "rule_set": ["site-ad"], "action": "reject" }, // 可选启用 去广告模式，基于域名的简陋过滤，不能替代浏览器扩展
       { "domain": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
       { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名
-      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal"], "outbound": "direct" }, // 额外一些应当直连的
+      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "girigirilove.com"], "domain_keyword": [".ffzy-play", ".ffzy-online", ".ffzy-video"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
       { "domain_suffix": ["google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
+      // { "ip_cidr": ["91.105.192.0/23","91.108.4.0/22","91.108.8.0/21","91.108.16.0/21","91.108.56.0/22","149.154.160.0/20","185.76.151.0/24"], "action": "reject" }, // 强制 telegram 使用 ipv6 // https://core.telegram.org/resources/cidr.txt
       { "rule_set": ["site-not-cn"], "outbound": "proxy" },
       { "rule_set": ["site-cn", "site-cn-ext"], "outbound": "direct" },
-      { "domain_keyword": [".ffzy-play", ".ffzy-online", ".ffzy-video"], "outbound": "direct" }, // 非凡资源 视频站 使用了 Cloudflare，可直连
-      // { "action": "resolve", "server": "google" },
+      // { "action": "resolve", "server": "ali" }, // 兼容 1.11
       { "action": "resolve", "server": "google", "client_subnet": "111.0.0.0/10" }, // 弱点在此，冷门的境外域名会被解析，此 subnet 属于中国移动
       { "rule_set": ["ip-cn"], "outbound": "direct" },
       { "outbound": "proxy" } // 兜底，也就是很多机场规则里的 漏网之鱼

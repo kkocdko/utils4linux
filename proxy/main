@@ -4,7 +4,7 @@ cd $(dirname $0)
 if [ ! -e dist ]; then
   mkdir dist
   cd dist
-  # curl -L https://github.com/SagerNet/sing-box/releases/download/v1.12.0/sing-box-1.12.0-linux-amd64.tar.gz | tar -xz --strip-component 1
+  # curl -L https://github.com/SagerNet/sing-box/releases/download/v1.12.12/sing-box-1.12.12-linux-amd64.tar.gz | tar -xz --strip-component 1
   # cd ui; rm -f *.js *.ico *.png *.webmanifest *.ttf assets/*.ttf assets/*.woff assets/*.woff2; sed -i.bak "s|</title>|</title><script>requestAnimationFrame=f=>setTimeout(f,250)</script>|" index.html
   exit
 fi
@@ -27,11 +27,10 @@ echo '
 ' > sing-box.exe.manifest
 echo '
 cd /d %~dp0
-:: curl -o config.jsonc -L "https://kkocdko.site/hidden/proxy/config.jsonc?token=xxx"
+:: curl -o config.jsonc "curl/8.7.6 (sing-box)" -L "https://kkocdko.site/hidden/proxy/config.jsonc?user=a&token=b"
 start "proxy" sing-box.exe run -c config.jsonc -D . --disable-color
 ' > main.bat
 
 # nssm install nssm_proxy C:\misc\proxy\sing-box.exe run -c config.jsonc -D . --disable-color # https://nssm.cc/ci/nssm-2.24-101-g897c7ad.zip # do not use sc.exe which requires special symbol export
 
 # ss -npt | grep 2400:c620 | sort
-# https://120.53.53.53/resolve?type=A&name=qq.com // { "tag": "dhcp", "type": "dhcp" }
