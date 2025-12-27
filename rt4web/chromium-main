@@ -8,53 +8,48 @@
 # fi
 # cd /home/kkocdko/misc/apps/google-chrome
 cd /media/kkocdko/KK_TMP_1/google-chrome
-GTK_IM_MODULE=ibus GOOGLE_API_KEY=no GOOGLE_DEFAULT_CLIENT_ID=no GOOGLE_DEFAULT_CLIENT_SECRET=no exec ./chrome \
---disable-crashpad-forwarding \
---disable-component-update \
---disable-breakpad \
+exec ./chrome \
 --disable-logging \
 --disable-speech-api \
 --disable-domain-reliability \
 --disable-smooth-scrolling \
---disable-nacl \
 --disable-quic \
---disable-crash-reporter \
 --disable-chrome-tracing-computation \
+--disable-crash-reporter \
 --disable-renderer-accessibility \
---disable-ax-menu-list \
 --disable-top-sites \
+--disable-component-update \
 --check-for-update-interval=315360000 \
---disable-features=TabHoverCardImages,EyeDropper,CustomizeChromeSidePanel,OptimizationGuideModelDownloading,AIPromptAPI,LanguageDetectionAPI,TranslationAPI,ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
+--disable-features=TabHoverCardImages,EyeDropper,AIPromptAPI,LanguageDetectionAPI,TranslationAPI,ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
+--extension-mime-request-handling=always-prompt-for-install \
 --password-store=basic \
 --force-device-scale-factor=1 \
 --gtk-version=4 \
---force-dark-mode \
 --force-local-ntp \
---extension-mime-request-handling=always-prompt-for-install \
---use-gl=angle \
 --use-angle=vulkan \
 --enable-zero-copy \
---enable-features=WebUIDarkMode,FluentOverlayScrollbar,VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,WebRTCPipeWireCapturer,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,UseMultiPlaneFormatForHardwareVideo,VaapiVideoEncodeAccelerator \
---google-api-key=no \
---google-url=http://noway \
---google-apis-url=http://noway \
---google-base-url=http://noway \
---google-doodle-url=http://noway \
---search-provider-logo-url=http://noway \
---secure-connect-api-url=http://noway \
+--ui-enable-zero-copy \
+--enable-features=FluentOverlayScrollbar,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,AcceleratedVideoEncoder,AcceleratedVideoDecoder,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoEncodeAccelerator,UseMultiPlaneFormatForHardwareVideo \
+--google-url=https://cp.cloudflare.com \
+--google-apis-url=https://cp.cloudflare.com \
+--google-base-url=https://cp.cloudflare.com \
+--google-doodle-url=https://cp.cloudflare.com \
+--search-provider-logo-url=https://cp.cloudflare.com \
+--secure-connect-api-url=https://cp.cloudflare.com \
+--optimization-guide-service-get-models-url=https://cp.cloudflare.com \
 --user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
 --disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
 "$@" > /dev/null 2>&1
 
+exit 1
+
+# optimizationguide-pa.googleapis.com
+# --disable-crashpad-for-testing
 # --enable-unsafe-webgpu
 # --ignore-gpu-blocklist
 # --enable-skia-graphite
 # SkiaGraphite:dawn_skip_validation/true
 # SkiaGraphite
-# --optimization-guide-service-get-hints-url=http://noway \
-# --optimization-guide-service-get-models-url=http://noway \
-
-exit 1
 
 cat <<EOF > /usr/share/applications/google-chrome.desktop
 [Desktop Entry]
@@ -66,29 +61,20 @@ Type=Application
 Categories=Network;WebBrowser;
 MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;
 EOF
-sudo update-desktop-database
+update-desktop-database
 
 mv chrome_crashpad_handler chrome_crashpad_handler_origin
-cat <<EOF
-#!/bin/sh
-exec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"
-EOF > chrome_crashpad_handler
+printf '#!/bin/sh\nexec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"\n' > chrome_crashpad_handler
+chmod +x chrome_crashpad_handler
 
-# stable # 142
+# stable # 143.0.7499.109
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 ar -p google-chrome.deb data.tar.xz | tar -xJ
 mv opt/google/chrome/* .
-rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block
-rm -rf locales/ml.pak locales/ta.pak locales/kn.pak locales/te.pak locales/hi.pak locales/bn.pak locales/gu.pak locales/mr.pak locales/th.pak locales/el.pak
+rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block locales/{ml,ta,kn,te,hi,bn,gu,mr,th,el}.pak
 
 # https://github.com/chromium/chromium/blob/141.0.7356.1/components/optimization_guide/core/optimization_guide_features.cc
 # https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
-# example.io
-# google.com
-
-# >>> chrome_crashpad_handler
-# #!/bin/sh
-# exec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"
 
