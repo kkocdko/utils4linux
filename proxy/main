@@ -2,15 +2,42 @@
 cd $(dirname $0)
 
 if [ ! -e dist ]; then
+  exit
   mkdir dist
   cd dist
   # curl -L https://github.com/SagerNet/sing-box/releases/download/v1.12.12/sing-box-1.12.12-linux-amd64.tar.gz | tar -xz --strip-component 1
-  # cd ui; rm -f *.js *.ico *.png *.webmanifest *.ttf assets/*.ttf assets/*.woff assets/*.woff2; sed -i.bak "s|</title>|</title><script>requestAnimationFrame=f=>setTimeout(f,250)</script>|" index.html
+  # https://github.com/MetaCubeX/Yacd-meta
+  npm i -g pnpm --registry=https://registry.npmmirror.com
+  curl -o yacd-meta.tar.gz -L https://github.com/MetaCubeX/Yacd-meta/archive/9e6e9389616cb7d3248a24b8f6d318c4c70fa92f.tar.gz
+  tar -xf yacd-meta.tar.gz
+  mv Yacd-meta-* yacd-meta
+  cd yacd-meta
+  sed -i '35c const Comp = () => <div></div>;' src/components/SideBar.tsx
+  sed -i '136i --color-bg-proxy: #000; --color-input-bg: #223; --color-row-odd: #1b1b1b; --bg-log-info-card: #000; --color-background: #000; --color-bg-chart: #1f2937; --color-bg-card: #000; --color-focus-blue: unset; --color-proxy-border: #374151; --color-text: #fff; --color-text-highlight: #fff; --color-bg-sidebar: #000;' src/styles/main.scss
+  sed -i '46i padding: 0; gap: 0; zoom: 0.9; grid-template-columns: 1fr 1fr;' src/components/TrafficNow.module.scss
+  sed -i '45i padding: 0; min-height: 0;' src/components/TrafficNow.module.scss
+  sed -i '63i color: unset;' src/components/proxies/Proxy.module.scss
+  sed -i '10i padding: 7px 5px 5px 8px;' src/components/proxies/Proxy.module.scss
+  sed -i '32i padding: 0;' src/components/proxies/Proxies.module.scss
+  sed -i '19i flex-wrap: unset;' src/components/proxies/Proxies.module.scss
+  sed -i '9i position: relative; backdrop-filter: none;' src/components/proxies/Proxies.module.scss
+  sed -i '11i grid-template-columns: 1fr 1fr;' src/components/proxies/ProxyList.module.scss
+  sed -i '16i border: 0;' src/components/proxies/ProxyGroup.module.scss
+  sed -i '63i return <div></div>' src/components/Sparkline.tsx
+  sed -i '25i :root[data-theme=light] .proxyLatency { filter: brightness(0.8) contrast(1.7); }' src/components/proxies/ProxyLatency.module.scss
+  find src -name "*.scss" | xargs sed -i 's/translateY(-[12]px)/none/g'
+  pnpm i --registry=https://registry.npmmirror.com
+  pnpm build
+  cd public
+  rm -f *.js *.ico *.png *.webmanifest *.ttf assets/*.ttf assets/*.woff assets/*.woff2
+  cd ..
+  tar -cf public.tar.gz public
+  ~/misc/res/imgbench/zcodecs12 ect -9 -zip ui.zip *
   exit
 fi
 
 if [ "$1" = fetch ]; then
-  node --experimental-default-type=module config-sub-fetch.js
+  node config-sub-fetch.js # may needs proxychains
   exit
 fi
 
@@ -27,7 +54,7 @@ echo '
 ' > sing-box.exe.manifest
 echo '
 cd /d %~dp0
-:: curl -o config.jsonc "curl/8.7.6 (sing-box)" -L "https://kkocdko.site/hidden/proxy/config.jsonc?user=a&token=b"
+:: curl -o config.jsonc -H "User-Agent: curl/8.7.6 (sing-box)" -L "https://kkocdko.site/hidden/proxy/config.jsonc?user=a&token=b"
 start "proxy" sing-box.exe run -c config.jsonc -D . --disable-color
 ' > main.bat
 
