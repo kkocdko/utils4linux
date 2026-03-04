@@ -51,6 +51,11 @@ exit 1
 # SkiaGraphite:dawn_skip_validation/true
 # SkiaGraphite
 
+# todo: avoid ~/.config/google-chrome/screen_ai
+
+mkdir -p /etc/opt/chrome/policies/managed
+curl -o /etc/opt/chrome/policies/managed/managed_policies.json -L https://github.com/corbindavenport/just-the-browser/raw/refs/heads/main/chrome/managed_policies.json
+
 cat <<EOF > /usr/share/applications/google-chrome.desktop
 [Desktop Entry]
 Version=1.0
@@ -67,7 +72,7 @@ mv chrome_crashpad_handler chrome_crashpad_handler_origin
 printf '#!/bin/sh\nexec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"\n' > chrome_crashpad_handler
 chmod +x chrome_crashpad_handler
 
-# stable # 143.0.7499.109
+# stable # 145.0.7632.159
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
