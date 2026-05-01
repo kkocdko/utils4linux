@@ -67,6 +67,17 @@ FallbackNTP=1.pool.ntp.org 2.pool.ntp.org
 ```
 
 ```sh
+apt install flatpak
+mkdir -p /media/kkocdko/KK_TMP_1/flatpak/{user,system}
+ln -sf /media/kkocdko/KK_TMP_1/flatpak/user $HOME/.local/share/flatpak
+ln -sf /media/kkocdko/KK_TMP_1/flatpak/system /var/lib/flatpak
+export XDG_DATA_DIRS="$XDG_DATA_DIRS:/var/lib/flatpak/exports/share:$HOME/.local/share/flatpak/exports/share"
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak remote-modify --user flathub --url=https://mirrors.ustc.edu.cn/flathub
+flatpak remote-add --user --if-not-exists flathub-beta https://dl.flathub.org/beta-repo/flathub-beta.flatpakrepo
+flatpak install --user flathub-beta org.freecad.FreeCAD
+flatpak run --user org.freecad.FreeCAD
+
 dhcpcd
 # qemu{-nographic},kernel{console=ttyS0}
 dbus-send --system --print-reply --dest=org.freedesktop.UDisks2 /org/freedesktop/UDisks2/Manager org.freedesktop.UDisks2.Manager.GetBlockDevices
@@ -75,6 +86,7 @@ dbus-send --system --print-reply --dest=org.freedesktop.UDisks2 /org/freedesktop
 
 blockdev --rereadpt /dev/sdX # instead of partprobe
 efibootmgr --create --disk /dev/sda --part 1 --label kk --loader /linux.efi --unicode 'root=UUID=xxx amd_pstate=passive mitigations=off selinux=0'
+cat /sys/devices/system/cpu/vulnerabilities/*
 
 # todo: 如何在 systemd 之后自启动
 ssh-keygen -A

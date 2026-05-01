@@ -6,6 +6,8 @@ temp_dir=/tmp/mkdebian
 dist_dir=$(pwd)/dist
 mkdir -p $temp_dir $dist_dir
 
+# todo: -papers -gnome-shell-extensions
+
 if [ "$1" = test ]; then
   # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh" # printf "echo hi\nbash\n" > hi.sh
   # printf "root=UUID=a0b1-c2d3 rw rootflags=subvol=root,compress=zstd:1 mitigations=off audit=0 apparmor=0 selinux=0 amd_pstate=passive \0"
@@ -19,15 +21,15 @@ if [ "$1" = test ]; then
   mcopy -i $temp_dir/out.img $dist_dir/linux.efi ::/EFI/BOOT/BOOTX64.EFI
   mcopy -i $temp_dir/out.img $dist_dir/squashfs.img ::/LiveOS/squashfs.img
   qemu-system-x86_64 \
-    -machine q35,accel=kvm -bios /usr/share/ovmf/OVMF.fd -cpu host -smp 3 -m 4G \
+    -machine q35,accel=kvm -bios /usr/share/ovmf/OVMF.fd -cpu host -smp 3 -m 3G \
     -display gtk,gl=on -device virtio-vga-gl -device qemu-xhci -device usb-tablet \
     -drive format=raw,file=$temp_dir/out.img
   exit
 fi
 
 if [ "$1" = build-cachyos-kernel-deb ]; then
-  # curl -L https://packages.cachyos.org/package/cachyos-v3/x86_64_v3/linux-cachyos | awk -v RS='"' '/pkg.tar.zst/{print;exit}'
-  curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://cdn77.cachyos.org/repo/x86_64_v3/cachyos-v3/linux-cachyos-6.17.7-3-x86_64_v3.pkg.tar.zst
+  # curl -L https://packages.cachyos.org/package/cachyos-v3/x86_64_v3/linux-cachyos | awk -v RS='"' '/pkg.tar.zst/{print;exit}' # linux-cachyos-headers
+  curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://cdn77.cachyos.org/repo/x86_64_v3/cachyos-v3/linux-cachyos-7.0.2-2-x86_64_v3.pkg.tar.zst
   mkdir -p $temp_dir/linux-cachyos-deb/data/boot $temp_dir/linux-cachyos-deb/control
   tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C $temp_dir/linux-cachyos-deb/data
   find $temp_dir/linux-cachyos-deb/data -name '*.zst' | xargs zstd --rm -q -d
@@ -51,7 +53,7 @@ fi
 if [ "$1" = build ]; then
   export ALL_PROXY=http://127.0.0.1:9091 ; export HTTP_PROXY=$ALL_PROXY ; export HTTPS_PROXY=$ALL_PROXY
   curl \
-    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/06a7b511b90f4cc6c8b41d2f01a57702556fe63e/trixie/slim/oci/blobs/rootfs.tar.gz \
+    -o $dist_dir/rootfs.tar.gz -L https://github.com/debuerreotype/docker-debian-artifacts/raw/c5f3180659db80fb676e09bd8bfd992e3df68cac/forky/slim/oci/blobs/rootfs.tar.gz \
     -o $dist_dir/adw-gtk3.deb -L https://julianfairfax.codeberg.page/package-repo/debs/pool/main/a/adw-gtk3/adw-gtk3_6.2_all.deb \
     --parallel --skip-existing
   echo temp_dir=$temp_dir dist_dir=$dist_dir '
@@ -76,33 +78,35 @@ if [ "$1" = build ]; then
     ln -s /proc/self/fd/2 /dev/stderr
     ln -s /proc/self/fd /dev/fd
     export LANG=C.UTF-8 LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive
-    printf "Types: deb\nURIs: http://192.168.1.189:9630/debian\nSuites: trixie trixie-updates trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.189:9630/debian-security\nSuites: trixie-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
+    printf "Types: deb\nURIs: http://192.168.1.189:9630/debian\nSuites: forky forky-updates forky-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.189:9630/debian-security\nSuites: forky-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
     echo "Acquire::http::Pipeline-Depth \"0\";" > /etc/apt/apt.conf.d/99nopipelining
     apt-get update
     pkgs=""
     pkgs="$pkgs eject fdisk util-linux gdisk dhcpcd-base locales lsb-release netcat-openbsd procps python3" # apt info cloud-init | grep Depends:
     pkgs="$pkgs sudo libpam-systemd polkitd unattended-upgrades zstd apt-utils init nftables iputils-ping linux-sysctl-defaults less nano netbase vim-tiny whiptail systemd-timesyncd openssh-server ssh-import-id cloud-guest-utils apt-listchanges bash-completion bind9-host man-db manpages socat pciutils reportbug traceroute psmisc tcpdump ca-certificates curl ethtool uuid-runtime screen xz-utils" # from official cloud, exclude: systemd-resolved libnss-resolve libnss-myhostname netplan.io apparmor cloud-initramfs-growroot vim
     pkgs="$pkgs amd64-microcode intel-microcode atmel-firmware bluez-firmware dahdi-firmware-nonfree firmware-amd-graphics firmware-ast firmware-ath9k-htc firmware-atheros firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-carl9170 firmware-cavium firmware-cirrus firmware-intel-graphics firmware-intel-misc firmware-intel-sound firmware-iwlwifi firmware-libertas firmware-linux-free firmware-linux-nonfree firmware-linux firmware-marvell-prestera firmware-mediatek firmware-misc-nonfree firmware-myricom firmware-netronome firmware-netxen firmware-nvidia-graphics firmware-qlogic firmware-realtek firmware-siano firmware-sof-signed firmware-zd1211" # from debian-live-testing-amd64-standard.iso, exclude: firmware-ivtv firmware-ipw2x00
-    pkgs="$pkgs busybox-static util-linux-extra tmux binutils parted dosfstools systemd-boot-efi dracut-live dracut-config-generic" # extra packages, avoid install dracut hooks and dracut-network
+    pkgs="$pkgs busybox-static util-linux-extra tmux binutils parted dosfstools systemd-boot-efi dracut-live" # extra packages, avoid install dracut hooks and dracut-network
     pkgs="$pkgs /mnt/linux-image.deb /mnt/adw-gtk3.deb"
     apt-get install -y --no-install-recommends $pkgs
     apt-mark hold plymouth hunspell-en-us aspell initramfs-tools yelp gnome-icon-theme gnome-sushi gnome-software gnome-contacts xserver-xorg fonts-droid-fallback fonts-noto-mono evolution-data-server gstreamer1.0-plugins-bad evince
     pkgs=""
     pkgs="$pkgs iproute2 iw network-manager"
-    pkgs="$pkgs fonts-unifont gnome-calculator gnome-disk-utility gdm3 gnome-shell gnome-keyring gnome-menus gnome-session gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gvfs-fuse libpam-gnome-keyring libproxy1-plugin-gsettings nautilus pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop" # apt info gnome-core | grep Depends:
+    pkgs="$pkgs fonts-unifont gnome-calculator gnome-disk-utility gdm3 gnome-shell gnome-keyring gnome-menus gnome-session gnome-shell-extensions gnome-system-monitor ptyxis gnome-text-editor gvfs-fuse libpam-gnome-keyring nautilus pipewire-audio xdg-desktop-portal-gnome zenity gnome-remote-desktop" # apt info gnome-core | grep Depends:
     apt-get install -y --install-recommends $pkgs
     apt-mark unhold $(apt-mark showhold)
     # apt-get purge wsdd orca speech-dispatcher network-manager-l10n gnome-classic
     apt-get autoremove -y --purge
     apt-get clean all -y
+    # apt dist-clean
     update-locale LANG=C.UTF-8 LC_ALL=C.UTF-8 # if you needs en_US.UTF-8, apt install locales-all
     for entry in apt-daily.timer apt-daily-upgrade.timer apt-listchanges.timer dpkg-db-backup.timer fwupd-refresh.timer man-db.timer display-manager.service; do
       ln -sf /dev/null /etc/systemd/system/$entry # equal to systemctl mask
     done
-    rm -rf /usr/share/plymouth /var/lib/apt/lists/* /usr/share/desktop-base/*-theme /usr/share/ibus/dicts/emoji-* /usr/share/fonts/opentype/unifont/unifont_*
+    rm -rf /usr/share/plymouth /usr/share/desktop-base/*-theme /usr/share/ibus/dicts/emoji-* # /usr/share/fonts/opentype/unifont/unifont_*
     echo "source /etc/vim/vimrc" > /etc/vim/vimrc.tiny
     printf "root\nroot\n" | passwd
-    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --add dmsquash-live-autooverlay --aggressive-strip --omit-drivers "xfs bcachefs f2fs ocfs2 ocfs2_dlm ocfs2_nodemanager ceph libceph cifs lpfc kafs bfa fnic efct mpt3sas aic7xxx aic79xx qla2xxx qla4xxx intel_qat" --compress "zstd -9" --uefi /mnt/linux.efi
+    omit=$(find /lib/modules/*/kernel/{net,fs/{xfs,f2fs,smb,ceph,afs,gfs2,ocfs2,orangefs},drivers/{net,infiniband}} -name "*.ko" -printf "%f " | sed "s/\.ko//g")
+    dracut --kver $(ls /lib/modules) --kernel-cmdline "$(printf %1024s)" --no-hostonly --add dmsquash-live-autooverlay --aggressive-strip --omit-drivers "$omit aic7xxx aic79xx aic94xx qla2xxx qla4xxx mpt3sas bfa lpfc fnic efct" --compress "zstd -9" --uefi /mnt/linux.efi
     # debug: mkdir -p /dev/pts ; mount -t devpts devpts /dev/pts ; ln -sf /dev/pts/ptmx /dev/ptmx ; busybox telnetd -F -b 127.0.0.1:9783 -l bash || true # busybox telnet 127.0.0.1 9783
   ' | unshare -mupfr --map-auto --mount-proc /bin/sh # after the unshare exited, all mounts were gone
   echo '
