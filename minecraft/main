@@ -1,18 +1,12 @@
 #!/bin/sh
 exit 1
-
-mkdir -p /tmp/minecraft
-cd /tmp/minecraft
+mkdir -p .minecraft .openjfx jre
+ln -sf $(pwd)/.openjfx ~/.openjfx
+ln -sf $(pwd)/.minecraft ~/.minecraft
 curl \
-  -o hmcl.jar -L https://github.com/HMCL-dev/HMCL/releases/download/release-3.6.12/HMCL-3.6.12.jar \
-  -o jre.tar.gz -L https://mirrors.ustc.edu.cn/adoptium/releases/temurin21-binaries/jdk-21.0.7%2B6/OpenJDK21U-jre_x64_linux_hotspot_21.0.7_6.tar.gz \
+  -o hmcl.jar -L https://github.com/HMCL-dev/HMCL/releases/download/v3.8.1/HMCL-3.8.1.jar \
+  -o jre.tar.gz -L http://mirror.nju.edu.cn/adoptium/25/jre/x64/linux/OpenJDK25U-jre_x64_linux_hotspot_25.0.1_8.tar.gz \
   --parallel
-mkdir jre
 tar -xf jre.tar.gz --strip-components 1 -C jre
-mkdir -p .minecraft ~/.minecraft .openjfx ~/.openjfx
-sudo mount --bind .openjfx ~/.openjfx
-sudo mount --bind .minecraft ~/.minecraft
-LD_LIBRARY_PATH=$(pwd) ./jre/bin/java -Dhmcl.home="$(pwd)" -jar hmcl.jar
-# libglfw.so from http://mirrors.nju.edu.cn/debian/pool/main/g/glfw3/libglfw3_3.4-3_amd64.deb
-# https://github.com/CaffeineMC/sodium
-# https://github.com/CaffeineMC/lithium
+LD_LIBRARY_PATH=$(pwd) jre/bin/java -Dhmcl.home="$(pwd)" -jar hmcl.jar
+# login use password instead of github ; use sodium and lithium mods from github.com/CaffeineMC ; in hmcl select use system glfw, libglfw.so from http://mirrors.nju.edu.cn/debian/pool/main/g/glfw3/libglfw3_3.4-3_amd64.deb
