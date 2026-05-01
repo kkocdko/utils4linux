@@ -6,8 +6,9 @@
 # nohup sh -c 'sleep 1.5 ; gsettings set org.gnome.desktop.interface text-scaling-factor 1.25' > /dev/null &
 # sleep 0.1
 # fi
-# cd /home/kkocdko/misc/apps/google-chrome
-cd /media/kkocdko/KK_TMP_1/google-chrome
+export GTK_IM_MODULE=fcitx5
+cd $HOME/misc/apps/google-chrome
+# cd /media/kkocdko/KK_TMP_1/google-chrome
 exec ./chrome \
 --disable-logging \
 --disable-speech-api \
@@ -37,6 +38,7 @@ exec ./chrome \
 --search-provider-logo-url=https://cp.cloudflare.com \
 --secure-connect-api-url=https://cp.cloudflare.com \
 --optimization-guide-service-get-models-url=https://cp.cloudflare.com \
+--override-metrics-upload-url=https://cp.cloudflare.com \
 --user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
 --disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
 "$@" > /dev/null 2>&1
@@ -72,13 +74,13 @@ mv chrome_crashpad_handler chrome_crashpad_handler_origin
 printf '#!/bin/sh\nexec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"\n' > chrome_crashpad_handler
 chmod +x chrome_crashpad_handler
 
-# stable # 145.0.7632.159
+# stable # 147.0.7727.137
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 ar -p google-chrome.deb data.tar.xz | tar -xJ
 mv opt/google/chrome/* .
-rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block locales/{ml,ta,kn,te,hi,bn,gu,mr,th,el}.pak
+rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block locales/!(zh-*|en-*|ja.*|vi.*)
 
 # https://github.com/chromium/chromium/blob/141.0.7356.1/components/optimization_guide/core/optimization_guide_features.cc
 # https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
