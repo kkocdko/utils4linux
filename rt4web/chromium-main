@@ -30,11 +30,10 @@ exec ./chrome \
 --use-angle=vulkan \
 --enable-zero-copy \
 --ui-enable-zero-copy \
---enable-features=FluentOverlayScrollbar,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,AcceleratedVideoEncoder,AcceleratedVideoDecoder,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoEncodeAccelerator,UseMultiPlaneFormatForHardwareVideo \
+--enable-features=SkiaGraphite,OverlayScrollbar,Vulkan,VulkanFromANGLE,DefaultANGLEVulkan,AcceleratedVideoEncoder,AcceleratedVideoDecoder,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks,VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoEncodeAccelerator,UseMultiPlaneFormatForHardwareVideo \
 --google-url=https://cp.cloudflare.com \
 --google-apis-url=https://cp.cloudflare.com \
 --google-base-url=https://cp.cloudflare.com \
---google-doodle-url=https://cp.cloudflare.com \
 --search-provider-logo-url=https://cp.cloudflare.com \
 --secure-connect-api-url=https://cp.cloudflare.com \
 --optimization-guide-service-get-models-url=https://cp.cloudflare.com \
@@ -58,12 +57,11 @@ exit 1
 mkdir -p /etc/opt/chrome/policies/managed
 curl -o /etc/opt/chrome/policies/managed/managed_policies.json -L https://github.com/corbindavenport/just-the-browser/raw/refs/heads/main/chrome/managed_policies.json
 
-cat <<EOF > /usr/share/applications/google-chrome.desktop
+cat <<EOF > ~/.local/share/applications/google-chrome.desktop
 [Desktop Entry]
-Version=1.0
 Name=Google Chrome
+Icon=/home/kkocdko/misc/apps/google-chrome/product_logo_256.png
 Exec=/home/kkocdko/misc/apps/google-chrome/main %U
-Terminal=false
 Type=Application
 Categories=Network;WebBrowser;
 MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;
@@ -74,14 +72,28 @@ mv chrome_crashpad_handler chrome_crashpad_handler_origin
 printf '#!/bin/sh\nexec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"\n' > chrome_crashpad_handler
 chmod +x chrome_crashpad_handler
 
-# stable # 147.0.7727.137
+# stable # https://github.com/NDViet/google-chrome-stable/releases/download/149.0.7827.155-1/google-chrome-stable_149.0.7827.155-1_amd64.deb
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 ar -p google-chrome.deb data.tar.xz | tar -xJ
 mv opt/google/chrome/* .
-rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* *.png *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block locales/!(zh-*|en-*|ja.*|vi.*)
+rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttestationsPreloaded CHROME_VERSION_* $(ls *.png | grep -v _256) *.xpm xdg-* liboptimization_guide_internal.so google-chrome chrome-management-service default-app-block locales/!(zh-*|en-*|ja.*|vi.*)
 
 # https://github.com/chromium/chromium/blob/141.0.7356.1/components/optimization_guide/core/optimization_guide_features.cc
 # https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
 
+cat <<EOF > ~/misc/apps/google-chrome/extensions/external_extensions.json 
+// Dictionary of default apps to install into new profiles. They will be
+// dynamically downloaded and installed from CWS on profile creation.
+{
+  // > uBlock Origin
+  "cjpalhdlnbpafiamejdnhcphjbkeiagm" : {
+    "external_update_url": "https://clients2.google.com/service/update2/crx"
+  },
+  // > Violentmonkey
+  "jinjaccalgkegednnccohejagnlnfdag" : {
+    "external_update_url": "https://clients2.google.com/service/update2/crx"
+  }
+}
+EOF
