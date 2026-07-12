@@ -4,14 +4,14 @@
 {
   "experimental": {
     "cache_file": { "enabled": true }, // 建议不要使用 store_fakeip，在极端情况下会让错误无法恢复
-    "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui" } // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
+    "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui", "external_ui_download_url": "https://github.com/kkocdko/kblog/releases/download/simple_storage/yacd-meta-mod-20250210-0204.zip" } // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
   },
   "dns": {
     // 保持兼容 1.11 旧版本
     // "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" },
     // "servers": [
     //   { "tag": "local", "address": "local", "detour": "direct" },
-    //   { "tag": "ali", "address": "https://223.5.5.5/dns-query", "client_subnet": "111.0.0.0/10", "detour": "direct" },
+    //   { "tag": "ali", "address": "https://223.5.5.5/dns-query", "detour": "direct" },
     //   { "tag": "fakeip", "address": "fakeip" }
     // ],
     "servers": [
@@ -32,19 +32,22 @@
       {"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
     ],
     "rules": [
-      // { "ip_cidr": "192.168.1.77", "override_address": "100.79.45.69", "outbound": "ts-kk-1" }, { "domain_suffix": ["sw8a.lan"], "outbound": "ts-kk-1" }, { "domain_suffix": ["tailscale.com"], "outbound": "direct" },
-      // { "domain": "ender3v3ke.internal", "override_address": "192.168.69.97", "outbound": "direct" },
+      // { "domain": "ender3v3ke.internal", "override_address": "192.168.18.135", "outbound": "direct" },
+      // { "domain_suffix": ["klc2.lan", ".lan", "lazycat.ai"], "outbound": "lnks-klc2" },
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
       { "protocol": "quic", "action": "reject" }, // 嵌套 quic 抖动很大，强迫浏览器 h3 回落到其他协议
       { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
-      { "domain": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
-      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名
-      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "girigirilove.com"], "domain_keyword": [".ffzy-play", ".ffzy-online", ".ffzy-video"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
+      { "domain_suffix": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
+      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.ss.android.ugc.aweme.lite"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名
+      // { "domain": ["ab.chatgpt.com"], "action": "reject" },
+      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "tailscale.com", "girigirilove.com", "lazycat.ai", "kkocdko.site"], "domain_keyword": [".ffzy-"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
       { "domain_suffix": ["google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
-      // { "ip_cidr": ["91.105.192.0/23","91.108.4.0/22","91.108.8.0/21","91.108.16.0/21","91.108.56.0/22","149.154.160.0/20","185.76.151.0/24"], "action": "reject" }, // 强制 telegram 使用 ipv6 // https://core.telegram.org/resources/cidr.txt
+      // { "domain_suffix": ["youtube.com", "googlevideo.com", "twitch.tv", "ttvnw.net"], "outbound": "+youtube+twitch" }, // 匹配 youtube + twitch
+      // { "domain_suffix": ["krunker.io", "chess.com", "chesscomfiles.com", "lichess.org", "lichess1.org"], "outbound": "+krunker+chess" }, // 匹配 krunker + chess
+      // { "ip_cidr": ["91.105.192.0/23","91.108.4.0/22","91.108.8.0/21","91.108.16.0/21","91.108.56.0/22","149.154.160.0/20","185.76.151.0/24"], "action": "reject" }, // 强制 telegram 走 ipv6 // https://core.telegram.org/resources/cidr.txt
       { "rule_set": ["site-not-cn"], "outbound": "proxy" },
       { "rule_set": ["site-cn", "site-cn-ext"], "outbound": "direct" },
       // { "action": "resolve", "server": "ali" }, // 兼容 1.11
