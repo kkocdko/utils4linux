@@ -6,7 +6,7 @@ const gen = async (/** @type {string} */ sub) => {
   const [name, url] = [parts[0], parts.at(-1)];
   console.log(name + ": begin");
   console.time(name);
-  const ua = "SFA/1.12.14 (595; sing-box 1.12.14; language en_US)";
+  const ua = `SFA/1.13.16 (595; sing-box 1.13.16; language en_US) YYSSR-Desktop/v1.13.10`;
   const res = await fetch(url, { headers: { "User-Agent": ua } });
   const obj = await res.json();
   const outbounds = [];
@@ -24,7 +24,6 @@ const gen = async (/** @type {string} */ sub) => {
     ["in", { i: 1, r: /^in\-|india|印度|🇮🇳/ }],
     ["jp", { i: 1, r: /^jp\-|japan|日本|🇯🇵/ }],
     ["kr", { i: 1, r: /^kr\-|korea|韩国|🇰🇷/ }],
-    ["lu", { i: 1, r: /^lu\-|luxembourg|卢森堡|🇱🇺/ }],
     ["au", { i: 1, r: /^au\-|australia|澳大利亚|🇦🇺/ }],
     ["nl", { i: 1, r: /^nl\-|netherlands|荷兰|🇳🇱/ }],
     ["fr", { i: 1, r: /^fr\-|france|法国|🇫🇷/ }],
@@ -41,7 +40,7 @@ const gen = async (/** @type {string} */ sub) => {
     if (!found) continue;
     e.tag = name + "-" + found[0] + "-" + found[1].i++;
     if (factor && parseFloat(factor) !== 1) e.tag += "-x" + factor;
-    // if (e.tag.includes("[专线]")) continue;
+    if (e.type === "XTLS") e.type = "vless";
     if (e.type === "anytls") continue; // 兼容 sing-box 1.11
     outbounds.push(e);
   }
@@ -55,7 +54,6 @@ const gen = async (/** @type {string} */ sub) => {
       .sort(([a], [b]) => order.indexOf(b) - order.indexOf(a));
     ret += JSON.stringify(Object.fromEntries(entries)) + ",\n";
   }
-  console
   console.timeEnd(name);
   return ret;
 };

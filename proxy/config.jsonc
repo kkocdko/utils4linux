@@ -40,10 +40,9 @@
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
-      { "domain_suffix": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
+      { "domain_suffix": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun // 还有一些可屏蔽的例如 ab.chatgpt.com douyinvod.com
       { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.ss.android.ugc.aweme.lite"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名
-      // { "domain": ["ab.chatgpt.com"], "action": "reject" },
-      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "tailscale.com", "girigirilove.com", "lazycat.ai", "kkocdko.site"], "domain_keyword": [".ffzy-"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
+      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "tailscale.com", "girigirilove.com", "lazycat.ai", "kkocdko.site", "kekeka.cc.cd"], "domain_keyword": [".ffzy-"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
       { "domain_suffix": ["google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       // { "domain_suffix": ["youtube.com", "googlevideo.com", "twitch.tv", "ttvnw.net"], "outbound": "+youtube+twitch" }, // 匹配 youtube + twitch
       // { "domain_suffix": ["krunker.io", "chess.com", "chesscomfiles.com", "lichess.org", "lichess1.org"], "outbound": "+krunker+chess" }, // 匹配 krunker + chess
