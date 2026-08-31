@@ -26,30 +26,31 @@
   "route": {
     "default_domain_resolver": "local", // 规则下载 url、节点服务器域名等会使用此 dns 解析
     "rule_set": [
+      {"tag":"site-ad","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-ads-all.srs"},
       {"tag":"site-not-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs"},
       {"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs"},
       {"tag":"site-cn-ext","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},
       {"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
     ],
     "rules": [
-      // { "domain": "ender3v3ke.internal", "override_address": "192.168.18.135", "outbound": "direct" },
-      // { "domain_suffix": ["klc2.lan", ".lan", "lazycat.ai"], "outbound": "lnks-klc2" },
+      // { "domain": "ender3v3ke.internal", "override_address": "192.168.1.5", "outbound": "direct" }, // for i in $(seq 2 9); do u=http://192.168.1.$i ; timeout 1 curl -s $u | grep -q ">Creality<" && echo $u && break ; done
+      // { "domain_suffix": [".lan", "lazycat.ai"], "outbound": "lnks-direct" },
       { "action": "sniff" }, // 协议嗅探。劫持 dns、禁用 quic 等功能都依赖于此
       { "protocol": "quic", "action": "reject" }, // 嵌套 quic 抖动很大，强迫浏览器 h3 回落到其他协议
       { "protocol": "dns", "action": "hijack-dns" }, // 劫持 dns，省去手动设置。请卸载 systemd-resolved
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
-      { "domain_suffix": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun // 还有一些可屏蔽的例如 ab.chatgpt.com douyinvod.com
-      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.ss.android.ugc.aweme.lite"], "outbound": "direct" }, // 如果不开这个，似乎不探测包名
-      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "tailscale.com", "girigirilove.com", "lazycat.ai", "kkocdko.site", "kekeka.cc.cd"], "domain_keyword": [".ffzy-"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
+      { "clash_mode": "Enhanced", "rule_set": ["site-ad"], "domain_suffix": ["dldir1.qq.com","dldir1v6.qq.com","dldir2.qq.com","dldir2v6.qq.com","wxapp.tc.qq.com","douyinvod.com"], "action": "reject" }, // 微信 qq 自动更新和 tinker 热更新，微信视频号，抖音 cdn。别用 "method": "drop"，似乎会导致某些应用出现 ANR
+      { "domain_suffix": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
+      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.ss.android.ugc.aweme.lite", "com.autonavi.minimap", "com.cainiao.wireless", "com.hellotalk"], "outbound": "direct" }, // 需屏蔽广告的应用应当写到这里，而不是绕过 tun
+      { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "tailscale.com", "kkocdko.site", "kekeka.cc.cd", "girigirilove.com", "lazycat.ai", "tokenrhythm.studio", "anytokens.cc", "ai.laodog.top", "api.flymux.com", "token.moxiangketang.com", "api.freemodel.dev", "api.aicoding.sh", "hyperapi.cc", "xproxy.ai", "booltoken.com"], "domain_keyword": [".ffzy-"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
       { "domain_suffix": ["google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       // { "domain_suffix": ["youtube.com", "googlevideo.com", "twitch.tv", "ttvnw.net"], "outbound": "+youtube+twitch" }, // 匹配 youtube + twitch
       // { "domain_suffix": ["krunker.io", "chess.com", "chesscomfiles.com", "lichess.org", "lichess1.org"], "outbound": "+krunker+chess" }, // 匹配 krunker + chess
       // { "ip_cidr": ["91.105.192.0/23","91.108.4.0/22","91.108.8.0/21","91.108.16.0/21","91.108.56.0/22","149.154.160.0/20","185.76.151.0/24"], "action": "reject" }, // 强制 telegram 走 ipv6 // https://core.telegram.org/resources/cidr.txt
       { "rule_set": ["site-not-cn"], "outbound": "proxy" },
       { "rule_set": ["site-cn", "site-cn-ext"], "outbound": "direct" },
-      // { "action": "resolve", "server": "ali" }, // 兼容 1.11
       { "action": "resolve", "server": "google", "client_subnet": "111.0.0.0/10" }, // 弱点在此，冷门的境外域名会被解析，此 subnet 属于中国移动
       { "rule_set": ["ip-cn"], "outbound": "direct" },
       { "outbound": "proxy" } // 兜底，也就是很多机场规则里的 漏网之鱼
@@ -70,24 +71,53 @@
   ],
   "outbounds": [
     // groups
-    {"tag":"proxy","type":"selector","outbounds":["sh-hk-stls","sh-hk-hy2","mkc-hk-1"]},
+    {"tag":"proxy","type":"selector","outbounds":["sh-us-hy2","sh-us-stls","sh-us-hy2-v6","sh-us-stls-v6","sh-us-5-hy2","sh-us-5-stls","sh-us-5-hy2-v6","sh-us-5-stls-v6","sh-hk-hy2","sh-hk-stls","sops-sg-1","sops-sg-2","sops-jp-1","sops-jp-2","sops-us-1","sops-us-2"]},
+    // {"tag":"+youtube+twitch","type":"selector","outbounds":["proxy","sh-us-stls","sh-us-hy2","sh-hk-stls","sh-hk-hy2"]},
+    // {"tag":"+krunker+chess","type":"selector","outbounds":["proxy","direct"]},
     // self-hosted [ aliyun.com | wawo.wiki ]
     {"tag":"sh-hk-stls","detour":"sh-hk-stls-o","type":"shadowsocks","method":"2022-blake3-aes-128-gcm","password":"xxx","multiplex":{"enabled":true,"max_connections":2}},{"tag":"sh-hk-stls-o","type":"shadowtls","server":"1.1.1.1","server_port":11111,"version":3,"password":"xxx","tls":{"enabled":true,"server_name":"v.qq.com"}},
     {"tag":"sh-hk-hy2","type":"hysteria2","server":"1.1.1.1","server_port":11112,"password":"xxx","tls":{"enabled":true,"server_name":"v.qq.com","insecure":true}},
     // mkc - friend - t.me/Maker_Cloud - https://clash2sfa.xmdhs.com/sub?sub=https://example.com/api/v1/client/subscribe?token=xxx
     {"tag":"mkc-hk-1","type":"shadowsocks","server":"1.1.1.1","server_port":11111,"method":"chacha20-ietf-poly1305","password":"xxx"},
+    // kity - https|//kaze1.aisaka-taiga.com // imao - t.me/yimaojichang_group - https|//ymjc.cfd/xxx/&flag=sing-box // clash2sfa - https|//clash2sfa.xmdhs.com/sub?sub=https://example.com
+    {"tag":"kty-hk-1","type":"shadowsocks","server":"1.1.1.1","server_port":11111,"method":"chacha20-ietf-poly1305","password":"xxx"},
+    // lnks
+    // {"tag":"lnks-klc2","type":"socks","server":"100.79.45.69","server_port":9091,"detour":"ts-kk-1"}, // {"detour":"lnks-wg"}
+    // {"tag":"lnks-direct","type":"socks","server":"192.168.1.1","server_port":1070,"detour":"lnks-wg"}, // 如果有 outbound 走了 443 端口，需要手动 { "detour":"direct" }
     // built-in
     {"tag":"direct","type":"direct"}
   ],
   "endpoints": [
-    // { "tag": "ts-kk-1", "hostname": "klp1", "type": "tailscale" } // 在 connections 栏观察可鉴别 直连/中继，直连时与 derp 域名的连接几乎无流量。使用环境变量 TS_DEBUG_ALWAYS_USE_DERP=true 可强制中继 // mixed/0(tcp) | sing-box-1-12-4 (kkocdko) | derp7b.tailscale.com:443
+    // {"tag":"ts-kk-1","type":"tailscale"} // 在 connections 栏观察可鉴别 直连/中继，直连时与 derp 域名的连接几乎无流量。使用环境变量 TS_DEBUG_ALWAYS_USE_DERP=true 可强制中继 // mixed/0(tcp) | sing-box-1-12-4 (kkocdko) | derp7b.tailscale.com:443 | "hostname":"klp1"
+    // {"tag":"lnks-wg","type":"wireguard","peers":[{"address":"home6.example.org","port":12345,"public_key":"xxx","pre_shared_key":"xxx","allowed_ips":["192.168.0.0/16"]}],"address":["192.168.123.234/32"],"private_key":"xxx","workers":2} // home|home6|homeb6
   ]
 }
-// >>> server
+// >>> server.kvs5
 /*
+root@kvs5:~# cat /etc/nftables.conf
+...
+table inet port_forward {
+  chain prerouting {
+    type nat hook prerouting priority dstnat;
+    udp dport 5453-5953 redirect to :5353
+  }
+}
+root@kvs5:~# nft -f /etc/nftables.conf
+root@kvs5:~# nft list ruleset
+##############################
 {
+  "experimental": { "clash_api": { "external_controller": "127.0.0.1:9090" } },
   "dns": { "strategy": "prefer_ipv4", "servers": [{ "tag": "local", "type": "local" }] },
-  "route": { "default_domain_resolver": "local" },
+  "route": {
+    "default_domain_resolver": "local",
+    "rules": [
+      // { "domain_suffix": ["deepmind.google", "deepmind.com", "geller-pa.googleapis.com", "generativelanguage.googleapis.com", "proactivebackend-pa.googleapis.com", "ai.google.dev", "alkalicore-pa.clients6.google.com", "alkalimakersuite-pa.clients6.google.com", "generativeai.google", "makersuite.google.com", "aistudio.google.com", "bard.google.com", "gemini.google", "gemini.google.com"], "action": "resolve", "server": "local", "strategy": "prefer_ipv6" },
+      { "action": "resolve", "server": "local" },
+      { "ip_cidr": "2000::/3", "outbound": "warp-plus-1" },
+      { "outbound": "direct" }
+    ],
+    "auto_detect_interface": true
+  },
   "inbounds": [
     {
       "tag": "sh-hk-stls-i",
@@ -116,8 +146,19 @@
       "listen": "::",
       "listen_port": 11112,
       "users": [{ "password": "xxx" }],
-      "tls": { "enabled": true, "server_name": "v.qq.com", "certificate": ["-----BEGIN CERTIFICATE-----","xxx","-----END CERTIFICATE-----"], "key": ["-----BEGIN PRIVATE KEY-----","xxx","-----END PRIVATE KEY-----"] } // sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
+      "tls": {
+        "enabled": true,
+        "server_name": "v.qq.com",
+        "certificate": ["-----BEGIN CERTIFICATE-----","xxx","-----END CERTIFICATE-----"],
+        "key": ["-----BEGIN PRIVATE KEY-----","xxx","-----END PRIVATE KEY-----"]
+      } // sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
     }
+  ],
+  "outbounds": [
+    {"tag":"direct","type":"direct"}
+  ],
+  "endpoints": [
+    {"tag":"warp-plus-1","type":"wireguard","system":false,"mtu":1280,"address":["172.16.0.2/32","2606:xxxx/128"],"private_key":"xxxx","peers":[{"address":"engage.cloudflareclient.com","port":2408,"allowed_ips":["0.0.0.0/0","::/0"],"public_key":"xxxx"}]}
   ]
 }
 */

@@ -48,7 +48,7 @@ const gen = async (/** @type {string} */ sub) => {
   const order = ["tag", "detour", "type", "server", "server_port"].reverse();
   const exclude = ["domain_resolver", "down_mbps", "up_mbps"]; // always bbr
   for (const outbound of outbounds) {
-    delete outbound.domain_resolver;
+    if (outbound.domain_resolver) outbound.domain_resolver = "yylx";
     const entries = Object.entries(outbound)
       .filter(([k]) => !exclude.includes(k))
       .sort(([a], [b]) => order.indexOf(b) - order.indexOf(a));

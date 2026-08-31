@@ -50,14 +50,17 @@ fi
 exit 1
 
 echo '
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?><assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"><trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges><requestedExecutionLevel level="requireAdministrator" uiAccess="false"/></requestedPrivileges></security></trustInfo></assembly>
-' > sing-box.exe.manifest
-echo '
-cd /d %~dp0
 :: curl -o config.jsonc -H "User-Agent: curl/8.7.6 (sing-box)" -L "https://kkocdko.site/hidden/proxy/config.jsonc?user=a&token=b"
-start "proxy" sing-box.exe run -c config.jsonc -D . --disable-color
+fltmc>nul||powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"&&exit /b
+cd /d "%~dp0"
+title proxy
+sing-box run --config config.jsonc -D . --disable-color
+cmd /k
 ' > main.bat
 
 # nssm install nssm_proxy C:\misc\proxy\sing-box.exe run -c config.jsonc -D . --disable-color # https://nssm.cc/ci/nssm-2.24-101-g897c7ad.zip # do not use sc.exe which requires special symbol export
 
 # ss -npt | grep 2400:c620 | sort
+
+curl -L https://pkg.cloudflareclient.com/dists/trixie/main/binary-amd64/Packages
+# https://github.com/Diniboy1123/usque
