@@ -7,13 +7,6 @@
     "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui", "external_ui_download_url": "https://github.com/kkocdko/kblog/releases/download/simple_storage/yacd-meta-mod-20250210-0204.zip" } // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
   },
   "dns": {
-    // 保持兼容 1.11 旧版本
-    // "fakeip": { "enabled": true, "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" },
-    // "servers": [
-    //   { "tag": "local", "address": "local", "detour": "direct" },
-    //   { "tag": "ali", "address": "https://223.5.5.5/dns-query", "detour": "direct" },
-    //   { "tag": "fakeip", "address": "fakeip" }
-    // ],
     "servers": [
       { "tag": "local", "type": "local" },
       { "tag": "google", "type": "https", "server": "8.8.8.8", "detour": "proxy" }, // 小技巧 https://1.12.12.12/resolve?type=A&name=qq.com
@@ -41,9 +34,9 @@
       { "ip_is_private": true, "outbound": "direct" }, // 注意顺序，内网 dns 依然会被上一条劫持
       { "clash_mode": "Direct", "outbound": "direct" }, // 注意顺序，放在开头将导致 direct 模式下 dns 不被劫持
       { "clash_mode": "Global", "outbound": "proxy" }, // 尽量不要用全局模式
-      { "clash_mode": "Enhanced", "rule_set": ["site-ad"], "domain_suffix": ["dldir1.qq.com","dldir1v6.qq.com","dldir2.qq.com","dldir2v6.qq.com","wxapp.tc.qq.com","douyinvod.com"], "action": "reject" }, // 微信 qq 自动更新和 tinker 热更新，微信视频号，抖音 cdn。别用 "method": "drop"，似乎会导致某些应用出现 ANR
+      { "clash_mode": "Turbo", "rule_set": ["site-ad"], "domain_suffix": ["dldir1.qq.com","dldir1v6.qq.com","dldir2.qq.com","dldir2v6.qq.com","douyinvod.com"], "action": "reject" }, // 微信 qq 更新和 tinker 热更新，抖音 cdn。别用 method drop，会导致某些应用出现 ANR
       { "domain_suffix": ["dns.weixin.qq.com", "dns.weixin.qq.com.cn"], "action": "reject" }, // 屏蔽微信内置 doh，避免 ipv6 下出现问题，见下文中的 tun
-      { "package_name": ["com.tencent.mm", "com.eg.android.AlipayGphone", "com.ss.android.ugc.aweme.lite", "com.autonavi.minimap", "com.cainiao.wireless", "com.hellotalk"], "outbound": "direct" }, // 需屏蔽广告的应用应当写到这里，而不是绕过 tun
+      { "package_name": ["com.tencent.mm", "com.tencent.mobileqq", "com.eg.android.AlipayGphone", "com.ss.android.ugc.aweme.lite", "com.autonavi.minimap", "com.cainiao.wireless", "com.hellotalk"], "outbound": "direct" }, // 需屏蔽广告的应用应当写到这里，而不是绕过 tun
       { "domain_suffix": [".edu.cn", ".gov.cn", ".lan", ".internal", "tailscale.com", "kkocdko.site", "kekeka.cc.cd", "girigirilove.com", "lazycat.ai", "tokenrhythm.studio", "anytokens.cc", "ai.laodog.top", "api.flymux.com", "token.moxiangketang.com", "api.freemodel.dev", "api.aicoding.sh", "hyperapi.cc", "xproxy.ai", "booltoken.com"], "domain_keyword": [".ffzy-"], "outbound": "direct" }, // 额外一些应当直连的，例如 edu.cn 顶域和 非凡资源视频站
       { "domain_suffix": ["google.cn"], "outbound": "proxy" }, // 虽然没被彻底屏蔽，但是最好走代理
       // { "domain_suffix": ["youtube.com", "googlevideo.com", "twitch.tv", "ttvnw.net"], "outbound": "+youtube+twitch" }, // 匹配 youtube + twitch
