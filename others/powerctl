@@ -6,6 +6,9 @@
 # 2. Call functions in declear order.
 # https://docs.kernel.org/admin-guide/pm/amd-pstate.html
 
+# sudo apt install msr-tools
+# sudo turbostat --interval 2
+
 # output pids which should be stop / resume
 heavy_tasks_pids(){ echo `pidof chrome node gopls esbuild sing-box tidb-server electron gsd-smartcard` `pgrep -f qemu-kvm` ;}
 # $1 = low-power | balanced | performance
@@ -36,7 +39,7 @@ elif [ "$1" = "info" ]; then
     printf "%.0f " "$(($freq))e-3"
   done
   printf "MHz\n"
-  ./hwmoncat
+  hwmoncat
   # cat /sys/class/hwmon/hwmon1/device/power_now
 elif [ "$1" = "min" ]; then
   acpi_profile low-power

@@ -3,7 +3,7 @@ set -ex
 trap exit INT
 
 # My backup proposal: Unidirectional data flow. Phone -> PC -> Cloud. The code dir backup with history, others have no history.
-alias rclone=/home/kkocdko/misc/apps/rclone # https://github.com/rclone/rclone/releases/download/v1.69.0/rclone-v1.69.0-linux-amd64.zip
+alias rclone=$HOME/misc/apps/rclone # to strip more, modify https://github.com/rclone/rclone/blob/v1.72.1/backend/all/all.go
 
 if [ "$1" = pack-code-dir ]; then
   rclone sync --config "" --links --delete-excluded \
@@ -30,8 +30,7 @@ fi
 if [ "$1" = pack-apps-dir ]; then
   rm -rf /tmp/pack-apps-dir
   rclone sync --config "" --links --delete-excluded \
-    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier,tailscale,tailscaled,gitui,tokei,coreutils,rustscan,rg,goawk,rsync}" \
-    --filter "+ /frp/main" --filter "- /frp/" \
+    --filter "- /{clangd,rclone,ffmpeg,esbuild,flashplayer,bombardier,gitui,tokei,coreutils,rustscan,rg,rsync}" \
     --filter "+ /google-chrome/main" --filter "- /google-chrome/" \
     --filter "+ /vscode/main" --filter "- /vscode/" \
     --filter "- /electron/" \
@@ -55,6 +54,7 @@ if [ "$1" = pc-to-cloud ]; then
     --filter "- /apps/" \
     --filter "- /code/" \
     --filter "- /temp/" \
+    --filter "- /res/ipp_proj/" \
     --filter "- /res/qemu_win10/vvfat/" \
     --filter "- /res/qemu_win10/win10_*.qcow2" \
     /home/kkocdko/misc :onedrive:/rclone
@@ -66,9 +66,12 @@ if [ "$1" = phone-to-pc ]; then
   rclone_sync Pictures
   rclone_sync DCIM
   rclone_sync Download
-  # rclone_sync DataBackup # direct to pc using webdav, don't sync here # rclone --config "" serve webdav --addr :9439 /home/kkocdko/misc/bak/kpa1/
+  # rclone_sync DataBackup # direct to pc using webdav, don't sync here # $HOME/misc/apps/rclone --config "" serve webdav --addr :9439 /home/kkocdko/misc/bak/kpa1/
   # todo: exclude .thumbnails and others?
   exit
 fi
 
 exit 1
+
+# todo: 在这里测试，关于 btrfs send 的备份，以及其容错性质
+# https://btrfs.readthedocs.io/en/latest/btrfs-send.html
