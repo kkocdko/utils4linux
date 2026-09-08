@@ -32,7 +32,7 @@ if [ ! -e dist ]; then
   rm -f *.js *.ico *.png *.webmanifest *.ttf assets/*.ttf assets/*.woff assets/*.woff2
   cd ..
   tar -cf public.tar.gz public
-  ~/misc/res/imgbench/zcodecs12 ect -9 -zip ui.zip *
+  zcodecs ect -9 -zip ui.zip *
   exit
 fi
 

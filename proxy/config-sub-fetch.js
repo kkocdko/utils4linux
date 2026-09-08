@@ -41,7 +41,7 @@ const gen = async (/** @type {string} */ sub) => {
     e.tag = name + "-" + found[0] + "-" + found[1].i++;
     if (factor && parseFloat(factor) !== 1) e.tag += "-x" + factor;
     if (e.type === "XTLS") e.type = "vless";
-    if (e.type === "anytls") continue; // 兼容 sing-box 1.11
+    // if (e.type === "anytls") continue; // 兼容 sing-box 1.11
     outbounds.push(e);
   }
   ret += "// " + JSON.stringify(outbounds.map((e) => e.tag)) + "\n";

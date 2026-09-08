@@ -3,8 +3,8 @@
 // >>> client
 {
   "experimental": {
-    "cache_file": { "enabled": true }, // 建议不要使用 store_fakeip，在极端情况下会让错误无法恢复
-    "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui", "external_ui_download_url": "https://github.com/kkocdko/kblog/releases/download/simple_storage/yacd-meta-mod-20250210-0204.zip" } // 打开 http://127.0.0.1:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
+    "cache_file": { "enabled": true }, // 别用 store_fakeip，在极端情况下会让错误无法恢复
+    "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui", "external_ui_download_url": "https://github.com/kkocdko/kblog/releases/download/simple_storage/yacd-meta-mod-20250210-0204.zip" } // 打开 http://yacd.localhost:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
   },
   "dns": {
     "servers": [
@@ -19,11 +19,11 @@
   "route": {
     "default_domain_resolver": "local", // 规则下载 url、节点服务器域名等会使用此 dns 解析
     "rule_set": [
-      {"tag":"site-ad","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-ads-all.srs"},
-      {"tag":"site-not-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs"},
-      {"tag":"site-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs"},
-      {"tag":"site-cn-ext","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs"},
-      {"tag":"ip-cn","type":"remote","format":"binary","url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
+      { "tag":"site-ad", "type":"remote", "url":"https://raw.githubusercontent.com/lyc8503/sing-box-rules/rule-set-geosite/geosite-category-ads-all.srs" },
+      { "tag":"site-not-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs" },
+      { "tag":"site-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs" },
+      { "tag":"site-cn-ext", "type":"remote", "url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs" },
+      { "tag":"ip-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
     ],
     "rules": [
       // { "domain": "ender3v3ke.internal", "override_address": "192.168.1.5", "outbound": "direct" }, // for i in $(seq 2 9); do u=http://192.168.1.$i ; timeout 1 curl -s $u | grep -q ">Creality<" && echo $u && break ; done
