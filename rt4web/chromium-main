@@ -21,7 +21,7 @@ exec ./chrome \
 --disable-top-sites \
 --disable-component-update \
 --check-for-update-interval=315360000 \
---disable-features=TabHoverCardImages,EyeDropper,AIPromptAPI,LanguageDetectionAPI,TranslationAPI,ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
+--disable-features=TabHoverCardImages,EyeDropper,AIPromptAPI,LanguageDetectionAPI,TranslationAPI \
 --extension-mime-request-handling=always-prompt-for-install \
 --password-store=basic \
 --force-device-scale-factor=1 \
@@ -38,11 +38,15 @@ exec ./chrome \
 --secure-connect-api-url=https://cp.cloudflare.com \
 --optimization-guide-service-get-models-url=https://cp.cloudflare.com \
 --override-metrics-upload-url=https://cp.cloudflare.com \
---user-data-dir=/media/kkocdko/KK_TMP_1/home_config/google-chrome \
---disk-cache-dir=/media/kkocdko/KK_TMP_1/home_cache/google-chrome \
+--user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0" \
+--user-data-dir=/media/kkocdko/KK_TMP_1/home/.config/google-chrome \
+--disk-cache-dir=/media/kkocdko/KK_TMP_1/home/.cache/google-chrome \
 "$@" > /dev/null 2>&1
 
 exit 1
+
+# https://github.com/Sketchystan1/chrome-mv2-patch
+# https://9to5google.com/2026/06/15/google-chromes-next-update-will-mark-the-end-of-popular-ad-blockers/
 
 # optimizationguide-pa.googleapis.com
 # --disable-crashpad-for-testing
@@ -72,7 +76,7 @@ mv chrome_crashpad_handler chrome_crashpad_handler_origin
 printf '#!/bin/sh\nexec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"\n' > chrome_crashpad_handler
 chmod +x chrome_crashpad_handler
 
-# stable # https://github.com/NDViet/google-chrome-stable/releases/download/149.0.7827.155-1/google-chrome-stable_149.0.7827.155-1_amd64.deb
+# stable # https://github.com/NDViet/google-chrome-stable/releases/download/152.0.7977.82-1/google-chrome-stable_152.0.7977.82-1_amd64.deb
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -89,11 +93,30 @@ cat <<EOF > ~/misc/apps/google-chrome/extensions/external_extensions.json
 {
   // > uBlock Origin
   "cjpalhdlnbpafiamejdnhcphjbkeiagm" : {
-    "external_update_url": "https://clients2.google.com/service/update2/crx"
+    "external_update_url": "https://cp.cloudflare.com"
   },
   // > Violentmonkey
   "jinjaccalgkegednnccohejagnlnfdag" : {
     "external_update_url": "https://clients2.google.com/service/update2/crx"
   }
+}
+// correct: "external_update_url": "https://clients2.google.com/service/update2/crx"
+EOF
+
+# history_cleaner extension
+cat <<EOF > /tmp/history_cleaner/background.js
+// run on extension enabled, clean 30 days ago history entries
+const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+chrome.history.deleteRange({ startTime: 0, endTime: thirtyDaysAgo }, () => {
+  console.log("history cleaned");
+});
+EOF
+cat <<EOF > /tmp/history_cleaner/manifest.json 
+{
+  "manifest_version": 3,
+  "name": "history_cleaner",
+  "version": "1.0",
+  "permissions": ["history"],
+  "background": { "service_worker": "background.js" }
 }
 EOF
