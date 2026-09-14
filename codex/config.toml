@@ -1,0 +1,98 @@
+model = "glm-5.3-flash"
+model_reasoning_effort = "low"
+model_provider = "tr"
+approvals_reviewer = "user"
+allow_login_shell = false
+check_for_update_on_startup = false
+forced_login_method = "api"
+features.plugins = false
+features.apps = false
+features.memories = false
+features.code_mode = false
+features.code_mode_host = false
+features.network_proxy = false
+feedback.enabled = false
+analytics.enabled = false
+web_search = "disabled"
+sqlite_home = "~/.codex/db"
+model_instructions_file = "~/.codex/base_instructions.md" # override the base_instructions in model_catalog_json models.json # default = https://github.com/openai/codex/raw/refs/heads/main/codex-rs/protocol/src/prompts/base_instructions/default.md 
+model_catalog_json = "~/.codex/models.json"
+model_catalog_json_ = """
+curl -L https://github.com/openai/codex/raw/refs/heads/main/codex-rs/models-manager/models.json \
+| jq 'walk(
+  if type == "object" then
+    with_entries(
+      if .key | IN("instructions_template", "base_instructions") then
+        .value = ""
+      elif .key | IN("priority") then
+        .value = 0
+      elif .key | IN("available_in_plans", "service_tiers", "default_service_tier", "additional_speed_tiers") then
+        empty
+      else
+        .
+      end
+    )
+  else
+    .
+  end
+)' > models.openai.json
+"""
+# prompt: 你好，你直接回答我“你也好”即可。不要思考，不要探索，不要输出多余内容。
+# prompt: 你能联网搜索吗？帮我搜索一下，看看 kkocdko 的博客地址是什么。如果不能，就拒绝我。
+# scp -P9201 -C ~/.codex/*.{toml,json,md} kk@klc2.lan:~/.codex/
+
+[tui]
+status_line = ["model-with-reasoning", "current-dir", "context-used", "total-input-tokens", "total-output-tokens"]
+animations = false
+
+[model_providers.deepseek]
+name = "deepseek"
+base_url = "https://api.deepseek.com/"
+experimental_bearer_token = "sk-xxx"
+
+[model_providers.zai]
+name = "zai"
+base_url = "https://open.bigmodel.cn/api/v1"
+experimental_bearer_token = "xxx"
+
+# deepseek = [ sk_tr_xx ]
+# zai = [ sk_tr_xx ]
+
+[projects."/home/kkocdko/misc/code/kmbed"]
+trust_level = "trusted"
+[projects."/home/kkocdko/misc/code/ktrade"]
+trust_level = "trusted"
+[projects."/media/kkocdko/KK_TMP_1/code/tmp"]
+
+# 似乎 MCP 会造成注入大量的上下文
+#[mcp_servers.firecrawl]
+#url = "https://mcp.firecrawl.dev/v2/mcp"
+#http_headers = { Authorization = "Bearer fc-x
+#url = "https://mcp.context7.com/mcp"
+#http_headers = { Authorization = "Bearer ctx7sk-xx" }
+
+[[skills.config]]
+path = "~/.codex/skills/.system/imagegen/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "~/.codex/skills/.system/openai-docs/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "~/.codex/skills/.system/plugin-creator/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "~/.codex/skills/.system/skill-creator/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "~/.codex/skills/.system/skill-installer/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "/media/kkocdko/KK_TMP_1/home/.codex/skills/.system/review-agent/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "/media/kkocdko/KK_TMP_1/home/.codex/skills/context7-mcp/SKILL.md"
+enabled = false
+[[skills.config]]
+path = "/media/kkocdko/KK_TMP_1/home/.codex/skills/simple-english/SKILL.md" # curl -L https://github.com/AminBlg/SimpleEnglish/archive/refs/tags/v2.0.2.tar.gz | tar -xz ; mv SimpleEnglish-*/skills/simple-english ~/.codex/skills/ ; rm -rf SimpleEnglish-*
+enabled = false
+

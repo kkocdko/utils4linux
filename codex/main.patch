@@ -1,0 +1,1535 @@
+diff --git a/codex-rs/0_lean.md b/codex-rs/0_lean.md
+new file mode 100644
+index 0000000..4ec3e11
+--- /dev/null
++++ b/codex-rs/0_lean.md
+@@ -0,0 +1,82 @@
++# codex-lean
++
++The result:
++
++```
++$ ls -lh ./target/release/codex
++-rwxrwxr-x 1 root root 113M Aug 24 13:47 target/release/codex
++```
++
++Tips:
++
++```sh
++git pull --rebase origin release/0.150 # https://github.com/openai/codex # version = "0.150.1+lean.14" # 7a48857579dc8e4d84eba9244df1dc87c7bfc51d
++cargo build --bin codex --profile release -q
++git add . ; git commit -m lean.99
++git diff HEAD~1 HEAD > /mnt/c/misc/code/codex-lean/main.patch
++# cd /tmp/z/trim ; git clone --depth 20 file:///tmp/z/codex
++tar --zstd -cf /mnt/c/misc/code/codex-lean/main.tar.zst codex
++proxychains ssh klc2u1@klc2.lan "wsl -e xz -1c /tmp/z/codex/codex-rs/target/release/codex 2>nul" | xz -d > ~/misc/apps/codex
++```
++
++Make compressed temp dir:
++
++```sh
++truncate -s 16G /tmp/z.img
++mkdir -p /tmp/z
++/sbin/mkfs.btrfs -f /tmp/z.img
++sudo mount -o nossd,commit=5,compress=zstd /tmp/z.img /tmp/z
++sudo chmod 1777 /tmp/z
++watch "df -h | grep /tmp ; du -sh /tmp/z.img ; free -h"
++```
++
++Use with these in `~/.codex/config.toml`:
++
++```toml
++model = "gpt-5.6-luna"
++model_reasoning_effort = "low"
++model_provider = "free"
++approvals_reviewer = "user"
++allow_login_shell = false
++check_for_update_on_startup = false
++preferred_auth_method = "apikey"
++forced_login_method = "api"
++features.plugins = false
++features.apps = false
++features.memories = false
++features.code_mode = false
++features.code_mode_host = false
++feedback.enabled = false
++analytics.enabled = false
++
++[[skills.config]]
++path = "~/.codex/skills/.system/imagegen/SKILL.md"
++enabled = false
++[[skills.config]]
++path = "~/.codex/skills/.system/openai-docs/SKILL.md"
++enabled = false
++[[skills.config]]
++path = "~/.codex/skills/.system/plugin-creator/SKILL.md"
++enabled = false
++[[skills.config]]
++path = "~/.codex/skills/.system/skill-creator/SKILL.md"
++enabled = false
++```
++
++## Intro for LLM Agent
++
++Current dir is the source code of the open-source project `codex` cli. Check `ls -lh ./Cargo.toml` at first.
++
++Our goal is to reduce the compiled binary size, make codex into a lean program. So please cleverly cut off the call paths to deps, rather than deleting code everywhere.
++
++Now, please review the latest commit (other are upsteam commits, don't need to look at them). I removed features such as voice input and image generation, and replaced the deeply coupled `network-proxy` and `otel` (open telemetry) with non-functional placeholders.
++
++When reviewing this latest commit, you should exclude the `./network-proxy/src/lib_placeholder.rs` and `./otel/src/lib_placeholder.rs` files (they are about 1k lines). Only read them when I agree.
++
++Compilation is slow. MUST use the `cargo build --bin codex --profile release -q` command, using other profiles is prohibited (as it requires a full recompilation). Never run `cargo fmt` or `just`, they will cause large code rewrite.
++
++Also, there are some other modifications, such as:
++
++- Modified `./core/src/tools/mod.rs` to allow fallback to direct tool mode.
++
++- Modified `./core/src/tools/code_mode/mod.rs` to avoid duplicate warning.
+diff --git a/codex-rs/Cargo.toml b/codex-rs/Cargo.toml
+index f992ac7..b977dc1 100644
+--- a/codex-rs/Cargo.toml
++++ b/codex-rs/Cargo.toml
+@@ -1,6 +1,5 @@
+ [workspace]
+ members = [
+-    "aws-auth",
+     "analytics",
+     "agent-graph-store",
+     "agent-identity",
+@@ -16,7 +15,6 @@ members = [
+     "app-server-client",
+     "app-server-protocol",
+     "app-server-protocol-noop-macros",
+-    "app-server-test-client",
+     "apply-patch",
+     "arg0",
+     "feedback",
+@@ -24,14 +22,9 @@ members = [
+     "install-context",
+     "codex-backend-openapi-models",
+     "code-mode",
+-    "code-mode-host",
+     "code-mode-protocol",
+-    "code-mode-runtime",
+     "codex-home",
+     "cloud-config",
+-    "cloud-tasks",
+-    "cloud-tasks-client",
+-    "cloud-tasks-mock-client",
+     "cli",
+     "collaboration-mode-templates",
+     "connectors",
+@@ -61,7 +54,6 @@ members = [
+     "ext/git-attribution",
+     "ext/guardian-v2",
+     "ext/history-notes",
+-    "ext/image-generation",
+     "ext/items",
+     "ext/memories",
+     "ext/mcp",
+@@ -93,10 +85,8 @@ members = [
+     "response-debug-context",
+     "sandboxing",
+     "stdio-to-uds",
+-    "otel",
+     "tui",
+     "tools",
+-    "v8-poc",
+     "websocket-client",
+     "worktree",
+     "workload-identity",
+@@ -130,8 +120,6 @@ members = [
+     "codex-api",
+     "state",
+     "terminal-detection",
+-    "test-binary-support",
+-    "thread-manager-sample",
+     "thread-store",
+     "uds",
+     "codex-experimental-api-macros",
+@@ -158,7 +146,6 @@ codex-agent-identity = { path = "agent-identity" }
+ codex-agent-roles = { path = "agent-roles" }
+ codex-ansi-escape = { path = "ansi-escape" }
+ codex-api = { path = "codex-api" }
+-codex-aws-auth = { path = "aws-auth" }
+ codex-app-server = { path = "app-server" }
+ codex-app-server-transport = { path = "app-server-transport" }
+ codex-app-server-daemon = { path = "app-server-daemon" }
+@@ -178,7 +165,6 @@ codex-cloud-tasks-client = { path = "cloud-tasks-client" }
+ codex-cloud-tasks-mock-client = { path = "cloud-tasks-mock-client" }
+ codex-code-mode = { path = "code-mode" }
+ codex-code-mode-protocol = { path = "code-mode-protocol" }
+-codex-code-mode-runtime = { path = "code-mode-runtime" }
+ codex-home = { path = "codex-home" }
+ codex-http-client = { path = "http-client" }
+ codex-websocket-client = { path = "websocket-client" }
+@@ -203,7 +189,6 @@ codex-goal-extension = { path = "ext/goal" }
+ codex-git-attribution = { path = "ext/git-attribution" }
+ codex-guardian-v2 = { path = "ext/guardian-v2" }
+ codex-history-notes-extension = { path = "ext/history-notes" }
+-codex-image-generation-extension = { path = "ext/image-generation" }
+ codex-external-agent-migration = { path = "external-agent-migration" }
+ codex-experimental-api-macros = { path = "codex-experimental-api-macros" }
+ codex-features = { path = "features" }
+@@ -280,7 +265,6 @@ codex-utils-sleep-inhibitor = { path = "utils/sleep-inhibitor" }
+ codex-utils-stream-parser = { path = "utils/stream-parser" }
+ codex-utils-string = { path = "utils/string" }
+ codex-utils-template = { path = "utils/template" }
+-codex-v8-poc = { path = "v8-poc" }
+ codex-workload-identity = { path = "workload-identity" }
+ codex-windows-sandbox = { path = "windows-sandbox-rs" }
+ core_test_support = { path = "core/tests/common" }
+@@ -297,10 +281,6 @@ assert_matches = "1.5.0"
+ async-channel = "2.3.1"
+ async-io = "2.6.0"
+ async-stream = "0.3.6"
+-aws-config = "1"
+-aws-credential-types = "1"
+-aws-sigv4 = "1"
+-aws-types = "1"
+ axum = { version = "0.8", default-features = false }
+ base64 = "0.22.1"
+ bitflags = "2.13.1"
+@@ -324,7 +304,6 @@ crossbeam-channel = "0.5.15"
+ crypto_box = { version = "0.9.1", features = ["seal"] }
+ crossterm = "0.29.0"
+ ctor = "0.6.3"
+-deno_core_icudata = "0.77.0"
+ derive_more = "2"
+ diffy = "0.4.2"
+ dirs = "6"
+@@ -395,10 +374,6 @@ ratatui = { version = "0.30.2", default-features = false, features = [
+     "underline-color",
+ ] }
+ ratatui-macros = "0.7.2"
+-rcgen = { version = "0.14.7", default-features = false, features = [
+-    "aws_lc_rs",
+-    "pem",
+-] }
+ regex = "1.12.3"
+ regex-lite = "0.1.8"
+ reqwest = { version = "0.12", features = ["cookies"] }
+@@ -406,7 +381,7 @@ rmcp = { version = "=3.1.3", default-features = false }
+ runfiles = { git = "https://github.com/dzbarsky/rules_rust", rev = "b56cbaa8465e74127f1ea216f813cd377295ad81" }
+ rustix = { version = "1.1.4", features = ["net"] }
+ rustls = { version = "0.23", default-features = false, features = [
+-    "aws_lc_rs",
++    "ring",
+     "std",
+ ] }
+ rustls-native-certs = "0.8.3"
+@@ -427,13 +402,6 @@ scopeguard = "1.2.0"
+ sha2 = "0.10"
+ shlex = "1.3.0"
+ similar = "2.7.0"
+-symphonia = { version = "0.6.0", default-features = false, features = [
+-    "isomp4",
+-    "mkv",
+-    "mp3",
+-    "ogg",
+-    "wav",
+-] }
+ socket2 = "0.6.1"
+ # When bumping sqlx, audit the SQLite constructor deny list in clippy.toml.
+ sqlx = { version = "0.9.0", default-features = false, features = [
+@@ -490,7 +458,6 @@ unicode-width = "0.2"
+ url = "2"
+ urlencoding = "2.1"
+ uuid = "1"
+-v8 = "=150.4.0"
+ vt100 = "0.16.2"
+ walkdir = "2.5.0"
+ webbrowser = "1.2.2"
+@@ -505,7 +472,7 @@ wiremock = "0.6"
+ zeroize = "1.8.2"
+ 
+ [workspace.lints]
+-rust = {}
++rust = { warnings = "allow" }
+ 
+ [workspace.lints.clippy]
+ await_holding_invalid_type = "deny"
+@@ -551,7 +518,6 @@ unwrap_used = "deny"
+ ignored = [
+     "icu_provider",
+     "openssl-sys",
+-    "codex-v8-poc",
+ ]
+ 
+ [profile.dev]
+@@ -563,18 +529,21 @@ debug = "limited"
+ inherits = "dev"
+ opt-level = 0
+ debug = "none"
+-strip = "symbols"
++strip = true
++incremental = false
+ 
+ [profile.release]
+ lto = "thin"
+-debug = "line-tables-only"
+-split-debuginfo = "off"
++# lto = false
++debug = false
++opt-level = "s"
++# split-debuginfo = "off"
+ # Keep release binaries symbolicateable until packaging has archived the
+ # sidecar symbols and stripped the binaries.
+-strip = false
++strip = true
+ 
+ # Balance parallel release code generation against binary size.
+-codegen-units = 4
++codegen-units = 2
+ 
+ [profile.profiling]
+ inherits = "release"
+diff --git a/codex-rs/app-server/Cargo.toml b/codex-rs/app-server/Cargo.toml
+index 2f08b0f..2eccbe6 100644
+--- a/codex-rs/app-server/Cargo.toml
++++ b/codex-rs/app-server/Cargo.toml
+@@ -36,7 +36,6 @@ axum = { workspace = true, default-features = false, features = [
+ codex-analytics = { workspace = true }
+ codex-agent-extension = { workspace = true }
+ codex-arg0 = { workspace = true }
+-codex-aws-auth = { workspace = true }
+ codex-cloud-config = { workspace = true }
+ codex-code-mode = { workspace = true }
+ codex-config = { workspace = true }
+@@ -68,7 +67,6 @@ codex-backend-client = { workspace = true }
+ codex-file-search = { workspace = true }
+ codex-chatgpt = { workspace = true }
+ codex-login = { workspace = true }
+-codex-image-generation-extension = { workspace = true }
+ codex-memories-extension = { workspace = true }
+ codex-web-search-extension = { workspace = true }
+ codex-memories-write = { workspace = true }
+diff --git a/codex-rs/app-server/src/extensions.rs b/codex-rs/app-server/src/extensions.rs
+index 929eab5..cc72275 100644
+--- a/codex-rs/app-server/src/extensions.rs
++++ b/codex-rs/app-server/src/extensions.rs
+@@ -108,9 +108,6 @@ where
+     codex_mcp_extension::install(&mut builder);
+     codex_mcp_extension::install_executor_plugins(&mut builder, environment_manager);
+     codex_web_search_extension::install(&mut builder, auth_manager.clone());
+-    codex_image_generation_extension::install(&mut builder, auth_manager, |config: &Config| {
+-        Some(config.codex_home.clone())
+-    });
+     let skill_providers = codex_skills_extension::SkillProviders::new()
+         .with_executor_provider(executor_skill_provider)
+         .with_orchestrator_provider(Arc::new(
+diff --git a/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs b/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs
+index 9e7cb31..9c01d53 100644
+--- a/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs
++++ b/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs
+@@ -26,15 +26,7 @@ impl AccountRequestProcessor {
+         _params: BedrockDiscoverParams,
+     ) -> Result<Option<ClientResponsePayload>, JSONRPCErrorError> {
+         self.ensure_bedrock_login_allowed()?;
+-        let profiles = codex_aws_auth::discover_aws_profiles()
+-            .await
+-            .map_err(|err| internal_error(format!("failed to discover AWS profiles: {err}")))?
+-            .into_iter()
+-            .map(|profile| BedrockAwsProfile {
+-                name: profile.name,
+-                region: profile.region,
+-            })
+-            .collect();
++        let profiles = Vec::new();
+ 
+         let region = non_empty_env_var("AWS_REGION");
+         let environment_credentials = [
+@@ -98,13 +90,6 @@ impl AccountRequestProcessor {
+                 if profile.is_empty() {
+                     return Err(invalid_request("AWS profile name must not be empty."));
+                 }
+-                codex_aws_auth::validate_aws_profile(profile, region)
+-                    .await
+-                    .map_err(|err| {
+-                        invalid_request(format!(
+-                            "failed to load credentials for AWS profile `{profile}`: {err}"
+-                        ))
+-                    })?;
+                 Some(profile.to_string())
+             }
+             BedrockSetupParams::Environment { .. } => {
+diff --git a/codex-rs/core-api/Cargo.toml b/codex-rs/core-api/Cargo.toml
+index b82d5ee..f1b3ec4 100644
+--- a/codex-rs/core-api/Cargo.toml
++++ b/codex-rs/core-api/Cargo.toml
+@@ -22,7 +22,6 @@ codex-core = { workspace = true }
+ codex-extension-api = { workspace = true }
+ codex-home = { workspace = true }
+ codex-history = { workspace = true }
+-codex-image-generation-extension = { workspace = true }
+ codex-exec-server = { workspace = true }
+ codex-features = { workspace = true }
+ codex-login = { workspace = true }
+diff --git a/codex-rs/core-api/src/lib.rs b/codex-rs/core-api/src/lib.rs
+index e422218..36b99eb 100644
+--- a/codex-rs/core-api/src/lib.rs
++++ b/codex-rs/core-api/src/lib.rs
+@@ -92,7 +92,6 @@ pub use codex_features::Feature;
+ pub use codex_features::Features;
+ pub use codex_history::InitialHistory;
+ pub use codex_home::CodexHomeUserInstructionsProvider;
+-pub use codex_image_generation_extension::install as install_image_generation_extension;
+ pub use codex_login::AuthHeaders;
+ pub use codex_login::AuthManager;
+ pub use codex_login::CodexAuth;
+diff --git a/codex-rs/core/Cargo.toml b/codex-rs/core/Cargo.toml
+index 384af1d..089a4fd 100644
+--- a/codex-rs/core/Cargo.toml
++++ b/codex-rs/core/Cargo.toml
+@@ -142,7 +142,6 @@ codex-shell-escalation = { workspace = true }
+ assert_cmd = { workspace = true }
+ assert_matches = { workspace = true }
+ codex-exec-server-test-support = { workspace = true }
+-codex-image-generation-extension = { workspace = true }
+ codex-home = { workspace = true }
+ codex-otel = { workspace = true }
+ codex-test-binary-support = { workspace = true }
+diff --git a/codex-rs/core/src/context_manager/history.rs b/codex-rs/core/src/context_manager/history.rs
+index 2d9b647..52c81ce 100644
+--- a/codex-rs/core/src/context_manager/history.rs
++++ b/codex-rs/core/src/context_manager/history.rs
+@@ -29,8 +29,8 @@ use codex_protocol::protocol::TokenUsage;
+ use codex_protocol::protocol::TokenUsageInfo;
+ use codex_protocol::protocol::TurnContextItem;
+ use codex_protocol::protocol::WorldStateItem;
+-use codex_utils_audio::estimate_audio_token_count;
+ use codex_utils_cache::BlockingLruCache;
++fn estimate_audio_token_count(audio_url: &str) -> usize { 0 }
+ use codex_utils_cache::sha1_digest;
+ use codex_utils_output_truncation::TruncationPolicy;
+ use codex_utils_output_truncation::approx_bytes_for_tokens;
+diff --git a/codex-rs/core/src/realtime_conversation.rs b/codex-rs/core/src/realtime_conversation.rs
+index 5d15f5a..79df3c9 100644
+--- a/codex-rs/core/src/realtime_conversation.rs
++++ b/codex-rs/core/src/realtime_conversation.rs
+@@ -1115,6 +1115,7 @@ pub(crate) async fn handle_start(
+     sub_id: String,
+     params: ConversationStartParams,
+ ) -> CodexResult<()> {
++    /*
+     let prepared_start = match prepare_realtime_start(sess, params).await {
+         Ok(prepared_start) => prepared_start,
+         Err(err) => {
+@@ -1142,6 +1143,7 @@ pub(crate) async fn handle_start(
+         })
+         .await;
+     }
++    */
+     Ok(())
+ }
+ 
+@@ -1486,6 +1488,7 @@ fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) ->
+     )))
+ }
+ 
++/*
+ async fn handle_start_inner(
+     sess: &Arc<Session>,
+     sub_id: &str,
+@@ -1627,12 +1630,14 @@ async fn handle_start_inner(
+ 
+     Ok(())
+ }
++*/
+ 
+ pub(crate) async fn handle_audio(
+     sess: &Arc<Session>,
+     sub_id: String,
+     params: ConversationAudioParams,
+ ) {
++    /*
+     if let Err(err) = sess.conversation.audio_in(params.frame).await {
+         error!("failed to append realtime audio: {err}");
+         if sess.conversation.running_state().await.is_some() {
+@@ -1642,6 +1647,7 @@ pub(crate) async fn handle_audio(
+                 .await;
+         }
+     }
++    */
+ }
+ 
+ fn realtime_transcript_delta_from_handoff(handoff: &RealtimeHandoffRequested) -> Option<String> {
+@@ -1747,6 +1753,7 @@ pub(crate) async fn handle_text(
+     sub_id: String,
+     params: ConversationTextParams,
+ ) {
++    /*
+     debug!(text = %params.text, "[realtime-text] appending realtime conversation text input");
+     if let Err(err) = sess.conversation.text_in(params).await {
+         error!("failed to append realtime text: {err}");
+@@ -1757,6 +1764,7 @@ pub(crate) async fn handle_text(
+                 .await;
+         }
+     }
++    */
+ }
+ 
+ pub(crate) async fn handle_speech(
+@@ -1764,6 +1772,7 @@ pub(crate) async fn handle_speech(
+     sub_id: String,
+     params: ConversationSpeechParams,
+ ) {
++    /*
+     debug!(text = %params.text, "[realtime-text] appending realtime speech");
+     if let Err(err) = sess.conversation.append_speech(params.text).await {
+         error!("failed to append realtime speech: {err}");
+@@ -1774,10 +1783,13 @@ pub(crate) async fn handle_speech(
+                 .await;
+         }
+     }
++    */
+ }
+ 
+ pub(crate) async fn handle_close(sess: &Arc<Session>, sub_id: String) {
++    /*
+     end_realtime_conversation(sess, sub_id, RealtimeConversationEnd::Requested).await;
++    */
+ }
+ 
+ fn spawn_realtime_input_task(
+diff --git a/codex-rs/core/src/session/handlers.rs b/codex-rs/core/src/session/handlers.rs
+index dada3b6..e0322b6 100644
+--- a/codex-rs/core/src/session/handlers.rs
++++ b/codex-rs/core/src/session/handlers.rs
+@@ -64,17 +64,7 @@ pub async fn clean_background_terminals(sess: &Arc<Session>) {
+     sess.close_unified_exec_processes().await;
+ }
+ 
+-pub async fn realtime_conversation_list_voices(sess: &Session, sub_id: String) {
+-    sess.send_event_raw(Event {
+-        id: sub_id,
+-        msg: EventMsg::RealtimeConversationListVoicesResponse(
+-            RealtimeConversationListVoicesResponseEvent {
+-                voices: RealtimeVoicesList::builtin(),
+-            },
+-        ),
+-    })
+-    .await;
+-}
++pub async fn realtime_conversation_list_voices(sess: &Session, sub_id: String) {}
+ 
+ /// Queues an inter-agent message, then lets the shared pending-work scheduler
+ /// decide whether an idle session should start a regular turn.
+diff --git a/codex-rs/core/src/session/mod.rs b/codex-rs/core/src/session/mod.rs
+index 1d7fe51..c6a3c05 100644
+--- a/codex-rs/core/src/session/mod.rs
++++ b/codex-rs/core/src/session/mod.rs
+@@ -166,7 +166,7 @@ use codex_thread_store::ReadThreadParams;
+ use codex_thread_store::ResumeThreadParams;
+ use codex_thread_store::ThreadPersistenceMetadata;
+ use codex_thread_store::ThreadStore;
+-use codex_utils_audio::prepare_response_items as prepare_audio_response_items;
++fn prepare_audio_response_items(items: &mut [ResponseItem]) {}
+ use codex_utils_path_uri::PathUri;
+ use futures::future::BoxFuture;
+ use futures::future::Shared;
+diff --git a/codex-rs/core/src/tools/code_mode/mod.rs b/codex-rs/core/src/tools/code_mode/mod.rs
+index 26559df..8498de7 100644
+--- a/codex-rs/core/src/tools/code_mode/mod.rs
++++ b/codex-rs/core/src/tools/code_mode/mod.rs
+@@ -40,7 +40,7 @@ use crate::tools::router::ToolCallSource;
+ use crate::unified_exec::resolve_max_tokens;
+ use codex_protocol::openai_models::ToolMode;
+ use codex_tools::ToolName;
+-use codex_utils_audio::estimate_audio_token_count;
++fn estimate_audio_token_count(audio_url: &str) -> usize { 0 }
+ use codex_utils_output_truncation::TruncationPolicy;
+ use codex_utils_output_truncation::formatted_truncate_text_content_items_with_policy;
+ use codex_utils_output_truncation::truncate_function_output_items_with_policy;
+@@ -104,8 +104,7 @@ impl CodeModeService {
+             ToolMode::Direct => "Falling back to direct tools",
+             ToolMode::CodeMode | ToolMode::CodeModeOnly => "Code mode will fail closed",
+         };
+-        (!self
+-            .unavailable_warning_emitted
++        static G: AtomicBool = AtomicBool::new(false);(!G // global, avoid show multi times
+             .swap(true, Ordering::Relaxed))
+         .then(|| {
+             format!(
+diff --git a/codex-rs/core/src/tools/mod.rs b/codex-rs/core/src/tools/mod.rs
+index e262e00..7b4a2c3 100644
+--- a/codex-rs/core/src/tools/mod.rs
++++ b/codex-rs/core/src/tools/mod.rs
+@@ -79,7 +79,7 @@ pub(crate) fn requested_tool_mode(turn_context: &TurnContext) -> ToolMode {
+ pub(crate) fn effective_tool_mode(turn_context: &TurnContext) -> ToolMode {
+     let requested_tool_mode = requested_tool_mode(turn_context);
+     if !turn_context.code_mode_available
+-        && requested_tool_mode == ToolMode::CodeMode
++        && (requested_tool_mode == ToolMode::CodeMode || requested_tool_mode == ToolMode::CodeModeOnly) // bypass the restrictions
+         && !turn_context.config.code_mode.disable_in_process_fallback
+     {
+         ToolMode::Direct
+diff --git a/codex-rs/core/src/tools/runtimes/mod.rs b/codex-rs/core/src/tools/runtimes/mod.rs
+index f8c90db..e034d94 100644
+--- a/codex-rs/core/src/tools/runtimes/mod.rs
++++ b/codex-rs/core/src/tools/runtimes/mod.rs
+@@ -307,6 +307,7 @@ fn build_proxy_env_exports(env: &HashMap<String, String>) -> (String, String) {
+ 
+     let (captures, restores) =
+         build_override_exports_for_keys("__CODEX_SNAPSHOT_PROXY_OVERRIDE", &keys);
++    let restores = if restores.is_empty() { ":".to_string() } else { restores }; // fix bug after network-proxy removed
+     let key = PROXY_ACTIVE_ENV_KEY;
+     let proxy_blocks = (
+         format!("{captures}\n__CODEX_SNAPSHOT_PROXY_ENV_SET=\"${{{key}+x}}\""),
+diff --git a/codex-rs/exec-server/Cargo.toml b/codex-rs/exec-server/Cargo.toml
+index 746bfb2..f2fb881 100644
+--- a/codex-rs/exec-server/Cargo.toml
++++ b/codex-rs/exec-server/Cargo.toml
+@@ -81,7 +81,6 @@ http = { workspace = true }
+ opentelemetry = { workspace = true }
+ opentelemetry_sdk = { workspace = true }
+ pretty_assertions = { workspace = true }
+-rcgen = { workspace = true }
+ rustls = { workspace = true }
+ serial_test = { workspace = true }
+ tempfile = { workspace = true }
+diff --git a/codex-rs/http-client/Cargo.toml b/codex-rs/http-client/Cargo.toml
+index 2d54ca7..8459fa6 100644
+--- a/codex-rs/http-client/Cargo.toml
++++ b/codex-rs/http-client/Cargo.toml
+@@ -40,7 +40,6 @@ workspace = true
+ codex-utils-cargo-bin = { workspace = true }
+ opentelemetry_sdk = { workspace = true }
+ pretty_assertions = { workspace = true }
+-rcgen = { workspace = true }
+ tempfile = { workspace = true }
+ tracing-subscriber = { workspace = true }
+ 
+diff --git a/codex-rs/mcp-server/Cargo.toml b/codex-rs/mcp-server/Cargo.toml
+index 69fb1e8..f44300e 100644
+--- a/codex-rs/mcp-server/Cargo.toml
++++ b/codex-rs/mcp-server/Cargo.toml
+@@ -22,7 +22,6 @@ codex-arg0 = { workspace = true }
+ codex-config = { workspace = true }
+ codex-core = { workspace = true }
+ codex-home = { workspace = true }
+-codex-image-generation-extension = { workspace = true }
+ codex-exec-server = { workspace = true }
+ codex-extension-api = { workspace = true }
+ codex-features = { workspace = true }
+diff --git a/codex-rs/mcp-server/src/message_processor.rs b/codex-rs/mcp-server/src/message_processor.rs
+index 25c5faa..2a87ef3 100644
+--- a/codex-rs/mcp-server/src/message_processor.rs
++++ b/codex-rs/mcp-server/src/message_processor.rs
+@@ -75,11 +75,6 @@ impl MessageProcessor {
+             config.chatgpt_base_url.clone(),
+             config.http_client_factory(),
+         );
+-        codex_image_generation_extension::install(
+-            &mut extensions,
+-            auth_manager.clone(),
+-            |config: &Config| Some(config.codex_home.clone()),
+-        );
+         let skill_providers = codex_skills_extension::SkillProviders::new()
+             .with_host_provider(Arc::new(codex_skills_extension::HostSkillProvider::new()));
+         codex_skills_extension::install_with_providers_and_metrics(
+diff --git a/codex-rs/model-provider/Cargo.toml b/codex-rs/model-provider/Cargo.toml
+index e72a55a..85a1e9d 100644
+--- a/codex-rs/model-provider/Cargo.toml
++++ b/codex-rs/model-provider/Cargo.toml
+@@ -15,7 +15,6 @@ workspace = true
+ [dependencies]
+ codex-api = { workspace = true }
+ codex-agent-identity = { workspace = true }
+-codex-aws-auth = { workspace = true }
+ codex-http-client = { workspace = true }
+ codex-feedback = { workspace = true }
+ codex-login = { workspace = true }
+diff --git a/codex-rs/model-provider/src/lib.rs b/codex-rs/model-provider/src/lib.rs
+index b7d72a6..ae199ae 100644
+--- a/codex-rs/model-provider/src/lib.rs
++++ b/codex-rs/model-provider/src/lib.rs
+@@ -1,11 +1,9 @@
+-mod amazon_bedrock;
+ mod auth;
+ mod bearer_auth_provider;
+ mod models_endpoint;
+ mod provider;
+-mod shared_state;
+ 
+-pub use amazon_bedrock::is_supported_amazon_bedrock_region;
++pub fn is_supported_amazon_bedrock_region(region: &str) -> bool { false }
+ pub use auth::AgentIdentitySessionFallback;
+ pub use auth::ProviderAuthScope;
+ pub use auth::ResolvedProviderAuth;
+diff --git a/codex-rs/model-provider/src/provider.rs b/codex-rs/model-provider/src/provider.rs
+index 6aa6941..04d88e4 100644
+--- a/codex-rs/model-provider/src/provider.rs
++++ b/codex-rs/model-provider/src/provider.rs
+@@ -24,7 +24,6 @@ use codex_protocol::error::CodexErr;
+ use codex_protocol::openai_models::ModelsResponse;
+ use http::HeaderValue;
+ 
+-use crate::amazon_bedrock::AmazonBedrockModelProvider;
+ use crate::auth::ProviderAuthScope;
+ use crate::auth::ResolvedProviderAuth;
+ use crate::auth::auth_manager_for_provider;
+@@ -309,11 +308,7 @@ pub fn create_model_provider(
+     provider_info: ModelProviderInfo,
+     auth_manager: Option<Arc<AuthManager>>,
+ ) -> SharedModelProvider {
+-    if provider_info.is_amazon_bedrock() {
+-        Arc::new(AmazonBedrockModelProvider::new(provider_info, auth_manager))
+-    } else {
+         Arc::new(ConfiguredModelProvider::new(provider_info, auth_manager))
+-    }
+ }
+ 
+ /// Runtime model provider backed by configured `ModelProviderInfo`.
+diff --git a/codex-rs/network-proxy/Cargo.toml b/codex-rs/network-proxy/Cargo.toml
+index 82407b0..0578019 100644
+--- a/codex-rs/network-proxy/Cargo.toml
++++ b/codex-rs/network-proxy/Cargo.toml
+@@ -6,7 +6,7 @@ license.workspace = true
+ 
+ [lib]
+ name = "codex_network_proxy"
+-path = "src/lib.rs"
++path = "src/lib_placeholder.rs"
+ doctest = false
+ 
+ [lints]
+@@ -19,46 +19,17 @@ clap = { workspace = true, features = ["derive"] }
+ chrono = { workspace = true }
+ codex-utils-absolute-path = { workspace = true }
+ codex-utils-home-dir = { workspace = true }
+-codex-utils-rustls-provider = { workspace = true }
+ globset = { workspace = true }
+ rand = { workspace = true }
+ serde = { workspace = true, features = ["derive"] }
+ serde_json = { workspace = true }
+ thiserror = { workspace = true }
+ time = { workspace = true }
+-tokio = { workspace = true, features = ["full"] }
+ tracing = { workspace = true }
+ url = { workspace = true }
+-rama-core = { version = "=0.3.0-alpha.4" }
+ rama-http = { version = "=0.3.0-alpha.4" }
+-rama-http-backend = { version = "=0.3.0-alpha.4", features = ["tls"] }
+-rama-net = { version = "=0.3.0-alpha.4", features = ["http", "tls"] }
+-rama-socks5 = { version = "=0.3.0-alpha.4" }
+-rama-tcp = { version = "=0.3.0-alpha.4", features = ["http"] }
+-rama-tls-rustls = { version = "=0.3.0-alpha.4", features = ["http"] }
+-rustls-native-certs = { workspace = true }
+ sha2 = { workspace = true }
+ 
+ [dev-dependencies]
+ pretty_assertions = { workspace = true }
+ tempfile = { workspace = true }
+-
+-[target.'cfg(target_family = "unix")'.dependencies]
+-rama-unix = { version = "=0.3.0-alpha.4" }
+-
+-[target.'cfg(target_os = "macos")'.dependencies]
+-security-framework = "3"
+-
+-[target.'cfg(windows)'.dependencies]
+-schannel = "0.1"
+-windows-sys = { version = "0.52", features = [
+-    "Win32_Foundation",
+-    "Win32_NetworkManagement_IpHelper",
+-    "Win32_Networking_WinSock",
+-    "Win32_Security",
+-    "Win32_Security_Authorization",
+-    "Win32_System_Threading",
+-] }
+-
+-[target.'cfg(windows)'.dev-dependencies]
+-codex-windows-sandbox = { path = "../windows-sandbox-rs" }
+diff --git a/codex-rs/network-proxy/src/lib_placeholder.rs b/codex-rs/network-proxy/src/lib_placeholder.rs
+new file mode 100644
+index 0000000..4c89d45
+--- /dev/null
++++ b/codex-rs/network-proxy/src/lib_placeholder.rs
+@@ -0,0 +1,356 @@
++use std::collections::HashMap;
++use std::future::Future;
++use std::sync::Arc;
++use std::pin::Pin;
++use anyhow::Result;
++
++mod authorization_path;
++mod config;
++mod environment_policy;
++mod mitm_hook;
++mod policy;
++mod remote_config;
++
++pub use config::{host_and_port_from_network_addr, managed_proxy_ports};
++pub use config::{NetworkDomainPermission, NetworkDomainPermissionEntry, NetworkDomainPermissions, NetworkMode, NetworkProxyConfig, NetworkUnixSocketPermission, NetworkUnixSocketPermissions};
++pub use environment_policy::EnvironmentNetworkPolicy;
++pub use mitm_hook::{InjectedHeaderConfig, MitmHookActionsConfig, MitmHookBodyConfig, MitmHookConfig, MitmHookMatchConfig};
++pub use policy::normalize_host;
++pub use remote_config::{RemoteNetworkProxyConfig, RemoteNetworkProxyLaunchConfig};
++
++pub const CUSTOM_CA_ENV_KEYS: [&str; 0] = [];
++pub const PROXY_ATTRIBUTION_TOKEN_ENV_KEY: &str = "CODEX_NETWORK_PROXY_ATTRIBUTION";
++pub const PROXY_ACTIVE_ENV_KEY: &str = "CODEX_NETWORK_PROXY_ACTIVE";
++pub const PROXY_ENV_KEYS: &[&str] = &[];
++pub const PROXY_URL_ENV_KEYS: &[&str] = &[];
++pub const PROXY_GIT_SSH_COMMAND_ENV_KEY: &str = "GIT_SSH_COMMAND";
++pub const CODEX_PROXY_GIT_SSH_COMMAND_MARKER: &str = "";
++
++#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
++#[serde(rename_all = "lowercase")]
++pub enum NetworkPolicyDecision { Deny, Ask }
++
++#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
++#[serde(rename_all = "snake_case")]
++pub enum NetworkDecisionSource { BaselinePolicy, ModeGuard, ProxyState, Decider }
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum NetworkProtocol { Http, HttpsConnect, Socks5Tcp, Socks5Udp }
++
++impl NetworkProtocol {
++    pub const fn as_policy_protocol(self) -> &'static str {
++        match self {
++            Self::Http => "http",
++            Self::HttpsConnect => "https_connect",
++            Self::Socks5Tcp => "socks5_tcp",
++            Self::Socks5Udp => "socks5_udp",
++        }
++    }
++}
++
++#[derive(Clone, Debug)]
++pub struct NetworkPolicyRequest {
++    pub protocol: NetworkProtocol,
++    pub host: String,
++    pub port: u16,
++    pub environment_id: Option<String>,
++    pub client_addr: Option<String>,
++    pub method: Option<String>,
++    pub command: Option<String>,
++    pub exec_policy_hint: Option<String>,
++    pub execution_id: Option<String>,
++    pub disconnect: Option<NetworkRequestDisconnect>,
++}
++
++pub struct NetworkPolicyRequestArgs {
++    pub protocol: NetworkProtocol,
++    pub host: String,
++    pub port: u16,
++    pub environment_id: Option<String>,
++    pub client_addr: Option<String>,
++    pub method: Option<String>,
++    pub command: Option<String>,
++    pub exec_policy_hint: Option<String>,
++}
++
++impl NetworkPolicyRequest {
++    pub fn new(args: NetworkPolicyRequestArgs) -> Self {
++        Self {
++            protocol: args.protocol,
++            host: args.host,
++            port: args.port,
++            environment_id: args.environment_id,
++            client_addr: args.client_addr,
++            method: args.method,
++            command: args.command,
++            exec_policy_hint: args.exec_policy_hint,
++            execution_id: None,
++            disconnect: None,
++        }
++    }
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct NetworkRequestDisconnect;
++
++impl NetworkRequestDisconnect {
++    pub fn elapsed(&self) -> Option<std::time::Duration> { None }
++}
++
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct NetworkPolicyAuditEvent {
++    pub timestamp: String,
++    pub scope: String,
++    pub decision: String,
++    pub source: String,
++    pub reason: String,
++    pub protocol: NetworkProtocol,
++    pub host: String,
++    pub port: u16,
++    pub method: Option<String>,
++    pub client: Option<String>,
++    pub policy_override: bool,
++}
++
++pub type NetworkPolicyAuditObserver = Arc<dyn Fn(NetworkPolicyAuditEvent) + Send + Sync + 'static>;
++
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub enum NetworkDecision {
++    Allow,
++    Deny {
++        reason: String,
++        source: NetworkDecisionSource,
++        decision: NetworkPolicyDecision,
++    },
++}
++
++impl NetworkDecision {
++    pub fn deny(reason: impl Into<String>) -> Self {
++        Self::deny_with_source(reason, NetworkDecisionSource::Decider)
++    }
++
++    pub fn ask(reason: impl Into<String>) -> Self {
++        Self::ask_with_source(reason, NetworkDecisionSource::Decider)
++    }
++
++    pub fn deny_with_source(reason: impl Into<String>, source: NetworkDecisionSource) -> Self {
++        Self::Deny {
++            reason: reason.into(),
++            source,
++            decision: NetworkPolicyDecision::Deny,
++        }
++    }
++
++    pub fn ask_with_source(reason: impl Into<String>, source: NetworkDecisionSource) -> Self {
++        Self::Deny {
++            reason: reason.into(),
++            source,
++            decision: NetworkPolicyDecision::Ask,
++        }
++    }
++}
++
++pub trait NetworkPolicyDecider: Send + Sync + 'static {
++    fn decide(&self, req: NetworkPolicyRequest) -> NetworkPolicyDeciderFuture<'_>;
++}
++
++pub type NetworkPolicyDeciderFuture<'a> = Pin<Box<dyn Future<Output = NetworkDecision> + Send + 'a>>;
++
++impl<F, Fut> NetworkPolicyDecider for F
++where
++    F: Fn(NetworkPolicyRequest) -> Fut + Send + Sync + 'static,
++    Fut: Future<Output = NetworkDecision> + Send + 'static,
++{
++    fn decide(&self, req: NetworkPolicyRequest) -> NetworkPolicyDeciderFuture<'_> {
++        Box::pin((self)(req))
++    }
++}
++
++pub fn is_managed_mitm_ca_trust_bundle_path(_path: &str) -> bool { false }
++pub fn has_proxy_url_env_vars(_env: &HashMap<String, String>) -> bool { false }
++pub fn proxy_url_env_value<'a>(_env: &'a HashMap<String, String>, _key: &str) -> Option<&'a str> { None }
++pub fn strip_managed_proxy_env(_env: &mut HashMap<String, String>) {}
++pub fn write_attribution_frame(_writer: &mut impl std::io::Write, _token: &str) -> std::io::Result<()> { Ok(()) }
++
++#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
++#[serde(rename_all = "camelCase")]
++pub struct NetworkProxyAuditMetadata {
++    pub conversation_id: Option<String>,
++    pub app_version: Option<String>,
++    pub user_account_id: Option<String>,
++    pub auth_mode: Option<String>,
++    pub originator: Option<String>,
++    pub user_email: Option<String>,
++    pub terminal_type: Option<String>,
++    pub model: Option<String>,
++    pub slug: Option<String>,
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++pub struct NetworkProxy;
++
++impl NetworkProxy {
++    pub fn builder() -> NetworkProxyBuilder { NetworkProxyBuilder }
++    pub fn managed_mitm_ca_trust_bundle_path(&self) -> Option<codex_utils_absolute_path::AbsolutePathBuf> { None }
++    pub fn http_addr(&self) -> std::net::SocketAddr { std::net::SocketAddr::from(([127, 0, 0, 1], 0)) }
++    pub fn socks_addr(&self) -> std::net::SocketAddr { self.http_addr() }
++    pub async fn current_cfg(&self) -> Result<NetworkProxyConfig> { Ok(NetworkProxyConfig::default()) }
++    pub async fn add_allowed_domain(&self, _host: &str) -> Result<()> { Ok(()) }
++    pub async fn add_denied_domain(&self, _host: &str) -> Result<()> { Ok(()) }
++    pub fn apply_to_env<T>(&self, _env: T) {}
++    pub fn apply_to_env_for_optional_environment<T>(&self, _env: T, _environment_id: Option<&str>) -> Result<()> { Ok(()) }
++    pub fn restore_brokered_credentials<T>(&self, _env: T, c: &mut [String]) {}
++    pub fn remote_policy_decider(&self) -> Option<Arc<dyn NetworkPolicyDecider>> { None }
++    // pub fn for_execution(&self, _environment_id: &str, _execution_id: &str, _attribution_token: String) -> Result<Self> { Ok(Self) }
++    
++    pub fn for_execution<EP>(&self, environment_id: &str, execution_id: &str, attribution_token: String, environment_policy: Option<EP>, fallback_policy_decider: Option<Arc<dyn NetworkPolicyDecider>>) -> Result<Self> { Ok(Self) }
++
++    pub async fn remote_launch_config(&self) -> Result<RemoteNetworkProxyLaunchConfig> {
++        Ok(RemoteNetworkProxyLaunchConfig::new(
++            RemoteNetworkProxyConfig {
++                enabled: false,
++                enable_socks5: false,
++                enable_socks5_udp: false,
++                allow_upstream_proxy: false,
++                dangerously_allow_all_unix_sockets: false,
++                mode: NetworkMode::Full,
++                domains: None,
++                unix_sockets: None,
++                allow_local_binding: false,
++            },
++        ))
++    }
++
++    pub async fn replace_config_state(&self, _state: ConfigState) -> Result<()> { Ok(()) }
++
++    pub async fn run(&self) -> Result<NetworkProxyHandle> { Ok(NetworkProxyHandle) }
++
++    pub fn prepare_for_optional_environment(
++        &self,
++        env: HashMap<String, String>,
++        _environment_id: Option<&str>,
++    ) -> Result<PreparedManagedNetwork> {
++        Ok(PreparedManagedNetwork {
++            env,
++            sandbox_context: ManagedNetworkSandboxContext::default(),
++        })
++    }
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct NetworkProxyBuilder;
++
++impl NetworkProxyBuilder {
++    pub fn state(self, _state: Arc<NetworkProxyState>) -> Self { self }
++    pub fn policy_decider_arc(self, _decider: Arc<dyn NetworkPolicyDecider>) -> Self { self }
++    pub fn policy_decider(self, _decider: impl NetworkPolicyDecider) -> Self { self }
++    pub fn blocked_request_observer_arc(self, _observer: Arc<dyn BlockedRequestObserver>) -> Self { self }
++    pub fn managed_by_codex(self, v: bool) -> Self { self }
++    pub async fn build(self) -> Result<NetworkProxy> { Ok(NetworkProxy) }
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++pub struct PreparedManagedNetwork {
++    pub env: HashMap<String, String>,
++    pub sandbox_context: ManagedNetworkSandboxContext,
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++pub struct NetworkProxyHandle;
++
++impl NetworkProxyHandle {
++    pub async fn shutdown(self) -> Result<()> { Ok(()) }
++}
++
++#[derive(Clone, Debug, serde::Serialize)]
++pub struct BlockedRequest {
++    pub host: String,
++    pub reason: String,
++    pub client: Option<String>,
++    pub method: Option<String>,
++    pub mode: Option<NetworkMode>,
++    pub protocol: String,
++    #[serde(skip)]
++    pub execution_id: Option<String>,
++    pub decision: Option<String>,
++    pub source: Option<String>,
++    pub port: Option<u16>,
++    pub timestamp: i64,
++}
++
++pub struct BlockedRequestArgs {
++    pub host: String,
++    pub reason: String,
++    pub client: Option<String>,
++    pub method: Option<String>,
++    pub mode: Option<NetworkMode>,
++    pub protocol: String,
++    pub decision: Option<String>,
++    pub source: Option<String>,
++    pub port: Option<u16>,
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "camelCase")]
++pub struct ManagedNetworkSandboxContext {
++    #[serde(default)]
++    pub loopback_ports: Vec<u16>,
++    #[serde(default)]
++    pub allow_local_binding: bool,
++}
++
++pub trait ConfigReloader: Send + Sync {
++    fn source_label(&self) -> String;
++    fn maybe_reload(&self) -> ConfigReloaderFuture<'_, Option<ConfigState>>;
++    fn reload_now(&self) -> ConfigReloaderFuture<'_, ConfigState>;
++}
++
++pub type ConfigReloaderFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T>> + Send + 'a>>;
++
++pub trait BlockedRequestObserver: Send + Sync + 'static {
++    fn on_blocked_request(&self, request: BlockedRequest) -> BlockedRequestObserverFuture<'_>;
++}
++
++pub type BlockedRequestObserverFuture<'a> = Pin<Box<dyn Future<Output = ()> + Send + 'a>>;
++
++impl<F, Fut> BlockedRequestObserver for F
++where
++    F: Fn(BlockedRequest) -> Fut + Send + Sync + 'static,
++    Fut: Future<Output = ()> + Send + 'static,
++{
++    fn on_blocked_request(&self, request: BlockedRequest) -> BlockedRequestObserverFuture<'_> { Box::pin((self)(request)) }
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++pub struct NetworkProxyConstraints {
++    pub enabled: Option<bool>,
++    pub mode: Option<NetworkMode>,
++    pub allow_upstream_proxy: Option<bool>,
++    pub dangerously_allow_non_loopback_proxy: Option<bool>,
++    pub dangerously_allow_all_unix_sockets: Option<bool>,
++    pub allowed_domains: Option<Vec<String>>,
++    pub allowlist_expansion_enabled: Option<bool>,
++    pub denied_domains: Option<Vec<String>>,
++    pub denylist_expansion_enabled: Option<bool>,
++    pub allow_unix_sockets: Option<Vec<String>>,
++    pub allow_local_binding: Option<bool>,
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++pub struct NetworkProxyState;
++
++impl NetworkProxyState {
++    pub fn with_reloader_and_audit_metadata(_state: ConfigState, _reloader: Arc<dyn ConfigReloader>, _audit_metadata: NetworkProxyAuditMetadata) -> Self { Self }
++    pub fn from_remote_launch_config(_config: RemoteNetworkProxyLaunchConfig) -> Result<Self> { Ok(Self) }
++    pub fn set_policy_audit_observer(&mut self, _observer: NetworkPolicyAuditObserver) {}
++}
++
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++pub struct ConfigState;
++
++pub fn build_config_state(_config: NetworkProxyConfig, _constraints: NetworkProxyConstraints) -> Result<ConfigState> { Ok(ConfigState) }
++pub fn validate_policy_against_constraints(_config: &NetworkProxyConfig, _constraints: &NetworkProxyConstraints) -> Result<()> { Ok(()) }
++pub fn is_managed_proxy_env_var(_key: &str, _value: &str) -> bool { false }
++pub fn is_credential_broker_provider_env_key(key: &str) -> bool { false }
++pub fn credential_broker_provider_context_env_keys() -> impl Iterator<Item = &'static str> { std::iter::empty() }
++pub fn brokered_credential_env_keys(env: &HashMap<String, String>) -> impl Iterator<Item = &'static str> { std::iter::empty() }
+diff --git a/codex-rs/otel/Cargo.toml b/codex-rs/otel/Cargo.toml
+index 6efa930..357a5a5 100644
+--- a/codex-rs/otel/Cargo.toml
++++ b/codex-rs/otel/Cargo.toml
+@@ -7,7 +7,7 @@ license.workspace = true
+ [lib]
+ doctest = false
+ name = "codex_otel"
+-path = "src/lib.rs"
++path = "src/lib_placeholder.rs"
+ 
+ [lints]
+ workspace = true
+@@ -20,33 +20,8 @@ codex-api = { workspace = true }
+ codex-protocol = { workspace = true }
+ eventsource-stream = { workspace = true }
+ gethostname = { workspace = true }
+-opentelemetry = { workspace = true, features = ["logs", "metrics", "trace"] }
+-opentelemetry-appender-tracing = { workspace = true }
+-opentelemetry-otlp = { workspace = true, features = [
+-    "grpc-tonic",
+-    "http-proto",
+-    "http-json",
+-    "logs",
+-    "metrics",
+-    "trace",
+-    "reqwest-blocking-client",
+-    "reqwest-rustls",
+-    "tls",
+-    "tls-roots",
+-]}
+-opentelemetry-semantic-conventions = { workspace = true }
+-opentelemetry_sdk = { workspace = true, features = [
+-    "experimental_trace_batch_span_processor_with_async_runtime",
+-    "experimental_metrics_custom_reader",
+-    "logs",
+-    "metrics",
+-    "rt-tokio",
+-    "testing",
+-    "trace",
+-] }
+ http = { workspace = true }
+ os_info = { workspace = true }
+-reqwest = { workspace = true, features = ["blocking", "rustls-tls"] }
+ serde = { workspace = true, features = ["derive"] }
+ serde_json = { workspace = true }
+ strum_macros = { workspace = true }
+@@ -54,7 +29,6 @@ thiserror = { workspace = true }
+ tokio = { workspace = true }
+ tokio-tungstenite = { workspace = true }
+ tracing = { workspace = true }
+-tracing-opentelemetry = { workspace = true }
+ tracing-subscriber = { workspace = true }
+ 
+ [dev-dependencies]
+diff --git a/codex-rs/otel/src/lib_placeholder.rs b/codex-rs/otel/src/lib_placeholder.rs
+new file mode 100644
+index 0000000..ef33c04
+--- /dev/null
++++ b/codex-rs/otel/src/lib_placeholder.rs
+@@ -0,0 +1,303 @@
++use std::fmt::Debug;
++use std::time::Duration;
++use std::collections::{HashMap, BTreeMap};
++use codex_protocol::auth::AuthMode;
++use serde::Serialize;
++use strum_macros::Display;
++macro_rules! declare_empty_consts {
++    ($($name:ident),* $(,)?) => {
++        $(
++            pub const $name: &str = "";
++        )*
++    };
++}
++declare_empty_consts! {
++    API_CALL_COUNT_METRIC,API_CALL_DURATION_METRIC,ARTIFACT_OPERATION_EXPECTED_OUTPUT_COUNT_METRIC,ARTIFACT_OPERATION_STARTED_METRIC,CURATED_PLUGINS_STARTUP_SYNC_FINAL_METRIC,CURATED_PLUGINS_STARTUP_SYNC_METRIC,
++    GOAL_BLOCKED_METRIC,GOAL_BUDGET_LIMITED_METRIC,GOAL_COMPLETED_METRIC,GOAL_CREATED_METRIC,GOAL_DURATION_SECONDS_METRIC,GOAL_RESUMED_METRIC,GOAL_TOKEN_COUNT_METRIC,GOAL_USAGE_LIMITED_METRIC,GUARDIAN_REVIEW_COUNT_METRIC,GUARDIAN_REVIEW_DURATION_METRIC,GUARDIAN_REVIEW_TOKEN_USAGE_METRIC,GUARDIAN_REVIEW_TTFT_DURATION_METRIC,HOOK_RUN_DURATION_METRIC,HOOK_RUN_METRIC,ORIGINATOR_TAG,PLUGIN_INSTALL_ELICITATION_SENT_METRIC,PLUGIN_INSTALL_SUGGESTION_METRIC,PROCESS_START_METRIC,
++    RESPONSES_API_ENGINE_IAPI_TBT_DURATION_METRIC,RESPONSES_API_ENGINE_IAPI_TTFT_DURATION_METRIC,RESPONSES_API_ENGINE_SERVICE_TBT_DURATION_METRIC,RESPONSES_API_ENGINE_SERVICE_TTFT_DURATION_METRIC,RESPONSES_API_INFERENCE_TIME_DURATION_METRIC,RESPONSES_API_OVERHEAD_DURATION_METRIC,SSE_EVENT_COUNT_METRIC,SSE_EVENT_DURATION_METRIC,STARTUP_PHASE_DURATION_METRIC,STARTUP_PREWARM_AGE_AT_FIRST_TURN_METRIC,STARTUP_PREWARM_DURATION_METRIC,
++    THREAD_SKILLS_DESCRIPTION_TRUNCATED_CHARS_METRIC,THREAD_SKILLS_ENABLED_TOTAL_METRIC,THREAD_SKILLS_KEPT_TOTAL_METRIC,THREAD_SKILLS_TRUNCATED_METRIC,THREAD_STARTED_METRIC,TOOL_CALL_COUNT_METRIC,TOOL_CALL_DURATION_METRIC,TOOL_CALL_UNIFIED_EXEC_METRIC,TURN_E2E_DURATION_METRIC,TURN_MEMORY_METRIC,TURN_NETWORK_PROXY_METRIC,TURN_TOKEN_USAGE_METRIC,TURN_TOOL_CALL_METRIC,TURN_TTFM_DURATION_METRIC,TURN_TTFT_DURATION_METRIC,TURN_UNIFIED_EXEC_RUNNING_PROCESSES_METRIC,
++    WEBSOCKET_EVENT_COUNT_METRIC,WEBSOCKET_EVENT_DURATION_METRIC,WEBSOCKET_REQUEST_COUNT_METRIC,WEBSOCKET_REQUEST_DURATION_METRIC,
++}
++
++#[derive(Clone, Debug, Default, Eq, PartialEq)]
++pub enum OtelExporter {
++    #[default]
++    None,
++    Statsig,
++    OtlpGrpc {
++        endpoint: String,
++        headers: HashMap<String, String>,
++        tls: Option<OtelTlsConfig>,
++    },
++    OtlpHttp {
++        endpoint: String,
++        headers: HashMap<String, String>,
++        protocol: OtelHttpProtocol,
++        tls: Option<OtelTlsConfig>,
++    },
++}
++
++#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
++pub enum OtelHttpProtocol {
++    #[default]
++    Binary,
++    Json,
++}
++
++#[derive(Clone, Debug, Default, Eq, PartialEq)]
++pub struct OtelSettings {
++    pub service_name: String,
++    pub service_version: String,
++    pub codex_home: std::path::PathBuf,
++    pub exporter: OtelExporter,
++    pub trace_exporter: OtelExporter,
++    pub metrics_exporter: OtelExporter,
++    pub environment: String,
++    pub runtime_metrics: bool,
++    pub span_attributes: BTreeMap<String, String>,
++    pub tracestate: BTreeMap<String, BTreeMap<String, String>>,
++}
++
++#[derive(Clone, Debug, Default, Eq, PartialEq)]
++pub struct StatsigMetricsSettings {
++    pub environment: String,
++}
++
++#[derive(Clone, Debug, Default, Eq, PartialEq)]
++pub struct OtelTlsConfig {
++    pub ca_certificate: Option<codex_utils_absolute_path::AbsolutePathBuf>,
++    pub client_certificate: Option<codex_utils_absolute_path::AbsolutePathBuf>,
++    pub client_private_key: Option<codex_utils_absolute_path::AbsolutePathBuf>,
++}
++
++pub fn validate_span_attributes(_attributes: &BTreeMap<String, String>) -> std::io::Result<()> { Ok(()) }
++
++#[derive(Debug, Clone, Serialize, Display)]
++#[serde(rename_all = "snake_case")]
++pub enum ToolDecisionSource { AutomatedReviewer, Config, User }
++
++#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
++pub enum TelemetryAuthMode { ApiKey, Chatgpt }
++
++impl From<AuthMode> for TelemetryAuthMode {
++    fn from(mode: AuthMode) -> Self {
++        match mode {
++            AuthMode::ApiKey => Self::ApiKey,
++            _ => Self::Chatgpt,
++        }
++    }
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct MetricsClient;
++
++#[derive(Clone, Debug, Default)]
++pub struct MetricsConfig;
++
++#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
++pub enum MetricsExporter {
++    #[default]
++    None,
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct MetricsError;
++
++pub type Result<T, E = MetricsError> = std::result::Result<T, E>;
++
++#[derive(Clone, Debug, Default)]
++pub struct Timer;
++
++#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
++pub struct RuntimeMetricTotals {
++    pub count: u64,
++    pub duration_ms: u64,
++}
++
++impl RuntimeMetricTotals {
++    pub fn is_empty(self) -> bool {
++        self.count == 0 && self.duration_ms == 0
++    }
++
++    pub fn merge(&mut self, other: Self) {
++        self.count = self.count.saturating_add(other.count);
++        self.duration_ms = self.duration_ms.saturating_add(other.duration_ms);
++    }
++}
++
++#[derive(Clone, Copy, Debug, Default, PartialEq)]
++pub struct RuntimeMetricsSummary {
++    pub tool_calls: RuntimeMetricTotals,
++    pub api_calls: RuntimeMetricTotals,
++    pub streaming_events: RuntimeMetricTotals,
++    pub websocket_calls: RuntimeMetricTotals,
++    pub websocket_events: RuntimeMetricTotals,
++    pub responses_api_overhead_ms: u64,
++    pub responses_api_inference_time_ms: u64,
++    pub responses_api_engine_iapi_ttft_ms: u64,
++    pub responses_api_engine_service_ttft_ms: u64,
++    pub responses_api_engine_iapi_tbt_ms: f64,
++    pub responses_api_engine_service_tbt_ms: f64,
++    pub turn_ttft_ms: u64,
++    pub turn_ttfm_ms: u64,
++}
++
++impl RuntimeMetricsSummary {
++    pub fn is_empty(self) -> bool {
++        self.tool_calls.is_empty()
++            && self.api_calls.is_empty()
++            && self.streaming_events.is_empty()
++            && self.websocket_calls.is_empty()
++            && self.websocket_events.is_empty()
++            && self.responses_api_overhead_ms == 0
++            && self.responses_api_inference_time_ms == 0
++            && self.responses_api_engine_iapi_ttft_ms == 0
++            && self.responses_api_engine_service_ttft_ms == 0
++            && self.responses_api_engine_iapi_tbt_ms == 0.0
++            && self.responses_api_engine_service_tbt_ms == 0.0
++            && self.turn_ttft_ms == 0
++            && self.turn_ttfm_ms == 0
++    }
++
++    pub fn merge(&mut self, other: Self) {
++        self.tool_calls.merge(other.tool_calls);
++        self.api_calls.merge(other.api_calls);
++        self.streaming_events.merge(other.streaming_events);
++        self.websocket_calls.merge(other.websocket_calls);
++        self.websocket_events.merge(other.websocket_events);
++    }
++
++    pub fn responses_api_summary(&self) -> Self {
++        Self {
++            responses_api_overhead_ms: self.responses_api_overhead_ms,
++            responses_api_inference_time_ms: self.responses_api_inference_time_ms,
++            responses_api_engine_iapi_ttft_ms: self.responses_api_engine_iapi_ttft_ms,
++            responses_api_engine_service_ttft_ms: self.responses_api_engine_service_ttft_ms,
++            responses_api_engine_iapi_tbt_ms: self.responses_api_engine_iapi_tbt_ms,
++            responses_api_engine_service_tbt_ms: self.responses_api_engine_service_tbt_ms,
++            ..Self::default()
++        }
++    }
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct SessionTelemetry;
++
++#[derive(Clone, Debug, Default)]
++pub struct SessionTelemetryMetadata;
++
++#[derive(Clone, Debug, Default)]
++pub struct AuthEnvTelemetryMetadata {
++    pub openai_api_key_env_present: bool,
++    pub codex_api_key_env_present: bool,
++    pub codex_api_key_env_enabled: bool,
++    pub provider_env_key_name: Option<String>,
++    pub provider_env_key_present: Option<bool>,
++    pub refresh_token_url_override_present: bool,
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct OtelProvider {
++    pub tracer_provider: Option<()>,
++    pub tracer: Option<()>,
++}
++
++pub fn start_global_timer(_name: &str, _tags: &[(&str, &str)]) -> Result<Timer> { Ok(Timer) }
++pub fn global() -> Option<MetricsClient> { None }
++pub fn global_statsig_metrics_settings() -> Option<StatsigMetricsSettings> { None }
++pub fn record_process_start_once(_metrics: &MetricsClient, _originator: &str) -> Result<bool> { Ok(false) }
++pub fn sanitize_metric_tag_value(value: &str) -> String { value.to_string() }
++pub fn bounded_originator_tag_value(_value: &str) -> &'static str { "" }
++pub fn context_from_w3c_trace_context<T>(_trace: &T) -> Option<()> { None }
++pub fn current_span_trace_id() -> Option<String> { None }
++pub fn current_span_w3c_trace_context() -> Option<codex_protocol::protocol::W3cTraceContext> { None }
++pub fn inject_span_w3c_trace_headers<T, H>(_span: &T, _headers: &mut H) -> bool { false }
++pub fn set_parent_from_context<T, C>(_span: &T, _context: C) {}
++pub fn set_parent_from_w3c_trace_context<T, C>(_span: &T, _trace: &C) -> bool { false }
++pub fn span_w3c_trace_context<T>(_span: &T) -> Option<codex_protocol::protocol::W3cTraceContext> { None }
++pub fn traceparent_context_from_env() -> Option<()> { None }
++pub fn validate_tracestate_entries(_entries: &BTreeMap<String, BTreeMap<String, String>>) -> Result<(), Box<dyn std::error::Error>> { Ok(()) }
++pub fn validate_tracestate_member(key: &str, fields: &BTreeMap<String, String>) -> Result<(), Box<dyn std::error::Error>> { Ok(()) }
++
++impl OtelProvider {
++    pub fn try_new(settings: &OtelSettings) -> Result<Option<Self>, Box<dyn std::error::Error>> { Ok(None) }
++    pub fn metrics(&self) -> Option<&MetricsClient> { None }
++    pub fn logger_layer(&self) -> Option<tracing_subscriber::layer::Identity> { None }
++    pub fn logger_export_layer<S>(&self) -> Option<impl tracing_subscriber::Layer<S> + Send + Sync>
++    where
++        S: tracing::Subscriber + for<'span> tracing_subscriber::registry::LookupSpan<'span> + Send + Sync,
++    {
++        None::<tracing_subscriber::layer::Identity>
++    }
++    pub fn tracing_layer(&self) -> Option<tracing_subscriber::layer::Identity> { None }
++    pub fn reloadable_tracing_layer<S>(_service_name: &'static str) -> impl tracing_subscriber::Layer<S> + Send + Sync
++    where
++        S: tracing::Subscriber + for<'span> tracing_subscriber::registry::LookupSpan<'span> + Send + Sync,
++    {
++        tracing_subscriber::layer::Identity::new()
++    }
++    pub fn log_export_filter(_meta: &tracing::Metadata<'_>) -> bool { false }
++    pub async fn shutdown_with_timeout(self, _timeout: Duration) -> std::io::Result<()> { Ok(()) }
++    pub fn shutdown(&self) {}
++}
++
++impl MetricsClient {
++    pub fn start_timer(&self, _name: &str, _tags: &[(&str, &str)]) -> Result<Timer> { Ok(Timer) }
++    pub fn counter(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn gauge(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn histogram(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn histogram_with_boundaries(&self, name: &str, value: i64, boundaries: &[f64], tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn record_duration(&self, _name: &str, _duration: Duration, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn counter_with_description(&self, _name: &str, _description: &str, _value: i64, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn record_duration_seconds_with_description(&self, _name: &str, _description: &str, _duration: Duration, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn register_observable_gauge_with_description(&self, _name: &str, _description: &str, _callback: impl Fn() -> i64 + Send + Sync + 'static, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++    pub fn record(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)]) -> Result<()> { Ok(()) }
++}
++
++impl SessionTelemetry {
++    #[allow(clippy::too_many_arguments)]
++    pub fn new(_conversation_id: codex_protocol::ThreadId, _model: &str, _slug: &str, _account_id: Option<String>, _account_email: Option<String>, _auth_mode: Option<TelemetryAuthMode>, _originator: String, _log_user_prompts: bool, _terminal_type: String, _session_source: codex_protocol::protocol::SessionSource) -> Self { Self }
++    pub fn with_auth_env(self, _auth_env: AuthEnvTelemetryMetadata) -> Self { self }
++    pub fn with_metrics_service_name(self, _service_name: &str) -> Self { self }
++    pub fn with_metrics(self, _metrics: MetricsClient) -> Self { self }
++    pub fn with_metrics_without_metadata_tags(self, _metrics: MetricsClient) -> Self { self }
++    pub fn with_tool_result_log_config<T>(self, _config: T) -> Self { self }
++    pub fn with_provider_metrics(self, _provider: &OtelProvider) -> Self { self }
++    pub fn runtime_metrics_summary(&self) -> Option<RuntimeMetricsSummary> { None }
++    pub fn reset_runtime_metrics(&self) {}
++    pub fn record(&self, _name: &str, _value: f64, _tags: &[(&str, &str)]) {}
++    pub fn counter(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)]) {}
++    pub fn histogram(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)] ) {}
++    pub fn record_websocket_connect(&self, _duration: Duration, _status: Option<u16>, _error_message: Option<&str>, _auth_header_attached: bool, _auth_header_name: Option<&str>, _retry_after_unauthorized: bool, _recovery_mode: Option<&str>, _recovery_phase: Option<&str>, _endpoint: &str, _connection_reused: bool, _request_id: Option<&str>, _cf_ray: Option<&str>, _auth_error: Option<&str>, _auth_error_code: Option<&str>, _agent_identity_telemetry: Option<&codex_api::AgentIdentityTelemetry>) {}
++    pub fn record_auth_recovery(&self, _mode: &str, _phase: &str, _outcome: &str, _request_id: Option<&str>, _cf_ray: Option<&str>, _auth_error: Option<&str>, _auth_error_code: Option<&str>, _recovery_reason: Option<&str>, _auth_state_changed: Option<bool>) {}
++    pub fn user_prompt<T>(&self, _items: &T) {}
++    pub fn record_duration(&self, _name: &str, _duration: Duration, _tags: &[(&str, &str)]) {}
++    pub fn record_startup_phase(&self, _phase: &'static str, _duration: Duration, _status: Option<&'static str>) {}
++    pub fn record_turn_ttft(&self, _duration: Duration) {}
++    pub fn record_turn_cost(&self, _turn_id: &str, _estimated_usd: &str, _interrupted: bool, _speed: Option<&str>, _reasoning_effort: Option<&str>) {}
++    pub fn record_plugin_install_elicitation_sent(&self, _tool_type: &str, _tool_id: &str, _tool_name: &str) {}
++    pub fn record_plugin_install_suggestion(&self, _tool_type: &str, _tool_id: &str, _tool_name: &str, _response_action: &str, _user_confirmed: bool, _completed: bool) {}
++    pub fn with_model(self, _model: &str, _slug: &str) -> Self { self }
++    pub fn with_inference_request<T>( self, _service_tier: Option<&str>, _model_reasoning_effort: Option<&T>) -> Self { self }
++    pub fn record_responses<T, U>(&self, _span: &T, _event: &U) {}
++    pub fn conversation_starts<A, B, C, D, E, F>(&self, _provider_name: &str, _reasoning_effort: A, _reasoning_summary: B, _context_window: C, _auto_compact_token_limit: D, _approval_policy: E, _sandbox_policy: F, _mcp_servers: Vec<&str>) { let _ = std::marker::PhantomData::<(A, B, C, D, E, F)>; }
++    pub fn record_api_request<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(&self, a: A, b: B, c: C, d: D, e: E, f: F, g: G, _recovery_mode: H, _recovery_phase: I, _endpoint: J, _request_id: K, _cf_ray: L, _auth_error: M, _auth_error_code: N, _agent_identity_telemetry: O) {}
++    pub fn record_websocket_request<A, B, C, D>(&self, _duration: A, _error: B, _connection_reused: C, _agent_identity_telemetry: D) {}
++    pub fn record_websocket_event<A, B>(&self, _result: &A, _duration: B) {}
++    pub async fn log_sse_event<A, B>(&self, _response: &A, _duration: B) {}
++    pub fn sse_event_completed<A, B>(&self, _usage: &A, _ttft_ms: B) {}
++    pub fn see_event_completed_failed<T>(&self, _error: &T) {}
++    pub fn sandbox_outcome<N>(&self, tool_name: N, _call_id: &str, _outcome: &str, _initial_duration: Duration, _escalated_duration: Option<Duration>) {}
++    pub fn log_tool_failed<N>(&self, tool_name: N, _error: &str) {}
++    pub fn tool_result_with_tags<N>(&self, tool_name: N, _call_id: &str, _arguments: &str, _duration: Duration, _success: bool, _output: &str, _extra_tags: &[(&str, &str)], _extra_trace_fields: &[(&str, &str)]) {}
++    pub async fn log_tool_result_with_tags<T, F: FnOnce() -> Fut, Fut: Future<Output = Result<T, E>>, E: std::fmt::Display, N>(&self, tool_name: N, call_id: &str, arguments: &str, extra_tags: &[(&str, &str)], extra_trace_fields: &[(&str, &str)], f: F, log_output: impl FnOnce(&T) -> (String, bool)) -> Result<T, E> { f().await }
++    pub fn tool_decision<N, D>(&self, tool_name: N, _call_id: &str, d: D, _source: Option<ToolDecisionSource> ) {}
++    pub fn start_timer(&self, _name: &str, _tags: &[(&str, &str)]) -> Result<Timer> { Ok(Timer) }
++    pub fn timer(&self, _name: &str) -> Timer { Timer }
++}
++
++impl Timer {
++    pub fn finish(self) {}
++    pub fn record(&self, _tags: &[(&str, &str)]) -> Result<()> {Ok(()) }
++    pub fn elapsed(&self) -> Duration { Duration::ZERO }
++}
+diff --git a/codex-rs/rust-toolchain.toml b/codex-rs/rust-toolchain.toml
+deleted file mode 100644
+index 910c651..0000000
+--- a/codex-rs/rust-toolchain.toml
++++ /dev/null
+@@ -1,3 +0,0 @@
+-[toolchain]
+-channel = "1.95.0"
+-components = ["clippy", "rustfmt", "rust-src"]
+diff --git a/codex-rs/utils/audio/Cargo.toml b/codex-rs/utils/audio/Cargo.toml
+index 9054022..4c91a18 100644
+--- a/codex-rs/utils/audio/Cargo.toml
++++ b/codex-rs/utils/audio/Cargo.toml
+@@ -12,7 +12,6 @@ base64 = { workspace = true }
+ codex-protocol = { workspace = true }
+ codex-utils-cache = { workspace = true }
+ codex-utils-string = { workspace = true }
+-symphonia = { workspace = true }
+ thiserror = { workspace = true }
+ tracing = { workspace = true }
+ 
+@@ -21,3 +20,4 @@ pretty_assertions = { workspace = true }
+ 
+ [lib]
+ doctest = false
++path = "src/lib_placeholder.rs"
+diff --git a/codex-rs/utils/audio/src/lib_placeholder.rs b/codex-rs/utils/audio/src/lib_placeholder.rs
+new file mode 100644
+index 0000000..e69de29
+diff --git a/codex-rs/utils/rustls-provider/src/lib.rs b/codex-rs/utils/rustls-provider/src/lib.rs
+index 0269819..0c3d7eb 100644
+--- a/codex-rs/utils/rustls-provider/src/lib.rs
++++ b/codex-rs/utils/rustls-provider/src/lib.rs
+@@ -10,17 +10,9 @@ const REQUIRED_SIGNATURE_SCHEME: rustls::SignatureScheme =
+ pub fn ensure_rustls_crypto_provider() {
+     static RUSTLS_PROVIDER_INIT: Once = Once::new();
+     RUSTLS_PROVIDER_INIT.call_once(|| {
+-        // aws-lc-rs supports a broader WebPKI signature set than ring, including
+-        // ECDSA P-521/SHA-512 certs used by some enterprise TLS proxies.
+-        if rustls::crypto::aws_lc_rs::default_provider()
+-            .install_default()
+-            .is_err()
+-        {
+-            // Preserve the previous best-effort behavior for embedded hosts that
+-            // install a process-global provider before Codex can install one.
+-            return;
+-        }
+ 
++        rustls::crypto::ring::default_provider().install_default().unwrap();
++        return;
+         let Some(provider) = rustls::crypto::CryptoProvider::get_default() else {
+             panic!("aws-lc-rs rustls crypto provider should be installed");
+         };
+diff --git a/codex-rs/websocket-client/Cargo.toml b/codex-rs/websocket-client/Cargo.toml
+index 19baf98..5863279 100644
+--- a/codex-rs/websocket-client/Cargo.toml
++++ b/codex-rs/websocket-client/Cargo.toml
+@@ -16,7 +16,6 @@ url = { workspace = true }
+ [dev-dependencies]
+ codex-utils-rustls-provider = { workspace = true }
+ pretty_assertions = { workspace = true }
+-rcgen = { workspace = true }
+ tokio = { workspace = true, features = ["macros", "test-util"] }
+ 
+ [lints]
