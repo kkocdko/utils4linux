@@ -1,93 +1,5 @@
-diff --git a/codex-rs/0_lean.md b/codex-rs/0_lean.md
-new file mode 100644
-index 0000000..4ec3e11
---- /dev/null
-+++ b/codex-rs/0_lean.md
-@@ -0,0 +1,82 @@
-+# codex-lean
-+
-+The result:
-+
-+```
-+$ ls -lh ./target/release/codex
-+-rwxrwxr-x 1 root root 113M Aug 24 13:47 target/release/codex
-+```
-+
-+Tips:
-+
-+```sh
-+git pull --rebase origin release/0.150 # https://github.com/openai/codex # version = "0.150.1+lean.14" # 7a48857579dc8e4d84eba9244df1dc87c7bfc51d
-+cargo build --bin codex --profile release -q
-+git add . ; git commit -m lean.99
-+git diff HEAD~1 HEAD > /mnt/c/misc/code/codex-lean/main.patch
-+# cd /tmp/z/trim ; git clone --depth 20 file:///tmp/z/codex
-+tar --zstd -cf /mnt/c/misc/code/codex-lean/main.tar.zst codex
-+proxychains ssh klc2u1@klc2.lan "wsl -e xz -1c /tmp/z/codex/codex-rs/target/release/codex 2>nul" | xz -d > ~/misc/apps/codex
-+```
-+
-+Make compressed temp dir:
-+
-+```sh
-+truncate -s 16G /tmp/z.img
-+mkdir -p /tmp/z
-+/sbin/mkfs.btrfs -f /tmp/z.img
-+sudo mount -o nossd,commit=5,compress=zstd /tmp/z.img /tmp/z
-+sudo chmod 1777 /tmp/z
-+watch "df -h | grep /tmp ; du -sh /tmp/z.img ; free -h"
-+```
-+
-+Use with these in `~/.codex/config.toml`:
-+
-+```toml
-+model = "gpt-5.6-luna"
-+model_reasoning_effort = "low"
-+model_provider = "free"
-+approvals_reviewer = "user"
-+allow_login_shell = false
-+check_for_update_on_startup = false
-+preferred_auth_method = "apikey"
-+forced_login_method = "api"
-+features.plugins = false
-+features.apps = false
-+features.memories = false
-+features.code_mode = false
-+features.code_mode_host = false
-+feedback.enabled = false
-+analytics.enabled = false
-+
-+[[skills.config]]
-+path = "~/.codex/skills/.system/imagegen/SKILL.md"
-+enabled = false
-+[[skills.config]]
-+path = "~/.codex/skills/.system/openai-docs/SKILL.md"
-+enabled = false
-+[[skills.config]]
-+path = "~/.codex/skills/.system/plugin-creator/SKILL.md"
-+enabled = false
-+[[skills.config]]
-+path = "~/.codex/skills/.system/skill-creator/SKILL.md"
-+enabled = false
-+```
-+
-+## Intro for LLM Agent
-+
-+Current dir is the source code of the open-source project `codex` cli. Check `ls -lh ./Cargo.toml` at first.
-+
-+Our goal is to reduce the compiled binary size, make codex into a lean program. So please cleverly cut off the call paths to deps, rather than deleting code everywhere.
-+
-+Now, please review the latest commit (other are upsteam commits, don't need to look at them). I removed features such as voice input and image generation, and replaced the deeply coupled `network-proxy` and `otel` (open telemetry) with non-functional placeholders.
-+
-+When reviewing this latest commit, you should exclude the `./network-proxy/src/lib_placeholder.rs` and `./otel/src/lib_placeholder.rs` files (they are about 1k lines). Only read them when I agree.
-+
-+Compilation is slow. MUST use the `cargo build --bin codex --profile release -q` command, using other profiles is prohibited (as it requires a full recompilation). Never run `cargo fmt` or `just`, they will cause large code rewrite.
-+
-+Also, there are some other modifications, such as:
-+
-+- Modified `./core/src/tools/mod.rs` to allow fallback to direct tool mode.
-+
-+- Modified `./core/src/tools/code_mode/mod.rs` to avoid duplicate warning.
 diff --git a/codex-rs/Cargo.toml b/codex-rs/Cargo.toml
-index f992ac7..b977dc1 100644
+index ea9d044..820f2a9 100644
 --- a/codex-rs/Cargo.toml
 +++ b/codex-rs/Cargo.toml
 @@ -1,6 +1,5 @@
@@ -137,9 +49,9 @@ index f992ac7..b977dc1 100644
      "tools",
 -    "v8-poc",
      "websocket-client",
-     "worktree",
      "workload-identity",
-@@ -130,8 +120,6 @@ members = [
+     "utils/absolute-path",
+@@ -129,8 +119,6 @@ members = [
      "codex-api",
      "state",
      "terminal-detection",
@@ -148,7 +60,7 @@ index f992ac7..b977dc1 100644
      "thread-store",
      "uds",
      "codex-experimental-api-macros",
-@@ -158,7 +146,6 @@ codex-agent-identity = { path = "agent-identity" }
+@@ -157,7 +145,6 @@ codex-agent-identity = { path = "agent-identity" }
  codex-agent-roles = { path = "agent-roles" }
  codex-ansi-escape = { path = "ansi-escape" }
  codex-api = { path = "codex-api" }
@@ -156,7 +68,7 @@ index f992ac7..b977dc1 100644
  codex-app-server = { path = "app-server" }
  codex-app-server-transport = { path = "app-server-transport" }
  codex-app-server-daemon = { path = "app-server-daemon" }
-@@ -178,7 +165,6 @@ codex-cloud-tasks-client = { path = "cloud-tasks-client" }
+@@ -177,7 +164,6 @@ codex-cloud-tasks-client = { path = "cloud-tasks-client" }
  codex-cloud-tasks-mock-client = { path = "cloud-tasks-mock-client" }
  codex-code-mode = { path = "code-mode" }
  codex-code-mode-protocol = { path = "code-mode-protocol" }
@@ -164,7 +76,7 @@ index f992ac7..b977dc1 100644
  codex-home = { path = "codex-home" }
  codex-http-client = { path = "http-client" }
  codex-websocket-client = { path = "websocket-client" }
-@@ -203,7 +189,6 @@ codex-goal-extension = { path = "ext/goal" }
+@@ -202,7 +188,6 @@ codex-goal-extension = { path = "ext/goal" }
  codex-git-attribution = { path = "ext/git-attribution" }
  codex-guardian-v2 = { path = "ext/guardian-v2" }
  codex-history-notes-extension = { path = "ext/history-notes" }
@@ -172,7 +84,7 @@ index f992ac7..b977dc1 100644
  codex-external-agent-migration = { path = "external-agent-migration" }
  codex-experimental-api-macros = { path = "codex-experimental-api-macros" }
  codex-features = { path = "features" }
-@@ -280,7 +265,6 @@ codex-utils-sleep-inhibitor = { path = "utils/sleep-inhibitor" }
+@@ -279,7 +264,6 @@ codex-utils-sleep-inhibitor = { path = "utils/sleep-inhibitor" }
  codex-utils-stream-parser = { path = "utils/stream-parser" }
  codex-utils-string = { path = "utils/string" }
  codex-utils-template = { path = "utils/template" }
@@ -180,7 +92,7 @@ index f992ac7..b977dc1 100644
  codex-workload-identity = { path = "workload-identity" }
  codex-windows-sandbox = { path = "windows-sandbox-rs" }
  core_test_support = { path = "core/tests/common" }
-@@ -297,10 +281,6 @@ assert_matches = "1.5.0"
+@@ -296,10 +280,6 @@ assert_matches = "1.5.0"
  async-channel = "2.3.1"
  async-io = "2.6.0"
  async-stream = "0.3.6"
@@ -191,7 +103,7 @@ index f992ac7..b977dc1 100644
  axum = { version = "0.8", default-features = false }
  base64 = "0.22.1"
  bitflags = "2.13.1"
-@@ -324,7 +304,6 @@ crossbeam-channel = "0.5.15"
+@@ -323,7 +303,6 @@ crossbeam-channel = "0.5.15"
  crypto_box = { version = "0.9.1", features = ["seal"] }
  crossterm = "0.29.0"
  ctor = "0.6.3"
@@ -199,7 +111,7 @@ index f992ac7..b977dc1 100644
  derive_more = "2"
  diffy = "0.4.2"
  dirs = "6"
-@@ -395,10 +374,6 @@ ratatui = { version = "0.30.2", default-features = false, features = [
+@@ -393,10 +372,6 @@ ratatui = { version = "0.30.2", default-features = false, features = [
      "underline-color",
  ] }
  ratatui-macros = "0.7.2"
@@ -210,7 +122,7 @@ index f992ac7..b977dc1 100644
  regex = "1.12.3"
  regex-lite = "0.1.8"
  reqwest = { version = "0.12", features = ["cookies"] }
-@@ -406,7 +381,7 @@ rmcp = { version = "=3.1.3", default-features = false }
+@@ -404,7 +379,7 @@ rmcp = { version = "=3.1.3", default-features = false }
  runfiles = { git = "https://github.com/dzbarsky/rules_rust", rev = "b56cbaa8465e74127f1ea216f813cd377295ad81" }
  rustix = { version = "1.1.4", features = ["net"] }
  rustls = { version = "0.23", default-features = false, features = [
@@ -219,7 +131,7 @@ index f992ac7..b977dc1 100644
      "std",
  ] }
  rustls-native-certs = "0.8.3"
-@@ -427,13 +402,6 @@ scopeguard = "1.2.0"
+@@ -425,13 +400,6 @@ scopeguard = "1.2.0"
  sha2 = "0.10"
  shlex = "1.3.0"
  similar = "2.7.0"
@@ -233,7 +145,7 @@ index f992ac7..b977dc1 100644
  socket2 = "0.6.1"
  # When bumping sqlx, audit the SQLite constructor deny list in clippy.toml.
  sqlx = { version = "0.9.0", default-features = false, features = [
-@@ -490,7 +458,6 @@ unicode-width = "0.2"
+@@ -488,7 +456,6 @@ unicode-width = "0.2"
  url = "2"
  urlencoding = "2.1"
  uuid = "1"
@@ -241,7 +153,7 @@ index f992ac7..b977dc1 100644
  vt100 = "0.16.2"
  walkdir = "2.5.0"
  webbrowser = "1.2.2"
-@@ -505,7 +472,7 @@ wiremock = "0.6"
+@@ -503,7 +470,7 @@ wiremock = "0.6"
  zeroize = "1.8.2"
  
  [workspace.lints]
@@ -250,7 +162,7 @@ index f992ac7..b977dc1 100644
  
  [workspace.lints.clippy]
  await_holding_invalid_type = "deny"
-@@ -551,7 +518,6 @@ unwrap_used = "deny"
+@@ -549,7 +516,6 @@ unwrap_used = "deny"
  ignored = [
      "icu_provider",
      "openssl-sys",
@@ -258,7 +170,7 @@ index f992ac7..b977dc1 100644
  ]
  
  [profile.dev]
-@@ -563,18 +529,21 @@ debug = "limited"
+@@ -561,7 +527,8 @@ debug = "limited"
  inherits = "dev"
  opt-level = 0
  debug = "none"
@@ -268,23 +180,25 @@ index f992ac7..b977dc1 100644
  
  [profile.release]
  lto = "thin"
--debug = "line-tables-only"
--split-debuginfo = "off"
-+# lto = false
-+debug = false
-+opt-level = "s"
-+# split-debuginfo = "off"
- # Keep release binaries symbolicateable until packaging has archived the
- # sidecar symbols and stripped the binaries.
--strip = false
-+strip = true
- 
+@@ -574,6 +541,18 @@ strip = false
  # Balance parallel release code generation against binary size.
--codegen-units = 4
-+codegen-units = 2
+ codegen-units = 4
  
++[profile.lean]
++inherits = "release"
++lto = "thin"
++opt-level = "s"
++debug = false
++strip = true
++panic = "abort"
++codegen-units = 1
++[profile.lean.package."*"]
++debug = false
++strip = true
++
  [profile.profiling]
  inherits = "release"
+ debug = "full"
 diff --git a/codex-rs/app-server/Cargo.toml b/codex-rs/app-server/Cargo.toml
 index 2f08b0f..2eccbe6 100644
 --- a/codex-rs/app-server/Cargo.toml
@@ -367,7 +281,7 @@ index b82d5ee..f1b3ec4 100644
  codex-features = { workspace = true }
  codex-login = { workspace = true }
 diff --git a/codex-rs/core-api/src/lib.rs b/codex-rs/core-api/src/lib.rs
-index e422218..36b99eb 100644
+index 566c2bc..76e2054 100644
 --- a/codex-rs/core-api/src/lib.rs
 +++ b/codex-rs/core-api/src/lib.rs
 @@ -92,7 +92,6 @@ pub use codex_features::Feature;
@@ -391,10 +305,10 @@ index 384af1d..089a4fd 100644
  codex-otel = { workspace = true }
  codex-test-binary-support = { workspace = true }
 diff --git a/codex-rs/core/src/context_manager/history.rs b/codex-rs/core/src/context_manager/history.rs
-index 2d9b647..52c81ce 100644
+index 98254eb..58f1e79 100644
 --- a/codex-rs/core/src/context_manager/history.rs
 +++ b/codex-rs/core/src/context_manager/history.rs
-@@ -29,8 +29,8 @@ use codex_protocol::protocol::TokenUsage;
+@@ -28,8 +28,8 @@ use codex_protocol::protocol::TokenUsage;
  use codex_protocol::protocol::TokenUsageInfo;
  use codex_protocol::protocol::TurnContextItem;
  use codex_protocol::protocol::WorldStateItem;
@@ -405,7 +319,7 @@ index 2d9b647..52c81ce 100644
  use codex_utils_output_truncation::TruncationPolicy;
  use codex_utils_output_truncation::approx_bytes_for_tokens;
 diff --git a/codex-rs/core/src/realtime_conversation.rs b/codex-rs/core/src/realtime_conversation.rs
-index 5d15f5a..79df3c9 100644
+index 879c211..0860594 100644
 --- a/codex-rs/core/src/realtime_conversation.rs
 +++ b/codex-rs/core/src/realtime_conversation.rs
 @@ -1115,6 +1115,7 @@ pub(crate) async fn handle_start(
@@ -494,7 +408,7 @@ index 5d15f5a..79df3c9 100644
  
  fn spawn_realtime_input_task(
 diff --git a/codex-rs/core/src/session/handlers.rs b/codex-rs/core/src/session/handlers.rs
-index dada3b6..e0322b6 100644
+index 28fbc46..64f9698 100644
 --- a/codex-rs/core/src/session/handlers.rs
 +++ b/codex-rs/core/src/session/handlers.rs
 @@ -64,17 +64,7 @@ pub async fn clean_background_terminals(sess: &Arc<Session>) {
@@ -517,10 +431,10 @@ index dada3b6..e0322b6 100644
  /// Queues an inter-agent message, then lets the shared pending-work scheduler
  /// decide whether an idle session should start a regular turn.
 diff --git a/codex-rs/core/src/session/mod.rs b/codex-rs/core/src/session/mod.rs
-index 1d7fe51..c6a3c05 100644
+index d14cadc..2b6a464 100644
 --- a/codex-rs/core/src/session/mod.rs
 +++ b/codex-rs/core/src/session/mod.rs
-@@ -166,7 +166,7 @@ use codex_thread_store::ReadThreadParams;
+@@ -164,7 +164,7 @@ use codex_thread_store::ReadThreadParams;
  use codex_thread_store::ResumeThreadParams;
  use codex_thread_store::ThreadPersistenceMetadata;
  use codex_thread_store::ThreadStore;
@@ -530,7 +444,7 @@ index 1d7fe51..c6a3c05 100644
  use futures::future::BoxFuture;
  use futures::future::Shared;
 diff --git a/codex-rs/core/src/tools/code_mode/mod.rs b/codex-rs/core/src/tools/code_mode/mod.rs
-index 26559df..8498de7 100644
+index 0ce1e66..22632dc 100644
 --- a/codex-rs/core/src/tools/code_mode/mod.rs
 +++ b/codex-rs/core/src/tools/code_mode/mod.rs
 @@ -40,7 +40,7 @@ use crate::tools::router::ToolCallSource;
@@ -553,7 +467,7 @@ index 26559df..8498de7 100644
          .then(|| {
              format!(
 diff --git a/codex-rs/core/src/tools/mod.rs b/codex-rs/core/src/tools/mod.rs
-index e262e00..7b4a2c3 100644
+index df6b596..0600158 100644
 --- a/codex-rs/core/src/tools/mod.rs
 +++ b/codex-rs/core/src/tools/mod.rs
 @@ -79,7 +79,7 @@ pub(crate) fn requested_tool_mode(turn_context: &TurnContext) -> ToolMode {
