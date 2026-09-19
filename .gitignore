@@ -7,8 +7,8 @@
 /mkvscode/dist/
 /mkvscode/*.gz
 /katago/venv/
-/*/dist/
-/*/target/
+/*/dist
+/*/target
 /rt4web/*.zip
 /others/wx4tg.json
 venv

@@ -3,29 +3,28 @@ cd $(dirname $0)
 
 if [ "$1" = "" ]; then
   cd dist
-  exec $HOME/misc/apps/rclone --config "" serve webdav -L --dir-cache-time 1s --response-header cache-control:no-store --addr 127.0.0.1:9005 . # v1.75.0
+  exec rclone --config "" serve webdav -L --dir-cache-time 1s --response-header cache-control:no-store --addr 127.0.0.1:9005 . # --read-only
   exit 1
   # trap exit INT
-  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
-  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda.pdf&x-text-enhance&x-invert
-  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
-  # http://127.0.0.1:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+  # http://booker.localhost:9005/pdfjs/web/viewer.html?file=/chunks/bulletproof-ssl-and-tls-zh.pdf&x-text-enhance&x-invert
+  # http://booker.localhost:9005/pdfjs/web/viewer.html?file=/chunks/cnatda.pdf&x-text-enhance&x-invert
+  # http://booker.localhost:9005/pdfjs/web/viewer.html?file=/chunks/cnatda-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
+  # http://booker.localhost:9005/pdfjs/web/viewer.html?file=/chunks/csapp-zh.pdf&x-text-enhance&x-invert&x-no-text-layer
 fi
 
 exit 1
 
 echo ">>> init"
-rm -rf dist
-mkdir dist
+mkdir -p dist
 cd dist
 echo ">>> download and modify pdfjs"
-curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v5.3.93/pdfjs-5.3.93-dist.zip
+curl -o pdfjs-dist.zip -L https://github.com/mozilla/pdf.js/releases/download/v6.3.289/pdfjs-6.3.289-dist.zip
 unzip -qq -d pdfjs pdfjs-dist.zip
 rm -rf pdfjs-dist.zip
 mv pdfjs/web/locale/en-US/viewer.ftl pdfjs/web/locale/viewer.ftl
 sed -i pdfjs/web/locale/locale.json -e 's|/|/../|g'
-sed -i pdfjs/web/images/toolbarButton-sidebarToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
-sed -i pdfjs/web/viewer.html -e 's|"utf-8">|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-sidebarToggle.svg>|'
+sed -i pdfjs/web/images/toolbarButton-viewsManagerToggle.svg -e 's|/svg">|&<style>@media(prefers-color-scheme:dark){path{fill:white}}</style>|'
+sed -i pdfjs/web/viewer.html -e 's|</title>|&<script src=booker.js></script><link rel=stylesheet href=booker.css><link rel=icon href=images/toolbarButton-viewsManagerToggle.svg>|'
 sed -i pdfjs/build/pdf.mjs -e 's|(CanvasGraphics\.prototype|(xopts["x-text-enhance"]){CanvasGraphics.prototype.showText=()=>{}}if&|'
 rm -rf pdfjs/**/*.map pdfjs/**/*.pdf pdfjs/web/cmaps/ pdfjs/web/locale/*/ pdfjs/build/pdf.sandbox.mjs
 cat <<EOF > pdfjs/web/booker.css
@@ -81,7 +80,7 @@ cat <<EOF > pdfjs/web/booker.js
 EOF
 echo ">>> create symbolic links to books"
 mkdir chunks
-archive_dir="/run/media/kkocdko/data/docs/ebook"
+archive_dir="$HOME/misc/docs/ebook"
 ln -s "$archive_dir/Computer Networking A Top Down Approach 8th.pdf" chunks/cnatda.pdf
 ln -s "$archive_dir/Computer Systems A Programmer s Perspective 3th.pdf" chunks/csapp.pdf
 ln -s "$archive_dir/mysql-crash-course-zh.pdf" chunks/mysqlcc-zh.pdf
