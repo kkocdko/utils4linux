@@ -15,7 +15,7 @@ feedback.enabled = false
 analytics.enabled = false
 web_search = "disabled"
 sqlite_home = "~/.codex/db"
-model_instructions_file = "~/.codex/base_instructions.md" # override the base_instructions in model_catalog_json models.json # default = https://github.com/openai/codex/raw/refs/heads/main/codex-rs/protocol/src/prompts/base_instructions/default.md 
+# model_instructions_file = "~/.codex/base_instructions.md" # override the base_instructions in model_catalog_json models.json # default = https://github.com/openai/codex/raw/refs/heads/main/codex-rs/protocol/src/prompts/base_instructions/default.md
 model_catalog_json = "~/.codex/models.json"
 model_catalog_json_ = """
 curl -L https://github.com/openai/codex/raw/refs/heads/main/codex-rs/models-manager/models.json \
@@ -95,4 +95,3 @@ enabled = false
 [[skills.config]]
 path = "/media/kkocdko/KK_TMP_1/home/.codex/skills/simple-english/SKILL.md" # curl -L https://github.com/AminBlg/SimpleEnglish/archive/refs/tags/v2.0.2.tar.gz | tar -xz ; mv SimpleEnglish-*/skills/simple-english ~/.codex/skills/ ; rm -rf SimpleEnglish-*
 enabled = false
-
