@@ -1,8 +1,49 @@
 import fs from "node:fs";
 import { pipeline } from "node:stream/promises";
 
-const identifier = Buffer.from("any2store-v1\0\0\0\0");
+const identifier = Buffer.from("any2store-v3\0\0\0\0");
 const sampleRate = 48000;
+const blockSize = 1024 * 1024;
+const randomBytes = (length) => Buffer.from(crypto.getRandomValues(new Uint8Array(length)));
+
+async function deriveKey(password, salt) {
+  const material = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 60000, hash: "SHA-256" },
+    material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+
+function blockParameters(metadata, index) {
+  const nonce = Buffer.from(metadata.subarray(40, 52));
+  nonce.writeUInt32BE((nonce.readUInt32BE(8) ^ index) >>> 0, 8);
+  return {
+    name: "AES-GCM", iv: nonce, tagLength: 128,
+    additionalData: Buffer.concat([metadata, uint32(index)]),
+  };
+}
+
+function encryptedSize(size) {
+  return size + Math.max(1, Math.ceil(size / blockSize)) * 16;
+}
+
+async function* blocks(input, start, length, chunkSize) {
+  if (!length) return;
+  let pending = Buffer.alloc(0);
+  let copied = 0;
+  for await (const chunk of input.createReadStream({
+    start, end: start + length - 1, highWaterMark: chunkSize, autoClose: false,
+  })) {
+    copied += chunk.length;
+    pending = pending.length ? Buffer.concat([pending, chunk]) : chunk;
+    while (pending.length >= chunkSize) {
+      yield pending.subarray(0, chunkSize);
+      pending = pending.subarray(chunkSize);
+    }
+  }
+  if (copied !== length) throw new Error("Input was truncated while reading.");
+  if (pending.length) yield pending;
+}
 
 function uint32(value) {
   const buffer = Buffer.alloc(4);
@@ -62,27 +103,32 @@ function movie(sampleCount, dataOffset) {
   return box("moov", mvhd, box("trak", tkhd, box("mdia", mdhd, hdlr, minf)));
 }
 
-async function* storedBytes(input, size) {
-  const sampleCount = Math.ceil(size / 2);
+async function* storedBytes(input, size, password) {
+  const payloadSize = encryptedSize(size);
+  const sampleCount = Math.ceil(payloadSize / 2);
   if (sampleCount > 0xffffffff) {
-    throw new Error("Input exceeds the supported limit of 8 GiB minus 2 bytes.");
+    throw new Error("Encrypted payload exceeds the supported limit of 8 GiB minus 2 bytes.");
   }
+  const salt = randomBytes(16);
+  const nonce = randomBytes(12);
+  const authenticatedMetadata = Buffer.concat([identifier, uint64(size), salt, nonce]);
+  const key = await deriveKey(password, salt);
   const ftyp = box("ftyp", Buffer.from("isom"), uint32(512), Buffer.from("isomiso2mp41"));
-  const metadata = box("uuid", identifier, uint64(size));
+  const metadata = box("uuid", authenticatedMetadata);
   const placeholder = movie(sampleCount, 0);
   const offset = ftyp.length + placeholder.length + metadata.length + 16;
   yield ftyp;
   yield movie(sampleCount, offset);
   yield metadata;
   yield Buffer.concat([uint32(1), Buffer.from("mdat"), uint64(sampleCount * 2 + 16)]);
-  let copied = 0;
-  if (size) {
-    for await (const chunk of input.createReadStream({ start: 0, end: size - 1, autoClose: false })) {
-      copied += chunk.length;
-      yield chunk;
-    }
+  let index = 0;
+  for await (const chunk of blocks(input, 0, size, blockSize)) {
+    yield Buffer.from(await crypto.subtle.encrypt(blockParameters(authenticatedMetadata, index++), key, chunk));
   }
-  if (copied !== size || (await input.stat()).size !== size) {
+  if (!size) {
+    yield Buffer.from(await crypto.subtle.encrypt(blockParameters(authenticatedMetadata, 0), key, Buffer.alloc(0)));
+  }
+  if ((await input.stat()).size !== size) {
     throw new Error("Input size changed while storing.");
   }
   if (size % 2) yield Buffer.from([0]);
@@ -107,6 +153,7 @@ function safeNumber(value) {
 async function payloadRange(input, size) {
   let position = 0;
   let originalSize;
+  let authenticatedMetadata;
   let media;
   let hasFtyp = false;
   while (position < size) {
@@ -129,10 +176,11 @@ async function payloadRange(input, size) {
     if (type === "uuid" && boxSize - headerSize >= 16) {
       const uuid = await readAt(input, position + headerSize, 16);
       if (uuid.equals(identifier)) {
-        if (originalSize !== undefined || boxSize - headerSize !== 24) {
+        if (originalSize !== undefined || boxSize - headerSize !== 52) {
           throw new Error("Invalid any2store metadata.");
         }
-        originalSize = safeNumber((await readAt(input, position + headerSize + 16, 8)).readBigUInt64BE());
+        authenticatedMetadata = await readAt(input, position + headerSize, 52);
+        originalSize = safeNumber(authenticatedMetadata.readBigUInt64BE(16));
       }
     }
     if (type === "mdat") {
@@ -142,46 +190,57 @@ async function payloadRange(input, size) {
     position += boxSize;
   }
   if (!hasFtyp || originalSize === undefined || !media) {
-    throw new Error("Expected an MP4 created by any2store.js.");
+    throw new Error("Expected an encrypted v3 MP4 created by any2store.js.");
   }
-  if (media.length !== originalSize + originalSize % 2) {
+  if (media.length !== encryptedSize(originalSize) + originalSize % 2) {
     throw new Error("Stored length does not match the media box.");
   }
-  return { start: media.start, length: originalSize };
+  return { start: media.start, length: originalSize, authenticatedMetadata };
 }
 
-async function* extractedBytes(input, range) {
-  if (range.length) {
-    yield* input.createReadStream({
-      start: range.start,
-      end: range.start + range.length - 1,
-      autoClose: false,
-    });
+async function* extractedBytes(input, range, password) {
+  const salt = range.authenticatedMetadata.subarray(24, 40);
+  const key = await deriveKey(password, salt);
+  let index = 0;
+  for await (const chunk of blocks(input, range.start, encryptedSize(range.length), blockSize + 16)) {
+    let plaintext;
+    try {
+      plaintext = await crypto.subtle.decrypt(
+        blockParameters(range.authenticatedMetadata, index++), key, chunk);
+    } catch {
+      throw new Error("Wrong password or damaged encrypted data.");
+    }
+    yield Buffer.from(plaintext);
   }
 }
 
 async function main() {
-  if (process.argv.length < 4) {
-    throw new Error("Usage: node any2store.js input output (output .mp4 stores; otherwise extracts)");
+  if (process.argv.length !== 5) {
+    throw new Error("Usage: node any2store.js the_password input output (output .mp4 stores; otherwise extracts)");
   }
-  const [inputPath, outputPath] = process.argv.slice(-2);
+  const [password, inputPath, outputPath] = process.argv.slice(-3);
+  if (!password) throw new Error("Password must not be empty.");
   const input = await fs.promises.open(inputPath, "r");
   let output;
-  let succeeded = false;
+  const temporaryPath = `${outputPath}.${randomBytes(16).toString("hex")}.tmp`;
   try {
     const stat = await input.stat();
     if (!stat.isFile()) throw new Error("Input must be a regular file.");
+    const existing = await fs.promises.lstat(outputPath).catch((error) => {
+      if (error.code !== "ENOENT") throw error;
+    });
+    if (existing) throw new Error("Output already exists.");
     const bytes = /\.mp4$/i.test(outputPath)
-      ? storedBytes(input, stat.size)
-      : extractedBytes(input, await payloadRange(input, stat.size));
-    output = await fs.promises.open(outputPath, "wx");
-    await pipeline(bytes, output.createWriteStream({ autoClose: false }));
-    succeeded = true;
+      ? storedBytes(input, stat.size, password)
+      : extractedBytes(input, await payloadRange(input, stat.size), password);
+    output = await fs.promises.open(temporaryPath, "wx", 0o600);
+    await pipeline(bytes, output.createWriteStream());
+    await fs.promises.link(temporaryPath, outputPath);
   } finally {
     await input.close();
     if (output) {
       await output.close();
-      if (!succeeded) await fs.promises.unlink(outputPath);
+      await fs.promises.unlink(temporaryPath);
     }
   }
 }
