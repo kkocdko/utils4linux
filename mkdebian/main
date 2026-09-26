@@ -27,25 +27,25 @@ if [ "$1" = test ]; then
   exit
 fi
 
-if [ "$1" = build-cachyos-kernel-deb ]; then
+if [ "$1" = build-kernel-deb ]; then
   # curl -L https://packages.cachyos.org/package/cachyos-v3/x86_64_v3/linux-cachyos | awk -v RS='"' '/pkg.tar.zst/{print;exit}' # linux-cachyos-headers
-  curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://cdn77.cachyos.org/repo/x86_64_v3/cachyos-v3/linux-cachyos-7.0.2-2-x86_64_v3.pkg.tar.zst
-  mkdir -p $temp_dir/linux-cachyos-deb/data/boot $temp_dir/linux-cachyos-deb/control
-  tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C $temp_dir/linux-cachyos-deb/data
-  find $temp_dir/linux-cachyos-deb/data -name '*.zst' | xargs zstd --rm -q -d
-  kver=$(ls $temp_dir/linux-cachyos-deb/data/lib/modules)
-  mv $temp_dir/linux-cachyos-deb/data/lib/modules/$kver/vmlinuz $temp_dir/linux-cachyos-deb/data/boot/vmlinuz-$kver
-  depmod -b $temp_dir/linux-cachyos-deb/data $kver
-  tar -cf $temp_dir/linux-cachyos-deb/data.tar -C $temp_dir/linux-cachyos-deb/data .
-  xz -T2 -9e --block-size $(du -sb $temp_dir/linux-cachyos-deb/data.tar | awk '{print $1/2+64}') $temp_dir/linux-cachyos-deb/data.tar # allow 2 threads decompress and still keep good ratio
+  curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://cdn77.cachyos.org/repo/x86_64_v3/cachyos-v3/linux-cachyos-7.2.7-1-x86_64_v3.pkg.tar.zst
+  mkdir -p $temp_dir/d4k/data/boot $temp_dir/d4k/control
+  tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C $temp_dir/d4k/data
+  find $temp_dir/d4k/data -name '*.zst' | xargs zstd --rm -q -d
+  kver=$(ls $temp_dir/d4k/data/lib/modules)
+  mv $temp_dir/d4k/data/lib/modules/$kver/vmlinuz $temp_dir/d4k/data/boot/vmlinuz-$kver
+  depmod -b $temp_dir/d4k/data $kver
+  tar -cf $temp_dir/d4k/data.tar -C $temp_dir/d4k/data .
+  xz -T2 -1 --block-size $(du -sb $temp_dir/d4k/data.tar | awk '{print $1/2+64}') $temp_dir/d4k/data.tar # allow 2 threads decompress and still keep good ratio
   for entry in preinst prerm postinst postrm; do # simple scripts, copy from xanmod kernel
-    printf '#!/bin/sh\nset -e\n# Pass maintainer script parameters to hook scripts\nexport DEB_MAINT_PARAMS="$*"\n# Tell initramfs builder whether it is wanted\nexport INITRD=Yes\ntest -d /etc/kernel/'$entry'.d && run-parts --arg="'$kver'" --arg="/boot/vmlinuz-'$kver'" /etc/kernel/'$entry'.d\nexit 0\n' > $temp_dir/linux-cachyos-deb/control/$entry
+    printf '#!/bin/sh\nset -e\n# Pass maintainer script parameters to hook scripts\nexport DEB_MAINT_PARAMS="$*"\n# Tell initramfs builder whether it is wanted\nexport INITRD=Yes\ntest -d /etc/kernel/'$entry'.d && run-parts --arg="'$kver'" --arg="/boot/vmlinuz-'$kver'" /etc/kernel/'$entry'.d\nexit 0\n' > $temp_dir/d4k/control/$entry
   done
-  printf "Package: linux-image-$kver\nVersion: $kver\nArchitecture: amd64\nMaintainer: nobody\nSection: kernel\nDescription: Repacked cachyos x86_64_v3\n" > $temp_dir/linux-cachyos-deb/control/control
-  tar -cJf $temp_dir/linux-cachyos-deb/control.tar.xz -C $temp_dir/linux-cachyos-deb/control .
-  echo "2.0" > $temp_dir/linux-cachyos-deb/debian-binary
+  printf "Package: linux-image-$kver\nVersion: $kver\nArchitecture: amd64\nMaintainer: nobody\nSection: kernel\nDescription: Repacked cachyos x86_64_v3\n" > $temp_dir/d4k/control/control
+  tar -cJf $temp_dir/d4k/control.tar.xz -C $temp_dir/d4k/control .
+  echo "2.0" > $temp_dir/d4k/debian-binary
   rm -rf $dist_dir/linux-image.deb
-  ar r $dist_dir/linux-image.deb $temp_dir/linux-cachyos-deb/debian-binary $temp_dir/linux-cachyos-deb/control.tar.xz $temp_dir/linux-cachyos-deb/data.tar.xz
+  ar r $dist_dir/linux-image.deb $temp_dir/d4k/debian-binary $temp_dir/d4k/control.tar.xz $temp_dir/d4k/data.tar.xz
   rm -rf $temp_dir
   exit
 fi
