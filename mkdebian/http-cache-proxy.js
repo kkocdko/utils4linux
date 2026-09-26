@@ -9,12 +9,12 @@ const server = http.createServer(async (_, r) => {
   r.setHeader("Cache-Control", "no-store");
   let remote;
   if (r.req.url === "/refresh") {
-    return r.end(), process.exit();
+    return (r.end(), process.exit());
   } else if (
     r.req.url?.startsWith("/debian/") ||
     r.req.url?.startsWith("/debian-security/")
   ) {
-    remote = "http://mirrors.jcut.edu.cn" + r.req.url; // ustc,nju,jcut
+    remote = "http://mirrors.jcut.edu.cn" + r.req.url; // bfsu,ustc,nju,jcut
   } else if (
     r.req.url?.startsWith("/archive/debian/") ||
     r.req.url?.startsWith("/archive/debian-security/")
@@ -46,12 +46,6 @@ const server = http.createServer(async (_, r) => {
 });
 server.listen(9630);
 /*
-# node --experimental-default-type=module ../hcp.js
-# sing-box: { "domain": "deb.debian.org", "process_path": "/usr/lib/apt/methods/http", "action": "route-options", "override_address": "192.168.1.77", "override_port": 9630 }, // hcp
-# curl http://192.168.1.77:9630/refresh
-rm -rf /etc/apt/sources.list
-printf "Types: deb\nURIs: http://192.168.1.77:9630/debian\nSuites: bookworm bookworm-updates bookworm-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://192.168.1.77:9630/debian-security\nSuites: bookworm-security\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\n# > https://help.mirrorz.org/debian/\n# http://mirrors.bfsu.edu.cn/debian # and -security\n# http://mirrors.ustc.edu.cn/debian # and -security\n" > /etc/apt/sources.list.d/debian.sources
-apt clean all
-rm -rf /var/lib/apt/lists/*
-apt update
+# sing-box: { "domain": "deb.debian.org", "process_path": "/usr/lib/apt/methods/http", "action": "route-options", "override_address": "127.0.0.1", "override_port": 9630 }, // http-cache-proxy
+# curl http://127.0.0.1:9630/refresh
 */
