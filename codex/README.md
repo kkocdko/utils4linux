@@ -13,7 +13,7 @@ cd dist
 pwd # ~/misc/code/utils4linux/codex/dist
 
 # > load source
-git clone --branch release/0.xxx --depth 15 https://github.com/openai/codex # 40eac3ce8a0c10cbcb9db910d529355eb2f8fc09
+git clone --branch release/0.xxx --depth 15 https://github.com/openai/codex # e72da2b53805894878023d01949a25a082e0a5cb
 cd codex/codex-rs
 git apply ../../../main.patch
 
@@ -73,3 +73,36 @@ Also, there are some other modifications, such as:
 - Modified `./core/src/tools/mod.rs` to allow fallback to direct tool mode.
 
 - Modified `./core/src/tools/code_mode/mod.rs` to avoid duplicate warning.
+
+### Follow Upstream
+
+当我们在跟进上游时，如果遇到缺失，例如
+
+```
+$ cargo check --bin codex --profile lean -q
+error[E0599]: no method named `with_product_sku` found for struct `codex_otel::SessionTelemetry` in the current scope
+   --> core/src/tools/registry.rs:537:14
+    |
+533 |           let otel = invocation
+    |  ____________________-
+534 | |             .step_context
+535 | |             .session_telemetry
+536 | |             .clone()
+537 | |             .with_product_sku(invocation.turn.config.apps_mcp_product_sku.as_deref());
+    | |             -^^^^^^^^^^^^^^^^ method not found in `codex_otel::SessionTelemetry`
+    | |_____________|
+    |
+Some errors have detailed explanations: E0277, E0422, E0432, E0433, E0599.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `codex-core` (lib) due to 11 previous errors
+```
+
+那么，我们应当搜索代码，这可能是新增的一个成员函数。
+
+```
+$ rg "fn with_product_sku" # 可以使用 "fn the_name"、"struct the_name" 等方式来缩小搜索范围
+otel/src/events/session_telemetry.rs
+158:    pub fn with_product_sku(mut self, product_sku: Option<&str>) -> Self {
+```
+
+然后，我们就可以去 `otel/src/events/session_telemetry.rs` 里找，看它属于哪个 struct。搞清楚之后，小心地将它补充到 `otel/src/lib_placeholder.rs` 里面。

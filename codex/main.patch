@@ -1,5 +1,5 @@
 diff --git a/codex-rs/.gitignore b/codex-rs/.gitignore
-index 3907521..849be15 100644
+index 3907521b..849be15e 100644
 --- a/codex-rs/.gitignore
 +++ b/codex-rs/.gitignore
 @@ -1,2 +1,3 @@
@@ -7,7 +7,7 @@ index 3907521..849be15 100644
  /target/
  /target-*/
 diff --git a/codex-rs/Cargo.toml b/codex-rs/Cargo.toml
-index d2fff95..dc08203 100644
+index adceeb5e..73819af3 100644
 --- a/codex-rs/Cargo.toml
 +++ b/codex-rs/Cargo.toml
 @@ -1,6 +1,5 @@
@@ -16,8 +16,8 @@ index d2fff95..dc08203 100644
 -    "aws-auth",
      "analytics",
      "agent-graph-store",
-     "agent-identity",
-@@ -17,7 +16,6 @@ members = [
+     "agent-message-board-client",
+@@ -18,7 +17,6 @@ members = [
      "app-server-client",
      "app-server-protocol",
      "app-server-protocol-noop-macros",
@@ -25,7 +25,7 @@ index d2fff95..dc08203 100644
      "apply-patch",
      "arg0",
      "feedback",
-@@ -25,14 +23,9 @@ members = [
+@@ -26,14 +24,9 @@ members = [
      "install-context",
      "codex-backend-openapi-models",
      "code-mode",
@@ -40,7 +40,7 @@ index d2fff95..dc08203 100644
      "cli",
      "collaboration-mode-templates",
      "connectors",
-@@ -66,7 +59,6 @@ members = [
+@@ -68,7 +61,6 @@ members = [
      "ext/guardian-reviewer",
      "ext/guardian-v2",
      "ext/history-notes",
@@ -48,7 +48,7 @@ index d2fff95..dc08203 100644
      "ext/items",
      "ext/memories",
      "ext/mcp",
-@@ -91,7 +83,6 @@ members = [
+@@ -93,7 +85,6 @@ members = [
      "ollama",
      "process-hardening",
      "realtime-webrtc",
@@ -56,7 +56,7 @@ index d2fff95..dc08203 100644
      "protocol",
      "prompts",
      "rollout",
-@@ -101,13 +92,9 @@ members = [
+@@ -103,13 +94,9 @@ members = [
      "response-debug-context",
      "sandboxing",
      "stdio-to-uds",
@@ -70,7 +70,7 @@ index d2fff95..dc08203 100644
      "websocket-auth",
      "websocket-client",
      "windows-sandbox-service",
-@@ -144,8 +131,6 @@ members = [
+@@ -146,8 +133,6 @@ members = [
      "codex-api",
      "state",
      "terminal-detection",
@@ -79,7 +79,7 @@ index d2fff95..dc08203 100644
      "thread-store",
      "uds",
      "codex-experimental-api-macros",
-@@ -174,7 +159,6 @@ codex-agent-roles = { path = "agent-roles" }
+@@ -176,7 +161,6 @@ codex-agent-roles = { path = "agent-roles" }
  codex-ansi-escape = { path = "ansi-escape" }
  codex-api = { path = "codex-api" }
  codex-attachment-store = { path = "attachment-store" }
@@ -87,7 +87,7 @@ index d2fff95..dc08203 100644
  codex-app-server = { path = "app-server" }
  codex-app-server-transport = { path = "app-server-transport" }
  codex-app-server-daemon = { path = "app-server-daemon" }
-@@ -195,7 +179,6 @@ codex-cloud-tasks-client = { path = "cloud-tasks-client" }
+@@ -197,7 +181,6 @@ codex-cloud-tasks-client = { path = "cloud-tasks-client" }
  codex-cloud-tasks-mock-client = { path = "cloud-tasks-mock-client" }
  codex-code-mode = { path = "code-mode" }
  codex-code-mode-protocol = { path = "code-mode-protocol" }
@@ -95,7 +95,7 @@ index d2fff95..dc08203 100644
  codex-home = { path = "codex-home" }
  codex-http-client = { path = "http-client" }
  codex-websocket-auth = { path = "websocket-auth" }
-@@ -223,7 +206,6 @@ codex-git-attribution = { path = "ext/git-attribution" }
+@@ -226,7 +209,6 @@ codex-git-attribution = { path = "ext/git-attribution" }
  codex-guardian-reviewer = { path = "ext/guardian-reviewer" }
  codex-guardian-v2 = { path = "ext/guardian-v2" }
  codex-history-notes-extension = { path = "ext/history-notes" }
@@ -103,7 +103,7 @@ index d2fff95..dc08203 100644
  codex-external-agent-migration = { path = "external-agent-migration" }
  codex-experimental-api-macros = { path = "codex-experimental-api-macros" }
  codex-features = { path = "features" }
-@@ -277,7 +259,6 @@ codex-terminal-detection = { path = "terminal-detection" }
+@@ -280,7 +262,6 @@ codex-terminal-detection = { path = "terminal-detection" }
  codex-test-binary-support = { path = "test-binary-support" }
  codex-thread-store = { path = "thread-store" }
  codex-tools = { path = "tools" }
@@ -111,7 +111,7 @@ index d2fff95..dc08203 100644
  codex-tui = { path = "tui" }
  codex-uds = { path = "uds" }
  codex-utils-absolute-path = { path = "utils/absolute-path" }
-@@ -307,7 +288,6 @@ codex-utils-stream-parser = { path = "utils/stream-parser" }
+@@ -310,7 +291,6 @@ codex-utils-stream-parser = { path = "utils/stream-parser" }
  codex-utils-string = { path = "utils/string" }
  codex-utils-template = { path = "utils/template" }
  codex-user-verification = { path = "user-verification" }
@@ -119,7 +119,7 @@ index d2fff95..dc08203 100644
  codex-workload-identity = { path = "workload-identity" }
  codex-windows-sandbox = { path = "windows-sandbox-rs" }
  core_test_support = { path = "core/tests/common" }
-@@ -326,12 +306,6 @@ assert_matches = "1.5.0"
+@@ -329,12 +309,6 @@ assert_matches = "1.5.0"
  async-channel = "2.3.1"
  async-io = "2.6.0"
  async-stream = "0.3.6"
@@ -132,7 +132,7 @@ index d2fff95..dc08203 100644
  axum = { version = "0.8", default-features = false }
  base64 = "0.22.1"
  bitflags = "2.13.1"
-@@ -357,7 +331,6 @@ crossbeam-channel = "0.5.15"
+@@ -360,7 +334,6 @@ crossbeam-channel = "0.5.15"
  crypto_box = { version = "0.9.1", features = ["seal"] }
  crossterm = "0.29.0"
  ctor = "0.6.3"
@@ -140,7 +140,7 @@ index d2fff95..dc08203 100644
  derive_more = "2"
  diffy = "0.4.2"
  dirs = "6"
-@@ -429,10 +402,6 @@ ratatui = { version = "0.30.2", default-features = false, features = [
+@@ -432,10 +405,6 @@ ratatui = { version = "0.30.2", default-features = false, features = [
      "underline-color",
  ] }
  ratatui-macros = "0.7.2"
@@ -151,7 +151,7 @@ index d2fff95..dc08203 100644
  regex = "1.12.3"
  regex-automata = { version = "0.4.13", default-features = false, features = ["std", "syntax", "unicode", "nfa-pikevm"] }
  regex-lite = "0.1.8"
-@@ -442,7 +411,7 @@ rmcp = { version = "=3.2.0", default-features = false }
+@@ -445,7 +414,7 @@ rmcp = { version = "=3.2.0", default-features = false }
  runfiles = { git = "https://github.com/dzbarsky/rules_rust", rev = "b56cbaa8465e74127f1ea216f813cd377295ad81" }
  rustix = { version = "1.1.4", features = ["net"] }
  rustls = { version = "0.23.45", default-features = false, features = [
@@ -160,7 +160,7 @@ index d2fff95..dc08203 100644
      "std",
  ] }
  rustls-native-certs = "0.8.3"
-@@ -464,13 +433,6 @@ sha2 = "0.10"
+@@ -467,13 +436,6 @@ sha2 = "0.10"
  shlex = "1.3.0"
  signal-hook = "0.3.18"
  similar = "2.7.0"
@@ -174,7 +174,7 @@ index d2fff95..dc08203 100644
  socket2 = "0.6.1"
  # Keep SQLx versions in sync; when bumping, audit the SQLite constructor deny list in clippy.toml.
  sqlx = { version = "=0.9.0", default-features = false, features = [
-@@ -531,7 +493,6 @@ unicode-width = "0.2"
+@@ -534,7 +496,6 @@ unicode-width = "0.2"
  url = "2"
  urlencoding = "2.1"
  uuid = "1"
@@ -182,7 +182,7 @@ index d2fff95..dc08203 100644
  vt100 = "0.16.2"
  walkdir = "2.5.0"
  webbrowser = "1.2.2"
-@@ -546,7 +507,7 @@ wiremock = "0.6"
+@@ -549,7 +510,7 @@ wiremock = "0.6"
  zeroize = "1.8.2"
  
  [workspace.lints]
@@ -191,7 +191,7 @@ index d2fff95..dc08203 100644
  
  [workspace.lints.clippy]
  await_holding_invalid_type = "deny"
-@@ -592,7 +553,6 @@ unwrap_used = "deny"
+@@ -595,7 +556,6 @@ unwrap_used = "deny"
  ignored = [
      "icu_provider",
      "openssl-sys",
@@ -199,7 +199,7 @@ index d2fff95..dc08203 100644
  ]
  
  [profile.dev]
-@@ -604,7 +564,8 @@ debug = "limited"
+@@ -607,7 +567,8 @@ debug = "line-tables-only"
  inherits = "dev"
  opt-level = 0
  debug = "none"
@@ -209,7 +209,7 @@ index d2fff95..dc08203 100644
  
  [profile.release]
  lto = "thin"
-@@ -617,6 +578,18 @@ strip = false
+@@ -620,6 +581,18 @@ strip = false
  # Balance parallel release code generation against binary size.
  codegen-units = 4
  
@@ -229,7 +229,7 @@ index d2fff95..dc08203 100644
  inherits = "release"
  debug = "full"
 diff --git a/codex-rs/app-server/Cargo.toml b/codex-rs/app-server/Cargo.toml
-index 73ae57d..3b3d99b 100644
+index ad0a5fba..2886a23c 100644
 --- a/codex-rs/app-server/Cargo.toml
 +++ b/codex-rs/app-server/Cargo.toml
 @@ -36,7 +36,6 @@ axum = { workspace = true, default-features = false, features = [
@@ -248,8 +248,16 @@ index 73ae57d..3b3d99b 100644
  codex-memories-extension = { workspace = true }
  codex-web-search-extension = { workspace = true }
  codex-websocket-auth = { workspace = true }
+@@ -142,7 +140,6 @@ http = { workspace = true }
+ opentelemetry = { workspace = true }
+ opentelemetry_sdk = { workspace = true }
+ pretty_assertions = { workspace = true }
+-rcgen = { workspace = true }
+ rmcp = { workspace = true, default-features = false, features = [
+     "elicitation",
+     "server",
 diff --git a/codex-rs/app-server/src/extensions.rs b/codex-rs/app-server/src/extensions.rs
-index c2d6d6d..cc76679 100644
+index c2d6d6d0..cc76679a 100644
 --- a/codex-rs/app-server/src/extensions.rs
 +++ b/codex-rs/app-server/src/extensions.rs
 @@ -98,9 +98,6 @@ pub(crate) fn thread_extensions(
@@ -263,7 +271,7 @@ index c2d6d6d..cc76679 100644
          .with_executor_provider(executor_skill_provider)
          .with_host_provider(Arc::new(codex_skills_extension::HostSkillProvider::new()));
 diff --git a/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs b/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs
-index a3fe8f9..9c01d53 100644
+index a3fe8f91..9c01d53e 100644
 --- a/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs
 +++ b/codex-rs/app-server/src/request_processors/account_processor/bedrock_setup.rs
 @@ -26,15 +26,7 @@ impl AccountRequestProcessor {
@@ -302,7 +310,7 @@ index a3fe8f9..9c01d53 100644
              }
              BedrockSetupParams::Environment { .. } => {
 diff --git a/codex-rs/cli/Cargo.toml b/codex-rs/cli/Cargo.toml
-index 463931e..6163b2b 100644
+index 4fed7668..ffe185ab 100644
 --- a/codex-rs/cli/Cargo.toml
 +++ b/codex-rs/cli/Cargo.toml
 @@ -34,7 +34,6 @@ codex-app-server-test-client = { workspace = true }
@@ -322,18 +330,18 @@ index 463931e..6163b2b 100644
  codex-rollout = { workspace = true }
  codex-rollout-trace = { workspace = true }
 diff --git a/codex-rs/cli/src/exec_server_command.rs b/codex-rs/cli/src/exec_server_command.rs
-index 633ac84..421ecbf 100644
+index de4b6643..00fcd236 100644
 --- a/codex-rs/cli/src/exec_server_command.rs
 +++ b/codex-rs/cli/src/exec_server_command.rs
-@@ -24,7 +24,6 @@ use codex_login::read_codex_access_token_from_env;
- use codex_utils_absolute_path::AbsolutePathBuf;
+@@ -25,7 +25,6 @@ use codex_utils_absolute_path::AbsolutePathBuf;
  use codex_utils_cli::CliConfigOverrides;
+ use codex_websocket_auth::WebsocketAuthArgs;
  
 -use crate::exec_server_auth;
  use crate::exec_server_telemetry;
  
  /// [EXPERIMENTAL] Run the standalone exec-server service.
-@@ -167,17 +166,7 @@ impl ExecServerCommand {
+@@ -181,17 +180,7 @@ impl ExecServerCommand {
              .await?;
              let direct_transport = self.remote_transport == ExecServerRemoteTransport::Direct;
              let (_otel, telemetry) = exec_server_telemetry::init(Some(&config));
@@ -353,7 +361,7 @@ index 633ac84..421ecbf 100644
                      &config,
                      &base_url,
 diff --git a/codex-rs/cli/src/main.rs b/codex-rs/cli/src/main.rs
-index 4d7984d..43952e1 100644
+index bdd7771b..401b5806 100644
 --- a/codex-rs/cli/src/main.rs
 +++ b/codex-rs/cli/src/main.rs
 @@ -58,10 +58,6 @@ mod daemon_telemetry;
@@ -381,7 +389,7 @@ index 4d7984d..43952e1 100644
  use crate::mcp_cmd::McpCli;
  use crate::plugin_cmd::PluginCli;
 diff --git a/codex-rs/codex-api/Cargo.toml b/codex-rs/codex-api/Cargo.toml
-index da3f1b7..230ce94 100644
+index 82bec692..aa589ef1 100644
 --- a/codex-rs/codex-api/Cargo.toml
 +++ b/codex-rs/codex-api/Cargo.toml
 @@ -34,7 +34,6 @@ uuid = { workspace = true }
@@ -391,9 +399,9 @@ index da3f1b7..230ce94 100644
 -rcgen = { workspace = true }
  rustls = { workspace = true }
  tempfile = { workspace = true }
- tokio-test = { workspace = true }
+ tokio = { workspace = true, features = ["test-util"] }
 diff --git a/codex-rs/core-api/Cargo.toml b/codex-rs/core-api/Cargo.toml
-index b82d5ee..f1b3ec4 100644
+index b82d5ee4..f1b3ec4d 100644
 --- a/codex-rs/core-api/Cargo.toml
 +++ b/codex-rs/core-api/Cargo.toml
 @@ -22,7 +22,6 @@ codex-core = { workspace = true }
@@ -405,10 +413,10 @@ index b82d5ee..f1b3ec4 100644
  codex-features = { workspace = true }
  codex-login = { workspace = true }
 diff --git a/codex-rs/core-api/src/lib.rs b/codex-rs/core-api/src/lib.rs
-index a8facc3..eba8795 100644
+index 2a01ba78..ced8cbb9 100644
 --- a/codex-rs/core-api/src/lib.rs
 +++ b/codex-rs/core-api/src/lib.rs
-@@ -94,7 +94,6 @@ pub use codex_features::Feature;
+@@ -100,7 +100,6 @@ pub use codex_features::Feature;
  pub use codex_features::Features;
  pub use codex_history::InitialHistory;
  pub use codex_home::CodexHomeUserInstructionsProvider;
@@ -417,7 +425,7 @@ index a8facc3..eba8795 100644
  pub use codex_login::AuthManager;
  pub use codex_login::CodexAuth;
 diff --git a/codex-rs/core/Cargo.toml b/codex-rs/core/Cargo.toml
-index 693fbd7..c70792e 100644
+index 693fbd7b..c70792e6 100644
 --- a/codex-rs/core/Cargo.toml
 +++ b/codex-rs/core/Cargo.toml
 @@ -142,7 +142,6 @@ codex-shell-escalation = { workspace = true }
@@ -429,10 +437,10 @@ index 693fbd7..c70792e 100644
  codex-otel = { workspace = true }
  codex-test-binary-support = { workspace = true }
 diff --git a/codex-rs/core/src/realtime_conversation.rs b/codex-rs/core/src/realtime_conversation.rs
-index 46d2d79..007258c 100644
+index db2cde5f..bb9ed1b4 100644
 --- a/codex-rs/core/src/realtime_conversation.rs
 +++ b/codex-rs/core/src/realtime_conversation.rs
-@@ -1212,6 +1212,7 @@ pub(crate) async fn handle_start(
+@@ -1255,6 +1255,7 @@ pub(crate) async fn handle_start(
      sub_id: String,
      params: ConversationStartParams,
  ) -> CodexResult<()> {
@@ -440,7 +448,7 @@ index 46d2d79..007258c 100644
      let prepared_start = match prepare_realtime_start(sess, params).await {
          Ok(prepared_start) => prepared_start,
          Err(err) => {
-@@ -1239,6 +1240,7 @@ pub(crate) async fn handle_start(
+@@ -1282,6 +1283,7 @@ pub(crate) async fn handle_start(
          })
          .await;
      }
@@ -448,7 +456,7 @@ index 46d2d79..007258c 100644
      Ok(())
  }
  
-@@ -1613,6 +1615,7 @@ fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) ->
+@@ -1656,6 +1658,7 @@ fn validate_realtime_voice(version: RealtimeWsVersion, voice: RealtimeVoice) ->
      )))
  }
  
@@ -456,7 +464,7 @@ index 46d2d79..007258c 100644
  async fn handle_start_inner(
      sess: &Arc<Session>,
      sub_id: &str,
-@@ -1774,12 +1777,14 @@ async fn handle_start_inner(
+@@ -1817,12 +1820,14 @@ async fn handle_start_inner(
  
      Ok(())
  }
@@ -471,7 +479,7 @@ index 46d2d79..007258c 100644
      if let Err(err) = sess.conversation.audio_in(params.frame).await {
          error!("failed to append realtime audio: {err}");
          if sess.conversation.running_state().await.is_some() {
-@@ -1789,6 +1794,7 @@ pub(crate) async fn handle_audio(
+@@ -1832,6 +1837,7 @@ pub(crate) async fn handle_audio(
                  .await;
          }
      }
@@ -479,7 +487,7 @@ index 46d2d79..007258c 100644
  }
  
  fn realtime_transcript_delta_from_handoff(handoff: &RealtimeHandoffRequested) -> Option<String> {
-@@ -1894,6 +1900,7 @@ pub(crate) async fn handle_text(
+@@ -1937,6 +1943,7 @@ pub(crate) async fn handle_text(
      sub_id: String,
      params: ConversationTextParams,
  ) {
@@ -487,7 +495,7 @@ index 46d2d79..007258c 100644
      debug!(text = %params.text, "[realtime-text] appending realtime conversation text input");
      if let Err(err) = sess.conversation.text_in(params).await {
          error!("failed to append realtime text: {err}");
-@@ -1904,6 +1911,7 @@ pub(crate) async fn handle_text(
+@@ -1947,6 +1954,7 @@ pub(crate) async fn handle_text(
                  .await;
          }
      }
@@ -495,7 +503,7 @@ index 46d2d79..007258c 100644
  }
  
  pub(crate) async fn handle_speech(
-@@ -1911,6 +1919,7 @@ pub(crate) async fn handle_speech(
+@@ -1954,6 +1962,7 @@ pub(crate) async fn handle_speech(
      sub_id: String,
      params: ConversationSpeechParams,
  ) {
@@ -503,7 +511,7 @@ index 46d2d79..007258c 100644
      debug!("[realtime-text] appending realtime speech");
      if let Err(err) = sess.conversation.append_speech(params.text).await {
          error!("failed to append realtime speech: {err}");
-@@ -1921,10 +1930,13 @@ pub(crate) async fn handle_speech(
+@@ -1964,10 +1973,13 @@ pub(crate) async fn handle_speech(
                  .await;
          }
      }
@@ -518,10 +526,10 @@ index 46d2d79..007258c 100644
  
  fn spawn_realtime_input_task(
 diff --git a/codex-rs/core/src/session/handlers.rs b/codex-rs/core/src/session/handlers.rs
-index 8ab5964..ca931be 100644
+index cc8413a6..a2e5dfd2 100644
 --- a/codex-rs/core/src/session/handlers.rs
 +++ b/codex-rs/core/src/session/handlers.rs
-@@ -62,15 +62,6 @@ pub async fn clean_background_terminals(sess: &Arc<Session>) {
+@@ -63,15 +63,6 @@ pub async fn clean_background_terminals(sess: &Arc<Session>) {
  }
  
  pub async fn realtime_conversation_list_voices(sess: &Session, sub_id: String) {
@@ -538,7 +546,7 @@ index 8ab5964..ca931be 100644
  
  /// Queues an inter-agent message, then lets the shared pending-work scheduler
 diff --git a/codex-rs/core/src/tools/code_mode/mod.rs b/codex-rs/core/src/tools/code_mode/mod.rs
-index 95133ec..340499e 100644
+index 79a95b2a..868a454b 100644
 --- a/codex-rs/core/src/tools/code_mode/mod.rs
 +++ b/codex-rs/core/src/tools/code_mode/mod.rs
 @@ -43,7 +43,7 @@ use crate::tools::router::ToolCallSource;
@@ -561,10 +569,10 @@ index 95133ec..340499e 100644
          .then(|| {
              format!(
 diff --git a/codex-rs/core/src/tools/mod.rs b/codex-rs/core/src/tools/mod.rs
-index 464996b..d8b8eef 100644
+index ce81b204..a0bd35ad 100644
 --- a/codex-rs/core/src/tools/mod.rs
 +++ b/codex-rs/core/src/tools/mod.rs
-@@ -85,7 +85,7 @@ pub(crate) fn requested_tool_mode(turn_context: &TurnContext, model_info: &Model
+@@ -86,7 +86,7 @@ pub(crate) fn requested_tool_mode(turn_context: &TurnContext, model_info: &Model
  pub(crate) fn effective_tool_mode(turn_context: &TurnContext, model_info: &ModelInfo) -> ToolMode {
      let requested_tool_mode = requested_tool_mode(turn_context, model_info);
      if !turn_context.code_mode_available
@@ -574,7 +582,7 @@ index 464996b..d8b8eef 100644
      {
          ToolMode::Direct
 diff --git a/codex-rs/core/src/tools/runtimes/mod.rs b/codex-rs/core/src/tools/runtimes/mod.rs
-index 727ff73..de7d5ac 100644
+index 727ff739..de7d5ace 100644
 --- a/codex-rs/core/src/tools/runtimes/mod.rs
 +++ b/codex-rs/core/src/tools/runtimes/mod.rs
 @@ -616,6 +616,7 @@ fn build_proxy_env_exports(env: &HashMap<String, String>) -> (String, String) {
@@ -586,10 +594,10 @@ index 727ff73..de7d5ac 100644
      let proxy_blocks = (
          format!("{captures}\n__CODEX_SNAPSHOT_PROXY_ENV_SET=\"${{{key}+x}}\""),
 diff --git a/codex-rs/exec-server/Cargo.toml b/codex-rs/exec-server/Cargo.toml
-index c1f67cc..5c6280b 100644
+index fd9928db..9f3bba11 100644
 --- a/codex-rs/exec-server/Cargo.toml
 +++ b/codex-rs/exec-server/Cargo.toml
-@@ -88,7 +88,6 @@ ctor = { workspace = true }
+@@ -98,7 +98,6 @@ ctor = { workspace = true }
  http = { workspace = true }
  opentelemetry_sdk = { workspace = true }
  pretty_assertions = { workspace = true }
@@ -598,7 +606,7 @@ index c1f67cc..5c6280b 100644
  serial_test = { workspace = true }
  tempfile = { workspace = true }
 diff --git a/codex-rs/exec-server/src/server/registry.rs b/codex-rs/exec-server/src/server/registry.rs
-index 9eeba5b..dcd80d6 100644
+index 9eeba5bf..dcd80d60 100644
 --- a/codex-rs/exec-server/src/server/registry.rs
 +++ b/codex-rs/exec-server/src/server/registry.rs
 @@ -76,16 +76,16 @@ pub(crate) fn build_router() -> RpcRouter<ExecServerHandler> {
@@ -629,19 +637,19 @@ index 9eeba5b..dcd80d6 100644
          ENVIRONMENT_INFO_METHOD,
          |handler: Arc<ExecServerHandler>, _params: ()| async move { handler.environment_info() },
 diff --git a/codex-rs/http-client/Cargo.toml b/codex-rs/http-client/Cargo.toml
-index 857798c..d6a61f0 100644
+index d59c2e78..6d51bb72 100644
 --- a/codex-rs/http-client/Cargo.toml
 +++ b/codex-rs/http-client/Cargo.toml
-@@ -43,7 +43,6 @@ workspace = true
+@@ -44,7 +44,6 @@ workspace = true
  codex-utils-cargo-bin = { workspace = true }
  opentelemetry_sdk = { workspace = true }
  pretty_assertions = { workspace = true }
 -rcgen = { workspace = true }
  tempfile = { workspace = true }
+ tokio = { workspace = true, features = ["test-util"] }
  tracing-subscriber = { workspace = true }
- 
 diff --git a/codex-rs/model-provider/Cargo.toml b/codex-rs/model-provider/Cargo.toml
-index ecdcaa4..cb99912 100644
+index ecdcaa4b..cb999128 100644
 --- a/codex-rs/model-provider/Cargo.toml
 +++ b/codex-rs/model-provider/Cargo.toml
 @@ -16,7 +16,6 @@ workspace = true
@@ -653,7 +661,7 @@ index ecdcaa4..cb99912 100644
  codex-feedback = { workspace = true }
  codex-login = { workspace = true }
 diff --git a/codex-rs/model-provider/src/lib.rs b/codex-rs/model-provider/src/lib.rs
-index 2eefe68..feb036f 100644
+index 2eefe68b..feb036fb 100644
 --- a/codex-rs/model-provider/src/lib.rs
 +++ b/codex-rs/model-provider/src/lib.rs
 @@ -1,4 +1,3 @@
@@ -671,7 +679,7 @@ index 2eefe68..feb036f 100644
  pub use auth::ProviderAuthScope;
  pub use auth::ResolvedProviderAuth;
 diff --git a/codex-rs/model-provider/src/provider.rs b/codex-rs/model-provider/src/provider.rs
-index 07b34c3..2f2b25d 100644
+index fa30479f..8fd2d553 100644
 --- a/codex-rs/model-provider/src/provider.rs
 +++ b/codex-rs/model-provider/src/provider.rs
 @@ -24,7 +24,6 @@ use codex_protocol::error::CodexErr;
@@ -682,7 +690,7 @@ index 07b34c3..2f2b25d 100644
  use crate::auth::ProviderAuthScope;
  use crate::auth::ResolvedProviderAuth;
  use crate::auth::auth_manager_for_provider;
-@@ -359,9 +358,6 @@ pub fn create_model_provider(
+@@ -370,9 +369,6 @@ pub fn create_model_provider(
      provider_info: ModelProviderInfo,
      auth_manager: Option<Arc<AuthManager>>,
  ) -> SharedModelProvider {
@@ -693,7 +701,7 @@ index 07b34c3..2f2b25d 100644
          provider_info.validate()?;
          let manager = auth_manager
 diff --git a/codex-rs/model-provider/src/shared_state.rs b/codex-rs/model-provider/src/shared_state.rs
-index 02dae76..46d8eff 100644
+index 02dae76d..46d8eff3 100644
 --- a/codex-rs/model-provider/src/shared_state.rs
 +++ b/codex-rs/model-provider/src/shared_state.rs
 @@ -10,14 +10,9 @@ use codex_login::GatewayAuthManager;
@@ -728,7 +736,7 @@ index 02dae76..46d8eff 100644
  
  #[cfg(test)]
 diff --git a/codex-rs/network-proxy/Cargo.toml b/codex-rs/network-proxy/Cargo.toml
-index bda4261..0669a84 100644
+index bda42616..0669a84f 100644
 --- a/codex-rs/network-proxy/Cargo.toml
 +++ b/codex-rs/network-proxy/Cargo.toml
 @@ -6,7 +6,7 @@ license.workspace = true
@@ -785,7 +793,7 @@ index bda4261..0669a84 100644
 -codex-windows-sandbox = { path = "../windows-sandbox-rs" }
 diff --git a/codex-rs/network-proxy/src/lib_placeholder.rs b/codex-rs/network-proxy/src/lib_placeholder.rs
 new file mode 100644
-index 0000000..ef29c2a
+index 00000000..ef29c2a8
 --- /dev/null
 +++ b/codex-rs/network-proxy/src/lib_placeholder.rs
 @@ -0,0 +1,448 @@
@@ -1238,7 +1246,7 @@ index 0000000..ef29c2a
 +pub fn brokered_credential_marker_env_keys(_env: &HashMap<String, String>) -> Vec<String> { Vec::new() }
 +pub const CREDENTIAL_BROKER_ACTIVE_ENV_KEY: &str = "CODEX_CREDENTIAL_BROKER_ACTIVE";
 diff --git a/codex-rs/network-proxy/src/mitm_hook.rs b/codex-rs/network-proxy/src/mitm_hook.rs
-index 6e2ee5c..ee9ac87 100644
+index 6e2ee5cf..ee9ac87e 100644
 --- a/codex-rs/network-proxy/src/mitm_hook.rs
 +++ b/codex-rs/network-proxy/src/mitm_hook.rs
 @@ -63,6 +63,9 @@ pub struct InjectedHeaderConfig {
@@ -1258,7 +1266,7 @@ index 6e2ee5c..ee9ac87 100644
 +
 +}
 diff --git a/codex-rs/otel/Cargo.toml b/codex-rs/otel/Cargo.toml
-index 362a788..2e2bc0f 100644
+index 3197eaa8..ba9408ef 100644
 --- a/codex-rs/otel/Cargo.toml
 +++ b/codex-rs/otel/Cargo.toml
 @@ -7,7 +7,7 @@ license.workspace = true
@@ -1270,7 +1278,7 @@ index 362a788..2e2bc0f 100644
  
  [lints]
  workspace = true
-@@ -23,33 +23,8 @@ codex-api = { workspace = true }
+@@ -24,33 +24,8 @@ codex-api = { workspace = true }
  codex-protocol = { workspace = true }
  eventsource-stream = { workspace = true }
  gethostname = { workspace = true }
@@ -1304,7 +1312,7 @@ index 362a788..2e2bc0f 100644
  serde = { workspace = true, features = ["derive"] }
  serde_json = { workspace = true }
  strum_macros = { workspace = true }
-@@ -57,7 +32,6 @@ thiserror = { workspace = true }
+@@ -58,7 +33,6 @@ thiserror = { workspace = true }
  tokio = { workspace = true }
  tokio-tungstenite = { workspace = true }
  tracing = { workspace = true }
@@ -1314,10 +1322,10 @@ index 362a788..2e2bc0f 100644
  [dev-dependencies]
 diff --git a/codex-rs/otel/src/lib_placeholder.rs b/codex-rs/otel/src/lib_placeholder.rs
 new file mode 100644
-index 0000000..7c7c82b
+index 00000000..3406c3c2
 --- /dev/null
 +++ b/codex-rs/otel/src/lib_placeholder.rs
-@@ -0,0 +1,324 @@
+@@ -0,0 +1,348 @@
 +use std::fmt::Debug;
 +use std::time::Duration;
 +use std::collections::{HashMap, BTreeMap};
@@ -1336,9 +1344,11 @@ index 0000000..7c7c82b
 +    API_CALL_COUNT_METRIC,API_CALL_DURATION_METRIC,ARTIFACT_OPERATION_EXPECTED_OUTPUT_COUNT_METRIC,ARTIFACT_OPERATION_STARTED_METRIC,CURATED_PLUGINS_STARTUP_SYNC_FINAL_METRIC,CURATED_PLUGINS_STARTUP_SYNC_METRIC,EXEC_SERVER_CLIENT_REQUEST_COUNT_METRIC,
 +    GOAL_BLOCKED_METRIC,GOAL_BUDGET_LIMITED_METRIC,GOAL_COMPLETED_METRIC,GOAL_CREATED_METRIC,GOAL_DURATION_SECONDS_METRIC,GOAL_RESUMED_METRIC,GOAL_TOKEN_COUNT_METRIC,GOAL_USAGE_LIMITED_METRIC,GUARDIAN_REVIEW_COUNT_METRIC,GUARDIAN_REVIEW_DURATION_METRIC,GUARDIAN_REVIEW_TOKEN_USAGE_METRIC,GUARDIAN_REVIEW_TTFT_DURATION_METRIC,HOOK_RUN_DURATION_METRIC,HOOK_RUN_METRIC,ORIGINATOR_TAG,PLUGIN_INSTALL_ELICITATION_SENT_METRIC,PLUGIN_INSTALL_SUGGESTION_METRIC,PROCESS_START_METRIC,
 +    RESPONSES_API_ENGINE_IAPI_TBT_DURATION_METRIC,RESPONSES_API_ENGINE_IAPI_TTFT_DURATION_METRIC,RESPONSES_API_ENGINE_SERVICE_TBT_DURATION_METRIC,RESPONSES_API_ENGINE_SERVICE_TTFT_DURATION_METRIC,RESPONSES_API_INFERENCE_TIME_DURATION_METRIC,RESPONSES_API_OVERHEAD_DURATION_METRIC,SSE_EVENT_COUNT_METRIC,SSE_EVENT_DURATION_METRIC,STARTUP_PHASE_DURATION_METRIC,STARTUP_PREWARM_AGE_AT_FIRST_TURN_METRIC,STARTUP_PREWARM_DURATION_METRIC,
-+    THREAD_SKILLS_DESCRIPTION_TRUNCATED_CHARS_METRIC,THREAD_SKILLS_ENABLED_TOTAL_METRIC,THREAD_SKILLS_KEPT_TOTAL_METRIC,THREAD_SKILLS_TRUNCATED_METRIC,THREAD_STARTED_METRIC,TOOL_CALL_COUNT_METRIC,TOOL_CALL_DURATION_METRIC,TOOL_CALL_UNIFIED_EXEC_METRIC,TURN_E2E_DURATION_METRIC,TURN_MEMORY_METRIC,TURN_NETWORK_PROXY_METRIC,TURN_TOKEN_USAGE_METRIC,TURN_TOOL_CALL_METRIC,TURN_TTFM_DURATION_METRIC,TURN_TTFT_DURATION_METRIC,TURN_UNIFIED_EXEC_RUNNING_PROCESSES_METRIC,
++    THREAD_SKILLS_DESCRIPTION_TRUNCATED_CHARS_METRIC,THREAD_SKILLS_ENABLED_TOTAL_METRIC,THREAD_SKILLS_KEPT_TOTAL_METRIC,THREAD_SKILLS_TRUNCATED_METRIC,THREAD_STARTED_METRIC,THREAD_TOOLS_FRAGMENT_BYTES_METRIC,THREAD_TOOLS_NAMESPACES_TOTAL_METRIC,
++    TOOL_CALL_COUNT_METRIC,TOOL_CALL_DURATION_METRIC,TOOL_CALL_UNIFIED_EXEC_METRIC,TURN_E2E_DURATION_METRIC,TURN_MEMORY_METRIC,TURN_NETWORK_PROXY_METRIC,TURN_TOKEN_USAGE_METRIC,TURN_TOOL_CALL_METRIC,TURN_TTFM_DURATION_METRIC,TURN_TTFT_DURATION_METRIC,TURN_UNIFIED_EXEC_RUNNING_PROCESSES_METRIC,
 +    WEBSOCKET_CONTINUATION_COUNT_METRIC,WEBSOCKET_EVENT_COUNT_METRIC,WEBSOCKET_EVENT_DURATION_METRIC,WEBSOCKET_REQUEST_COUNT_METRIC,WEBSOCKET_REQUEST_DURATION_METRIC,
 +}
++pub const CONTEXT_FRAGMENT_BYTES_BUCKETS: &[f64] = &[256., 512., 1_024., 2_048., 4_096., 8_192., 16_384.];
 +
 +#[derive(Clone, Debug, Default, Eq, PartialEq)]
 +pub enum OtelExporter {
@@ -1444,6 +1454,10 @@ index 0000000..7c7c82b
 +pub struct MetricsError;
 +
 +pub type Result<T, E = MetricsError> = std::result::Result<T, E>;
++
++impl std::fmt::Display for MetricsError {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
++}
 +
 +#[derive(Clone, Debug, Default)]
 +pub struct Timer;
@@ -1595,7 +1609,6 @@ index 0000000..7c7c82b
 +}
 +
 +impl SessionTelemetry {
-+    #[allow(clippy::too_many_arguments)]
 +    pub fn new(_conversation_id: codex_protocol::ThreadId, _model: &str, _slug: &str, _account_id: Option<String>, _account_email: Option<String>, _auth_mode: Option<TelemetryAuthMode>, _originator: String, _log_user_prompts: bool, _terminal_type: String, _session_source: codex_protocol::protocol::SessionSource) -> Self { Self }
 +    pub fn with_auth_env(self, _auth_env: AuthEnvTelemetryMetadata) -> Self { self }
 +    pub fn with_metrics_service_name(self, _service_name: &str) -> Self { self }
@@ -1603,10 +1616,12 @@ index 0000000..7c7c82b
 +    pub fn with_metrics_without_metadata_tags(self, _metrics: MetricsClient) -> Self { self }
 +    pub fn with_tool_result_log_config<T>(self, _config: T) -> Self { self }
 +    pub fn with_provider_metrics(self, _provider: &OtelProvider) -> Self { self }
++    pub fn with_product_sku(mut self, product_sku: Option<&str>) -> Self { self }
 +    pub fn runtime_metrics_summary(&self) -> Option<RuntimeMetricsSummary> { None }
 +    pub fn reset_runtime_metrics(&self) {}
 +    pub fn record(&self, _name: &str, _value: f64, _tags: &[(&str, &str)]) {}
 +    pub fn counter(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)]) {}
++    pub fn guardian_assessment(&self, assessment: &impl Sized, outcome: Option<impl Sized>) {}
 +    pub fn histogram(&self, _name: &str, _value: impl Debug, _tags: &[(&str, &str)] ) {}
 +    pub fn histogram_with_boundaries(&self, _name: &str, _value: i64, _boundaries: &[f64], _tags: &[(&str, &str)]) {}
 +    pub fn record_websocket_connect(&self, _duration: Duration, _status: Option<u16>, _error_message: Option<&str>, _auth_header_attached: bool, _auth_header_name: Option<&str>, _retry_after_unauthorized: bool, _recovery_mode: Option<&str>, _recovery_phase: Option<&str>, _endpoint: &str, _connection_reused: bool, _request_id: Option<&str>, _cf_ray: Option<&str>, _auth_error: Option<&str>, _auth_error_code: Option<&str>, _agent_identity_telemetry: Option<&codex_api::AgentIdentityTelemetry>) {}
@@ -1618,6 +1633,8 @@ index 0000000..7c7c82b
 +    pub fn record_turn_cost(&self, _turn_id: &str, _estimated_usd: &str, _interrupted: bool, _speed: Option<&str>, _reasoning_effort: Option<&str>) {}
 +    pub fn record_plugin_install_elicitation_sent(&self, _tool_type: &str, _tool_id: &str, _tool_name: &str) {}
 +    pub fn record_plugin_install_suggestion(&self, _tool_type: &str, _tool_id: &str, _tool_name: &str, _response_action: &str, _user_confirmed: bool, _completed: bool) {}
++    pub fn record_multi_agent_spawn_phase(&self, phase: &'static str, duration: Duration, fork_mode: &'static str, history_mode: &'static str, multi_agent_version: &'static str) {}
++    pub fn record_multi_agent_spawn_failure(&self, reason: &'static str, fork_mode: &'static str, multi_agent_version: &'static str) {}
 +    pub fn with_model(self, _model: &str, _slug: &str) -> Self { self }
 +    pub fn with_inference_request<T>( self, _service_tier: Option<&str>, _model_reasoning_effort: Option<&T>) -> Self { self }
 +    pub fn record_responses<T, U>(&self, _span: &T, _event: &U) {}
@@ -1642,9 +1659,24 @@ index 0000000..7c7c82b
 +    pub fn record(&self, _tags: &[(&str, &str)]) -> Result<()> {Ok(()) }
 +    pub fn elapsed(&self) -> Duration { Duration::ZERO }
 +}
++
++#[derive(Default)]
++pub struct AgentResponseLogger;
++
++impl AgentResponseLogger {
++    pub fn record(&self, telemetry: &SessionTelemetry, item: &impl Sized, context: impl Sized) {}
++}
++
++pub struct AgentResponseContext<'a> {
++    pub turn_id: &'a str,
++    pub session_source: &'a codex_protocol::protocol::SessionSource,
++    pub parent_turn_id: Option<String>,
++    pub root_turn_id: Option<String>,
++    pub initiating_agent_path: Option<&'a codex_protocol::AgentPath>,
++}
 diff --git a/codex-rs/rust-toolchain.toml b/codex-rs/rust-toolchain.toml
 deleted file mode 100644
-index 910c651..0000000
+index 910c6511..00000000
 --- a/codex-rs/rust-toolchain.toml
 +++ /dev/null
 @@ -1,3 +0,0 @@
@@ -1652,7 +1684,7 @@ index 910c651..0000000
 -channel = "1.95.0"
 -components = ["clippy", "rustfmt", "rust-src"]
 diff --git a/codex-rs/utils/audio/Cargo.toml b/codex-rs/utils/audio/Cargo.toml
-index 9054022..9d6cef9 100644
+index 90540228..9d6cef99 100644
 --- a/codex-rs/utils/audio/Cargo.toml
 +++ b/codex-rs/utils/audio/Cargo.toml
 @@ -9,10 +9,6 @@ workspace = true
@@ -1673,14 +1705,14 @@ index 9054022..9d6cef9 100644
 +path = "src/lib_placeholder.rs"
 diff --git a/codex-rs/utils/audio/src/lib_placeholder.rs b/codex-rs/utils/audio/src/lib_placeholder.rs
 new file mode 100644
-index 0000000..3147ba4
+index 00000000..3147ba44
 --- /dev/null
 +++ b/codex-rs/utils/audio/src/lib_placeholder.rs
 @@ -0,0 +1,2 @@
 +pub fn estimate_audio_token_count(_audio_url: &str) -> usize { 0 }
 +pub fn prepare_response_items(items: &mut [impl Sized]) {}
 diff --git a/codex-rs/utils/rustls-provider/src/lib.rs b/codex-rs/utils/rustls-provider/src/lib.rs
-index 0269819..0c3d7eb 100644
+index 0269819b..0c3d7ebc 100644
 --- a/codex-rs/utils/rustls-provider/src/lib.rs
 +++ b/codex-rs/utils/rustls-provider/src/lib.rs
 @@ -10,17 +10,9 @@ const REQUIRED_SIGNATURE_SCHEME: rustls::SignatureScheme =
@@ -1704,7 +1736,7 @@ index 0269819..0c3d7eb 100644
              panic!("aws-lc-rs rustls crypto provider should be installed");
          };
 diff --git a/codex-rs/websocket-client/Cargo.toml b/codex-rs/websocket-client/Cargo.toml
-index 19baf98..5863279 100644
+index 19baf984..58632798 100644
 --- a/codex-rs/websocket-client/Cargo.toml
 +++ b/codex-rs/websocket-client/Cargo.toml
 @@ -16,7 +16,6 @@ url = { workspace = true }
