@@ -46,8 +46,26 @@ if [ "$1" = build-kernel-deb ]; then
   echo "2.0" > $temp_dir/d4k/debian-binary
   rm -rf $dist_dir/linux-image.deb
   ar r $dist_dir/linux-image.deb $temp_dir/d4k/debian-binary $temp_dir/d4k/control.tar.xz $temp_dir/d4k/data.tar.xz
-  rm -rf $temp_dir
+  rm -rf $temp_dir/d4k
   exit
+fi
+
+if [ "$1" = build-font-deb ]; then
+  curl --skip-existing -o $dist_dir/noto-sans-cjk-vf.zip -L https://github.com/googlefonts/noto-cjk/releases/download/Sans2.004/01_NotoSansCJK-OTF-VF.zip # size = 248M
+  mkdir -p $temp_dir/d4f/data/etc/fonts/conf.d
+  unzip -p $dist_dir/noto-sans-cjk-vf.zip Variable/OTF/Subset/NotoSansSC-VF.otf | install -Dp /dev/stdin $temp_dir/d4f/data/usr/share/fonts/opentype/noto-sans-sc-vf/noto-sans-sc-vf.otf # use the subset tiny file
+  ln -sf /usr/share/fontconfig/conf.avail/70-fonts-noto-sans-sc-vf.conf $temp_dir/d4f/data/etc/fonts/conf.d/70-fonts-noto-sans-sc-vf.conf
+  printf '<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig><alias><family>Noto Sans SC</family><default><family>sans-serif</family></default></alias></fontconfig>\n' | install -Dp /dev/stdin $temp_dir/d4f/data/usr/share/fontconfig/conf.avail/70-fonts-noto-sans-sc-vf.conf
+  printf "Package: fonts-noto-sans-sc-vf\nVersion: 2.004+2\nArchitecture: all\nMaintainer: nobody\nSection: fonts\nDescription: Noto Sans CJK SC (Simplified Chinese) (Subset) Variable Fonts\n" | install -Dp /dev/stdin $temp_dir/d4f/control/control
+  cfg_tar="--owner=0 --group=0 --numeric-owner" cfg_xz="-T1 -9 --block-size 67108864"
+  tar $cfg_tar -c -C $temp_dir/d4f/data . | xz $cfg_xz > $temp_dir/d4f/data.tar.xz
+  tar $cfg_tar -c -C $temp_dir/d4f/control . | xz $cfg_xz > $temp_dir/d4f/control.tar.xz
+  echo "2.0" > $temp_dir/d4f/debian-binary
+  ar r $dist_dir/fonts-noto-sans-sc-vf.deb $temp_dir/d4f/debian-binary $temp_dir/d4f/control.tar.xz $temp_dir/d4f/data.tar.xz
+  rm -rf $temp_dir/d4f
+  exit
+  # http://mirrors.nju.edu.cn/debian/pool/main/f/fonts-noto-cjk/fonts-noto-cjk_20240730+repack1-1_all.deb
+  # http://mirrors.nju.edu.cn/fedora/releases/44/Everything/x86_64/os/Packages/g/google-noto-sans-cjk-vf-fonts-2.004-11.fc44.noarch.rpm
 fi
 
 if [ "$1" = build ]; then
