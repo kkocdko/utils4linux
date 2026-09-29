@@ -1,3 +1,16 @@
+# cachyos kernel repackage script
+
+- https://discuss.cachyos.org/t/cachyos-kernel-on-ubuntu/33598/2
+- https://discuss.cachyos.org/t/installing-the-cachyos-kernel-in-ubuntu-or-debian/22785
+- https://github.com/fabianwimberger/linux-cachyos-deb/tree/main/
+- https://docs.kernel.org/filesystems/erofs.html
+
+```sh
+# ./main build-kernel-deb
+
+/media/kkocdko/KK_TMP_1/home/.cache/mkdebian
+```
+
 # mkdebian
 
 Custom debian livecd.

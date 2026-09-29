@@ -1,12 +1,13 @@
 #!/bin/sh
 set -ex
 trap exit INT
-type unshare curl tar mksquashfs zstd pivot_root mkfs.fat mtools mmd mcopy qemu-system-x86_64 # apt install -y squashfs-tools mtools qemu-system-x86
-temp_dir=/tmp/mkdebian
+export PATH="$PATH:/sbin" # on debian, tools like mkfs.fat are inside /sbin
+type unshare curl unzip tar zstd pivot_root mkfs.erofs mkfs.fat mtools qemu-system-x86_64 # apt install erofs-utils mtools qemu-system-x86
 dist_dir=$(pwd)/dist
-mkdir -p $temp_dir $dist_dir
-
-# todo: -papers -gnome-shell-extensions
+temp_dir=/tmp/mkdebian
+dist_dir=/media/kkocdko/KK_TMP_1/mkdebian/dist
+temp_dir=/media/kkocdko/KK_TMP_1/mkdebian/temp
+mkdir -p $dist_dir $temp_dir
 
 if [ "$1" = test ]; then
   # init=/bin/bash -- -c "until cd /run/initramfs/live 2> /dev/null; do sleep 0.1; done; bash hi.sh" # printf "echo hi\nbash\n" > hi.sh
@@ -30,7 +31,7 @@ fi
 if [ "$1" = build-kernel-deb ]; then
   # curl -L https://packages.cachyos.org/package/cachyos-v3/x86_64_v3/linux-cachyos | awk -v RS='"' '/pkg.tar.zst/{print;exit}' # linux-cachyos-headers
   curl --skip-existing -o $dist_dir/linux-cachyos.pkg.tar.zst -L https://cdn77.cachyos.org/repo/x86_64_v3/cachyos-v3/linux-cachyos-7.2.8-1-x86_64_v3.pkg.tar.zst
-  mkdir $temp_dir/build-kernel-deb
+  mkdir -p $temp_dir/build-kernel-deb
   cd $temp_dir/build-kernel-deb
   mkdir -p data/boot control
   tar -xf $dist_dir/linux-cachyos.pkg.tar.zst --strip-components 1 -C data
@@ -39,10 +40,10 @@ if [ "$1" = build-kernel-deb ]; then
   mv data/lib/modules/$kver/vmlinuz data/boot/vmlinuz-$kver
   depmod -b data $kver
   for entry in preinst prerm postinst postrm; do # simple scripts, copy from xanmod kernel
-    printf "#!/bin/sh\nset -e\n# Pass maintainer script parameters to hook scripts\nexport DEB_MAINT_PARAMS=\"\$*\"\n# Tell initramfs builder whether it is wanted\nexport INITRD=Yes\ntest -d /etc/kernel/$entry.d && run-parts --arg=\"$kver\" --arg="/boot/vmlinuz-$kver" /etc/kernel/$entry.d\nexit 0\n" > control/$entry
+    printf '#!/bin/sh\n\nset -e\n\n# Pass maintainer script parameters to hook scripts\nexport DEB_MAINT_PARAMS="$*"\n\n# Tell initramfs builder whether it is wanted\nexport INITRD=Yes\n\n# run-parts will error out if one of its directory arguments does not\n# exist, so filter the list of hook directories accordingly.\nhookdirs=\nfor dir in /etc/kernel /usr/share/kernel; do\ntest -d "$dir/'$entry'.d" || continue\nhookdirs="$hookdirs $dir/'$entry'.d"\ndone\nhookdirs="${hookdirs# }"\ntest -n "$hookdirs" && run-parts --arg="'$kver'" --arg="/boot/vmlinuz-'$kver'" $hookdirs\nexit 0' > control/$entry
   done
-  printf "Package: linux-image-$kver\nVersion: $kver\nArchitecture: amd64\nMaintainer: nobody\nSection: kernel\nDescription: Repacked cachyos x86_64_v3\n" > control/control
-  cfg_tar="--owner=0 --group=0 --numeric-owner" cfg_zstd="--long --ultra -20"
+  printf "Package: linux-image-$kver\nVersion: $kver\nArchitecture: amd64\nMaintainer: nobody\nInstalled-Size: $(du -s data | cut -f1)\nSection: kernel\nDescription: Repacked cachyos x86_64_v3\n" > control/control
+  cfg_tar="--owner=0 --group=0 --numeric-owner" cfg_zstd="--long --ultra -20" # xz -T1 -9 = 110M 6m19s , zstd -T2 --long --ultra -20 = 121M 4m16s , zstd 22 = 120M 7m25s
   tar $cfg_tar -cC data . | zstd $cfg_zstd -o data.tar.zst
   tar $cfg_tar -cC control . | zstd $cfg_zstd -o control.tar.zst
   echo "2.0" > debian-binary
@@ -50,34 +51,17 @@ if [ "$1" = build-kernel-deb ]; then
   ar r $dist_dir/linux-image.deb debian-binary control.tar.zst data.tar.zst
   rm -rf ../build-kernel-deb/*
   exit
-  # busybox time /bin/tar $cfg_tar -cC data . 2> data.9.tar.xz.txt | xz -T1 -9 > data.9.tar.xz &
-  # busybox time /bin/tar $cfg_tar -cC data . 2> data.7.tar.xz.txt | xz -T1 -7 > data.7.tar.xz &
-  # busybox time /bin/tar $cfg_tar -cC data . 2> data.5.tar.xz.txt | xz -T1 -5 > data.5.tar.xz &
-  # busybox time /bin/tar $cfg_tar -cC data . 2> data.9.tar.zst.txt | zstd -T1 -5 > data.9.tar.zst &
-  # busybox time /bin/tar $cfg_tar -cC data . 2> data.5.tar.zst.txt | zstd -T1 -5 > data.5.tar.zst &
-  # time taskset -c "6" sh -c 'tar -cC data . | xz -T1 -9 > data.9.tar.xz' # 6m19s
-  # time taskset -c "2,4" sh -c 'tar -cC data . | zstd -T2 --long --ultra -22 -f -o data.22.tar.zst' # 7m25s
-  # time taskset -c "2,4" sh -c 'tar -cC data . | zstd -T2 --long --ultra -20 -f -o data.20.tar.zst' # 4m16s
-  # time taskset -c "2,4" sh -c 'tar -cC data . | zstd -T2 -9 -f -o data.9.tar.zst' # 9s
-  # kkocdko@klp1:/media/kkocdko/KK_TMP_1/mkdebian/temp/build-kernel-deb$ ls -lh
-  # total 487M
-  # drwxrwxr-x 1 kkocdko kkocdko    0 Sep 26 23:56 control
-  # drwxrwxr-x 1 kkocdko kkocdko   14 Sep 26 23:56 data
-  # -rw-rw-r-- 1 kkocdko kkocdko 121M Sep 27 13:49 data.20.tar.zst
-  # -rw-rw-r-- 1 kkocdko kkocdko 120M Sep 27 14:03 data.22.tar.zst
-  # -rw-rw-r-- 1 kkocdko kkocdko 138M Sep 27 13:40 data.9.tar.zst
-  # -rw-rw-r-- 1 kkocdko kkocdko 110M Sep 27 14:02 data.9.tar.xz
 fi
 
 if [ "$1" = build-font-deb ]; then
   curl --skip-existing -o $dist_dir/noto-sans-cjk-vf.zip -L https://github.com/googlefonts/noto-cjk/releases/download/Sans2.004/01_NotoSansCJK-OTF-VF.zip # size = 248M
-  mkdir $temp_dir/build-font-deb
+  mkdir -p $temp_dir/build-font-deb
   cd $temp_dir/build-font-deb
   mkdir -p data/etc/fonts/conf.d control
   unzip -p $dist_dir/noto-sans-cjk-vf.zip Variable/OTF/Subset/NotoSansSC-VF.otf | install -Dp /dev/stdin data/usr/share/fonts/opentype/noto-sans-sc-vf/noto-sans-sc-vf.otf # use the subset tiny file
   ln -sf /usr/share/fontconfig/conf.avail/70-fonts-noto-sans-sc-vf.conf data/etc/fonts/conf.d/70-fonts-noto-sans-sc-vf.conf
   printf '<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig><match target="pattern"><test name="family"><string>sans-serif</string></test><edit name="family" mode="append" binding="strong"><string>Noto Sans SC</string></edit></match><alias><family>Noto Sans SC</family><default><family>sans-serif</family></default></alias></fontconfig>\n' | install -Dp /dev/stdin data/usr/share/fontconfig/conf.avail/70-fonts-noto-sans-sc-vf.conf
-  printf "Package: fonts-noto-sans-sc-vf\nVersion: 2.004+2\nArchitecture: all\nMaintainer: nobody\nSection: fonts\nDescription: Noto Sans CJK SC (Simplified Chinese) (Subset) Variable Fonts\n" > control/control
+  printf "Package: fonts-noto-sans-sc-vf\nVersion: 2.004+2\nArchitecture: all\nMaintainer: nobody\nInstalled-Size: $(du -s data | cut -f1)\nSection: fonts\nDescription: Noto Sans CJK SC (Simplified Chinese) (Subset) Variable Fonts\n" > control/control
   cfg_tar="--owner=0 --group=0 --numeric-owner" cfg_zstd="--long --ultra -20"
   tar $cfg_tar -cC data . | zstd $cfg_zstd -o data.tar.zst
   tar $cfg_tar -cC control . | zstd $cfg_zstd -o control.tar.zst
