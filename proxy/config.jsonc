@@ -6,6 +6,7 @@
     "cache_file": { "enabled": true }, // 别用 store_fakeip，在极端情况下会让错误无法恢复
     "clash_api": { "external_controller": "127.0.0.1:9090", "external_ui": "ui", "external_ui_download_url": "https://github.com/kkocdko/kblog/releases/download/simple_storage/yacd-meta-mod-20250210-0204.zip" } // 打开 http://yacd.localhost:9090/ui 即可。建议把延迟测试地址改成有点体积的，更能反映实际情况的 https://www.google.com/robots.txt 而不是 generate_204
   },
+  "http_clients": [{ "tag": "main", "detour": "proxy" }],
   "dns": {
     "servers": [
       { "tag": "local", "type": "local" },
@@ -23,7 +24,7 @@
       { "tag":"site-not-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs" },
       { "tag":"site-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs" },
       { "tag":"site-cn-ext", "type":"remote", "url":"https://raw.githubusercontent.com/xmdhs/cn-domain-list/rule-set/ext-cn-list.srs" },
-      { "tag":"ip-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"}
+      { "tag":"ip-cn", "type":"remote", "url":"https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs" }
     ],
     "rules": [
       // { "domain": "ender3v3ke.internal", "override_address": "192.168.1.5", "outbound": "direct" }, // for i in $(seq 2 9); do u=http://192.168.1.$i ; timeout 1 curl -s $u | grep -q ">Creality<" && echo $u && break ; done
@@ -137,14 +138,14 @@ root@kvs5:~# nft list ruleset
       "tag": "sh-hk-hy2",
       "type": "hysteria2",
       "listen": "::",
-      "listen_port": 11112,
+      "listen_port": 35353,
       "users": [{ "password": "xxx" }],
       "tls": {
         "enabled": true,
         "server_name": "v.qq.com",
         "certificate": ["-----BEGIN CERTIFICATE-----","xxx","-----END CERTIFICATE-----"],
         "key": ["-----BEGIN PRIVATE KEY-----","xxx","-----END PRIVATE KEY-----"]
-      } // sing-box generate tls-keypair 127.0.0.1 -m 120 > pair.pem
+      } // openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -noenc -keyout - -days 36500 -subj /CN=127.0.0.1
     }
   ],
   "outbounds": [

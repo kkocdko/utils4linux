@@ -49,18 +49,40 @@ fi
 
 exit 1
 
-echo '
+# linux systemd user service for server
+
+cat <<EOF > ./u-proxy.service
+[Unit]
+Description=proxy (sing-box inside)
+After=default.target
+[Service]
+Type=simple
+WorkingDirectory=%h/misc/proxy
+ExecStart=%h/misc/proxy/sing-box run -c config.jsonc -D .
+Restart=on-failure
+RestartSec=5s
+[Install]
+WantedBy=default.target
+EOF
+systemctl --user link ./u-proxy.service
+systemctl --user start u-proxy
+systemctl --user enable u-proxy
+loginctl enable-linger $USER # auto launch on machine boot, not need to login the user
+
+# windows
+
+cat <<EOF > main.bat
 :: curl -o config.jsonc -H "User-Agent: curl/8.7.6 (sing-box)" -L "https://kkocdko.site/hidden/proxy/config.jsonc?user=a&token=b"
 fltmc>nul||powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"&&exit /b
 cd /d "%~dp0"
 title proxy
 sing-box run --config config.jsonc -D . --disable-color
 cmd /k
-' > main.bat
-
-# nssm install nssm_proxy C:\misc\proxy\sing-box.exe run -c config.jsonc -D . --disable-color # https://nssm.cc/ci/nssm-2.24-101-g897c7ad.zip # do not use sc.exe which requires special symbol export
+EOF
+# https://nssm.cc/ci/nssm-2.24-101-g897c7ad.zip # do not use sc.exe which requires special symbol export
+# nssm install nssm_proxy C:\misc\proxy\sing-box.exe run -c config.jsonc -D . --disable-color
 
 # ss -npt | grep 2400:c620 | sort
 
-curl -L https://pkg.cloudflareclient.com/dists/trixie/main/binary-amd64/Packages
+# curl -L https://pkg.cloudflareclient.com/dists/trixie/main/binary-amd64/Packages
 # https://github.com/Diniboy1123/usque
