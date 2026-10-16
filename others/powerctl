@@ -4,7 +4,7 @@ set -e
 # 1. Always use the amd_pstate=passive, don't use guided or active. # https://docs.kernel.org/admin-guide/pm/amd-pstate.html
 # 2. Call functions in declear order.
 
-# output pids which should be stop / resume
+# print heavy tasks pids
 heavy_tasks_pids(){ echo $(pidof chrome node gopls esbuild sing-box tidb-server electron gsd-smartcard) $(pgrep -f qemu-kvm) ; }
 # $1 = low-power | balanced | performance
 acpi_profile(){ echo $1 > /sys/firmware/acpi/platform_profile ; }
@@ -19,40 +19,40 @@ cpu_governor(){ echo $1 | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_gover
 # for amd-pstate-epp only
 cpu_epp(){ echo power > /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference ; }
 
-if [ "$(id -u)" != "0" ]; then
+if [ "$(id -u)" != 0 ]; then
   exec sudo "$0" "$@"
 fi
 
 if [ "$1" = "" ]; then
-  echo "Usage: $0 [ info | min | high | max | doze | undoze | suspend ]"
-elif [ "$1" = "info" ]; then
+  echo "Usage: $0 [ info | max | stable | doze | undoze | suspend ]"
+elif [ "$1" = info ]; then
   echo "- cpu"
   s=$(turbostat -q -n 1 -i 0.5 -s Bzy_MHz,PkgWatt | tail -n+3) # apt install msr-tools
   echo "bzy_mhz: $(echo $s | cut -d ' ' -f '1,3-')"
   echo "pkg_watt: $(echo $s | cut -d ' ' -f '2')"
   type hwmoncat 2>&1 > /dev/null && hwmoncat || "$(dirname "$0")/hwmoncat"
-elif [ "$1" = "max" ]; then
+elif [ "$1" = max ]; then
   acpi_profile performance
   gpu_level high
   cpu_boost 1
   cpu_governor performance
-elif [ "$1" = "stable" ]; then
+elif [ "$1" = stable ]; then
   acpi_profile performance
   gpu_level high
   cpu_boost 0
   cpu_governor performance
-elif [ "$1" = "doze" ]; then
+elif [ "$1" = doze ]; then
   # kill -STOP `heavy_tasks_pids` # STOP/CONT # already stoped by s2idle # echo freeze > /sys/power/state # s2idle
   acpi_profile low-power
   gpu_level low
   cpu_boost 0
   cpu_governor powersave
-elif [ "$1" = "undoze" ]; then
+elif [ "$1" = undoze ]; then
   acpi_profile low-power
   gpu_level low
   cpu_boost 0
   cpu_governor conservative # https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt
-elif [ "$1" = "suspend" ]; then
+elif [ "$1" = suspend ]; then
   acpi_profile performance
   gpu_level high
   cpu_boost 1
