@@ -1,24 +1,14 @@
 /*
 
-history prompts:
+This any2store.js program store any single file inside m4a(mp4) container.
 
-我现在想做点有趣的事情。我们的目标是在 mp4 容器中存储任意数据。用 nodejs 写。我给你个开头，之后要写进单个 any2store.js 中。
+To learn how mp4 works, we can use `ffmpeg` to generate legal m4a audio or mp4 video (use `-movflags faststart` is better). To test our program, use `dd` comamnd to fetch 4M data from /dev/random as raw.bin, then `sha1sum` it, do store/extract/recheck and more.
 
-```js
-import fs from "node:fs";
-// use fs stream
-// use process.argv , find the last 2 args as input and output, if the last one is mp4 , store to mp4, if last one is not mp4, extract from mp4
-```
+Like `ffmpeg -i video.mp4 -f s16le -ar 48000 -ac 1 -i raw.bin -map 0:v -map 1:a -c copy -movflags +faststart ffmpeg.store.mp4`.
 
-能完成之后，使用 file 命令查看 store.mp4 ，确保它能被识别成 mp4 文件。然后，我们用 any2store.js 来复刻这个实现，不再依赖 ffmpeg。
+After all the `file` command should able to detect it as mp4 or m4a file. And our program must be standalone, not require ffmpeg.
 
-最终，应当能够 `node any2store.js raw.bin store.mp4` 实现此功能。
-
-在 any2store.js 只应当包含存储和提取功能，之后我们另外运行 sha1sum。
-
-mp4 中有多种存储方法，对吧，无论如何，我们存储进 mp4 的时候都必须是原样存储数据，禁止编码成 base64 或者其他的变换。我可以接受 mp4 文件变得不那么规范。
-
-你能理解吗？如果有疑问就问我。
+Must not encode the data into base64 which increase the size. Must use Web Crypto API.
 
 ```
 # 我们有一个这样的场景：很多网盘会对上传文件做合规性扫描，如果发现加密文件，就会警告。
