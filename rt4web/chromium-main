@@ -38,13 +38,13 @@ exec ./chrome \
 --secure-connect-api-url=https://cp.cloudflare.com \
 --optimization-guide-service-get-models-url=https://cp.cloudflare.com \
 --override-metrics-upload-url=https://cp.cloudflare.com \
---user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0" \
 --user-data-dir=/media/kkocdko/KK_TMP_1/home/.config/google-chrome \
 --disk-cache-dir=/media/kkocdko/KK_TMP_1/home/.cache/google-chrome \
 "$@" > /dev/null 2>&1
 
 exit 1
 
+# --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0" \
 # https://github.com/Sketchystan1/chrome-mv2-patch
 # https://9to5google.com/2026/06/15/google-chromes-next-update-will-mark-the-end-of-popular-ad-blockers/
 
@@ -76,7 +76,7 @@ mv chrome_crashpad_handler chrome_crashpad_handler_origin
 printf '#!/bin/sh\nexec ./chrome_crashpad_handler_origin --database /media/kkocdko/KK_TMP_1/home_config/google-chrome-crash "$@"\n' > chrome_crashpad_handler
 chmod +x chrome_crashpad_handler
 
-# stable # https://github.com/NDViet/google-chrome-stable/releases/download/152.0.7977.82-1/google-chrome-stable_152.0.7977.82-1_amd64.deb
+# stable # https://github.com/NDViet/google-chrome-stable/releases/download/155.0.8059.84-1/google-chrome-stable_155.0.8059.84-1_amd64.deb
 mkdir google-chrome
 cd google-chrome
 curl -o google-chrome.deb -L https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -87,7 +87,11 @@ rm -rf usr etc opt cron default_apps WidevineCdm MEIPreload PrivacySandboxAttest
 # https://github.com/chromium/chromium/blob/141.0.7356.1/components/optimization_guide/core/optimization_guide_features.cc
 # https://raw.githubusercontent.com/chromium/chromium/refs/tags/141.0.7348.1/gpu/config/gpu_switches.cc
 
-cat <<EOF > ~/misc/apps/google-chrome/extensions/external_extensions.json 
+### get crx file from chrome web store
+# - https://clients2.google.com/service/update2/crx?response=redirect&prodversion=137.0.0.0&acceptformat=crx2,crx3&x=id%3D{EXTENSIONID}%26uc
+# - https://stackoverflow.com/questions/7184793/
+
+cat <<EOF > ~/misc/apps/google-chrome/extensions/external_extensions.json
 // Dictionary of default apps to install into new profiles. They will be
 // dynamically downloaded and installed from CWS on profile creation.
 {
@@ -111,7 +115,7 @@ chrome.history.deleteRange({ startTime: 0, endTime: thirtyDaysAgo }, () => {
   console.log("history cleaned");
 });
 EOF
-cat <<EOF > /tmp/history_cleaner/manifest.json 
+cat <<EOF > /tmp/history_cleaner/manifest.json
 {
   "manifest_version": 3,
   "name": "history_cleaner",
